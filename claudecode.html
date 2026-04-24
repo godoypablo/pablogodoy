@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manual Maestro: Claude Code Pro - Máximo Ahorro</title>
+    <style>
+        :root {
+            --bg-deep: #0a0c10;
+            --bg-card: #161b22;
+            --blue-glow: #58a6ff;
+            --green-save: #238636;
+            --orange-alert: #d29922;
+            --text-main: #c9d1d9;
+            --text-muted: #8b949e;
+            --border-color: #30363d;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background-color: var(--bg-deep);
+            color: var(--text-main);
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            padding: 40px 20px;
+            background: linear-gradient(180deg, #1f242c 0%, var(--bg-deep) 100%);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            margin-bottom: 30px;
+        }
+
+        h1 { color: var(--blue-glow); margin: 0; font-size: 2.2em; }
+        .subtitle { color: var(--text-muted); font-size: 1.1em; }
+
+        .pro-badge {
+            background: var(--orange-alert);
+            color: black;
+            padding: 2px 10px;
+            border-radius: 5px;
+            font-weight: bold;
+            font-size: 0.8em;
+            text-transform: uppercase;
+        }
+
+        /* SECCIONES Y TARJETAS */
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+        }
+
+        h2 {
+            color: var(--blue-glow);
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 10px;
+            margin-top: 0;
+        }
+
+        /* TABLA DE COMANDOS */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+
+        th { background: #1f242c; color: var(--blue-glow); text-align: left; }
+        th, td { padding: 12px; border: 1px solid var(--border-color); }
+        tr:nth-child(even) { background: #0d1117; }
+
+        code {
+            background: rgba(110, 118, 129, 0.4);
+            color: #ff7b72;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Consolas', monospace;
+        }
+
+        /* ESTRATEGIAS */
+        .strategy {
+            display: flex;
+            align-items: flex-start;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .icon { font-size: 1.5em; }
+
+        .save-meter {
+            background: rgba(35, 134, 54, 0.2);
+            border-left: 4px solid var(--green-save);
+            padding: 10px 15px;
+            margin-top: 10px;
+            font-size: 0.9em;
+        }
+
+        .critical-alert {
+            background: rgba(248, 81, 73, 0.1);
+            border: 1px solid #f85149;
+            padding: 15px;
+            border-radius: 8px;
+            color: #ff7b72;
+        }
+
+        footer {
+            text-align: center;
+            padding: 30px;
+            color: var(--text-muted);
+            font-size: 0.8em;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>Claude Code: Manual de Cabecera <span class="pro-badge">Prioridad Tokens</span></h1>
+        <p class="subtitle">Estrategias de bajo consumo para programadores Pro</p>
+    </header>
+
+    <div class="card">
+        <h2>1. Comandos Mágicos de Terminal</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Comando</th>
+                    <th>Función Principal</th>
+                    <th>Beneficio</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><code>/compact</code></td>
+                    <td>Resume el historial del chat actual.</td>
+                    <td>Reduce el costo de cada mensaje nuevo.</td>
+                </tr>
+                <tr>
+                    <td><code>/reset</code></td>
+                    <td>Limpia todo el contexto acumulado.</td>
+                    <td>Cero costo de memoria anterior.</td>
+                </tr>
+                <tr>
+                    <td><code>/init</code></td>
+                    <td>Configura el archivo <code>CLAUDE.md</code>.</td>
+                    <td>Evita repetir instrucciones.</td>
+                </tr>
+                <tr>
+                    <td><code>/clear</code></td>
+                    <td>Limpia el texto visual de la pantalla.</td>
+                    <td>Mejora el orden visual.</td>
+                </tr>
+                <tr>
+                    <td><code>/help</code></td>
+                    <td>Lista todos los comandos internos.</td>
+                    <td>Guía rápida de uso.</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="card">
+        <h2>2. Configuración de Archivos "Ignorar"</h2>
+        <p>Prohibir a Claude leer archivos basura es el mayor ahorro posible.</p>
+        <div class="critical-alert">
+            <strong>Indispensable en su <code>.clfignore</code>:</strong><br>
+            <code>node_modules/</code>, <code>dist/</code>, <code>.git/</code>, <code>package-lock.json</code>, <code>*.log</code>
+        </div>
+        <div class="save-meter">
+            <strong>Ahorro Estimado:</strong> 30% - 60% de tokens por sesión al evitar archivos gigantes de dependencias.
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>3. Metodología de Programación Eficiente</h2>
+        
+        <div class="strategy">
+            <div class="icon">🎯</div>
+            <div>
+                <strong>Menciones Directas:</strong> No pidas "busca en el proyecto". Di: "Revisa <code>src/auth.js</code>". Obligar a Claude a leer un solo archivo es mucho más barato que dejarlo escanear todo.
+            </div>
+        </div>
+
+        <div class="strategy">
+            <div class="icon">📝</div>
+            <div>
+                <strong>Regla de Oro CLAUDE.md:</strong> Escribe aquí tus preferencias de estilo (ej: "Usa Tailwind", "Código en ES6"). Claude leerá esto una vez y no tendrás que gastar tokens dándole instrucciones en cada chat.
+            </div>
+        </div>
+
+        <div class="strategy">
+            <div class="icon">📋</div>
+            <div>
+                <strong>Planear antes de Actuar:</strong> Antes de pedir código, dile: <em>"Hazme un resumen de los cambios que harás"</em>. Si el plan está mal, lo corriges con 2 frases en lugar de pagar por 100 líneas de código erróneas.
+            </div>
+        </div>
+    </div>
+
+    <div class="card" style="border-left: 5px solid var(--orange-alert);">
+        <h2>4. Consejos de Cabecera</h2>
+        <ul>
+            <li><strong>Modulariza:</strong> Divide archivos grandes en pequeños. Claude gasta menos leyendo 5 archivos de 50 líneas que uno de 250.</li>
+            <li><strong>Sesiones Atómicas:</strong> Resuelve una tarea (ej: el Login), verifica que funcione, haz <code>/reset</code> y empieza la siguiente tarea (ej: el Registro).</li>
+            <li><strong>Evita el "Lock":</strong> Nunca dejes que Claude analice archivos como <code>package-lock.json</code> o <code>yarn.lock</code>. Son puro texto innecesario.</li>
+        </ul>
+    </div>
+
+    <footer>
+        Manual Optimizado para Claude Code Pro - &copy; 2026<br>
+        "El mejor código es el que se escribe gastando la menor cantidad de energía".
+    </footer>
+</div>
+
+</body>
+</html>

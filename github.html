@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Guía GitHub SIMPLE</title>
+
+<style>
+body {
+    font-family: Arial, sans-serif;
+    background: #0f172a;
+    color: #e2e8f0;
+    margin: 40px;
+}
+
+h1 { color: #38bdf8; }
+h2 { color: #7dd3fc; }
+
+.section {
+    background: #020617;
+    padding: 25px;
+    border-radius: 10px;
+    margin-bottom: 25px;
+    border: 1px solid #1e293b;
+}
+
+pre {
+    background: black;
+    color: #22c55e;
+    padding: 15px;
+    border-radius: 8px;
+}
+
+.alert {
+    background: #7f1d1d;
+    padding: 15px;
+    border-radius: 8px;
+}
+
+.ok {
+    background: #022c22;
+    padding: 15px;
+    border-radius: 8px;
+}
+</style>
+
+</head>
+
+<body>
+
+<h1>Guía GitHub SIMPLE (Paso a Paso)</h1>
+
+<div class="section">
+<h2>REGLA MÁS IMPORTANTE</h2>
+
+<div class="alert">
+SIEMPRE HACER ESTO ANTES DE TRABAJAR:
+</div>
+
+<pre>
+git pull
+</pre>
+
+<div class="alert">
+SIEMPRE HACER ESTO AL TERMINAR:
+</div>
+
+<pre>
+git add .
+git commit -m "avance"
+git push
+</pre>
+
+</div>
+
+<div class="section">
+<h2>PRIMERA VEZ (crear proyecto)</h2>
+
+<pre>
+mkdir gastos-personales
+cd gastos-personales
+git init
+git add .
+git commit -m "inicio"
+git remote add origin https://github.com/godoypablo/gastos-personales.git
+git branch -M main
+git push -u origin main
+</pre>
+
+</div>
+
+<div class="section">
+<h2>TRABAJAR TODOS LOS DÍAS</h2>
+
+<h3>Paso 1 — Antes de trabajar</h3>
+
+<pre>
+git pull
+</pre>
+
+<h3>Paso 2 — Trabajar normalmente</h3>
+<p>Editar archivos</p>
+
+<h3>Paso 3 — Guardar cambios</h3>
+
+<pre>
+git add .
+git commit -m "avance"
+</pre>
+
+<h3>Paso 4 — Subir a GitHub</h3>
+
+<pre>
+git push
+</pre>
+
+</div>
+
+<div class="section">
+<h2>CAMBIAR DE PC</h2>
+
+<h3>Primera vez en otra PC</h3>
+
+<pre>
+git clone https://github.com/godoypablo/gastos-personales.git
+cd gastos-personales
+</pre>
+
+</div>
+
+<div class="section">
+<h2>OTRO DÍA EN OTRA PC</h2>
+
+SIEMPRE PRIMERO:
+
+<pre>
+git pull
+</pre>
+
+Luego trabajar normalmente.
+
+</div>
+
+<div class="section">
+<h2>SUBIR AL SERVIDOR WEB</h2>
+
+NUNCA copiar archivos manualmente.
+
+En el servidor hacer:
+
+<pre>
+git pull
+</pre>
+
+</div>
+
+<div class="section">
+<h2>FLUJO PERFECTO</h2>
+
+<h3>Mañana</h3>
+
+<pre>
+git pull
+</pre>
+
+<h3>Trabajar</h3>
+
+<p>Editar archivos</p>
+
+<h3>Guardar</h3>
+
+<pre>
+git add .
+git commit -m "avance"
+</pre>
+
+<h3>Subir</h3>
+
+<pre>
+git push
+</pre>
+
+</div>
+
+<div class="section">
+<h2>SI ALGO FALLA</h2>
+
+Ejecutar:
+
+<pre>
+git status
+</pre>
+
+Debe decir:
+
+<div class="ok">
+En la rama main<br>
+Tu rama está actualizada con 'origin/main'
+</div>
+
+</div>
+
+<div class="section">
+<h2>VOLVER ATRÁS A UNA VERSIÓN QUE FUNCIONABA</h2>
+
+<h3>Paso 1 — Ver versiones anteriores</h3>
+
+<pre>
+git log --oneline
+</pre>
+
+Ejemplo:
+
+<pre>
+a34f2d1 cambio nuevo que rompió todo
+b91ac22 versión que funcionaba bien
+7aa9910 inicio del proyecto
+</pre>
+
+<h3>Paso 2 — Copiar el código de la versión que funcionaba</h3>
+
+<pre>
+b91ac22
+</pre>
+
+<h3>Paso 3 — Volver a esa versión</h3>
+
+<pre>
+git reset --hard b91ac22
+</pre>
+
+<h3>Paso 4 — Subir esa versión a GitHub</h3>
+
+<pre>
+git push --force
+</pre>
+
+<div class="alert">
+Esto deja el proyecto exactamente como estaba antes
+</div>
+
+</div>
+
+<div class="section">
+<h2>VOLVER ATRÁS SOLO UN PASO</h2>
+
+<pre>
+git reset --hard HEAD~1
+git push --force
+</pre>
+
+</div>
+
+<div class="section">
+<h2>VOLVER ATRÁS DE FORMA SEGURA</h2>
+
+<pre>
+git revert HEAD
+git push
+</pre>
+
+</div>
+
+<div class="section">
+<h2>RESUMEN VOLVER ATRÁS</h2>
+
+<pre>
+git log --oneline
+git reset --hard CODIGO
+git push --force
+</pre>
+
+</div>
+
+<div class="section">
+<h2>RESUMEN GENERAL</h2>
+
+<pre>
+ANTES → git pull
+TRABAJAR
+DESPUÉS → git push
+
+SI ALGO SE ROMPE →
+git log
+git reset
+</pre>
+
+</div>
+
+</body>
+</html>

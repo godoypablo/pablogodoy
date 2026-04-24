@@ -1,0 +1,14 @@
+RewriteEngine On
+
+# 1. Prevent infinite loops: check if the request is already in the subdirectory
+RewriteCond %{REQUEST_URI} !^/cifra/
+
+# 2. Rewrite all requests to the subdirectory
+RewriteRule ^(.*)$ /cifra/$1 [L]
+
+# Cifra — Service Worker: nunca cachear
+<Files "sw.js">
+    Header set Cache-Control "no-cache, no-store, must-revalidate"
+    Header set Pragma "no-cache"
+    Header set Expires "0"
+</Files>
