@@ -122,6 +122,8 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('btnCargar').addEventListener('click', cargarDatos);
     document.getElementById('selectMes').addEventListener('change', cargarDatos);
     document.getElementById('selectAnio').addEventListener('change', cargarDatos);
+    document.getElementById('inputBusqueda')?.addEventListener('input', e => aplicarBusqueda(e.target.value));
+    document.getElementById('inputBusquedaMov')?.addEventListener('input', e => _renderizarMovimientos(e.target.value));
 
     // Al abrir modal ingresos, renderizar si los datos ya están cargados
     document.getElementById('modalIngresos').addEventListener('show.bs.modal', () => {
@@ -365,6 +367,11 @@ async function cargarDatos() {
     app.mesActual = parseInt(selectMes.value);
     app.anioActual = parseInt(selectAnio.value);
 
+    // Limpiar búsqueda al cambiar de mes
+    const inputB = document.getElementById('inputBusqueda');
+    if (inputB) inputB.value = '';
+    app.busqueda = null;
+
     mostrarLoading();
 
     try {
@@ -397,11 +404,9 @@ function renderizarDatos() {
     const resARS = app.datos.resumen?.ARS || { total_ingresos: 0, ingresos_cobrados: 0, total_gastos: 0, gastos_pagados: 0 };
     const resUSD = app.datos.resumen?.USD || { total_ingresos: 0, ingresos_cobrados: 0, total_gastos: 0, gastos_pagados: 0 };
 
-    // Disponible por moneda = saldo real en cuentas − gastos pendientes del mes
-    const totalCuentasARS  = (app.cuentas || []).filter(c => (c.moneda || 'ARS') === 'ARS').reduce((s, c) => s + parseFloat(c.saldo_actual || 0), 0);
-    const totalCuentasUSD  = (app.cuentas || []).filter(c => c.moneda === 'USD').reduce((s, c) => s + parseFloat(c.saldo_actual || 0), 0);
-    const disponibleARS    = totalCuentasARS - (resARS.total_gastos - resARS.gastos_pagados);
-    const disponibleUSD    = totalCuentasUSD;
+    // Disponible = ingresos cobrados − gastos pagados del mes
+    const disponibleARS = resARS.ingresos_cobrados - resARS.gastos_pagados;
+    const disponibleUSD = resUSD.ingresos_cobrados - resUSD.gastos_pagados;
 
     // Topbar ARS
     const elSFH = document.getElementById('saldoFiltroHeader');
@@ -409,8 +414,8 @@ function renderizarDatos() {
         elSFH.textContent = formatearMoneda(disponibleARS);
         elSFH.style.color = disponibleARS >= 0 ? 'var(--cifra-pos)' : 'var(--cifra-neg)';
     }
-    // Topbar USD — solo visible si hay cuentas o gastos USD
-    const hayUSD = totalCuentasUSD > 0 || resUSD.total_gastos > 0;
+    // Topbar USD — solo visible si hay ingresos o gastos USD en el mes
+    const hayUSD = resUSD.total_ingresos > 0 || resUSD.total_gastos > 0;
     const elStatUSD = document.getElementById('statUSD');
     if (elStatUSD) elStatUSD.classList.toggle('d-none', !hayUSD);
     const elUSDH = document.getElementById('saldoUSDHeader');
@@ -777,7 +782,6 @@ function _initCatScrollTracker() {
         window.removeEventListener('scroll', _catScrollHandler);
         _catScrollHandler = null;
     }
-    if (window.innerWidth >= 768) return;
 
     _catScrollHandler = () => {
         if (_catScrollRafPending) return;
@@ -836,17 +840,59 @@ function _limpiarChipEnVista() {
 
 // Aplicar/quitar filtro de categoría en las filas del tbody (solo mobile)
 function aplicarFiltroCategoria() {
-    if (window.innerWidth >= 768) return;
     const catId = app.categoriaFiltrada;
-    // Filas de concepto: ocultar las que no pertenecen a la categoría activa
     document.querySelectorAll('#tablaGastos tr[data-categoria-id]').forEach(tr => {
         const trCat = tr.dataset.categoriaId || '';
         tr.classList.toggle('cat-fila-oculta', catId !== null && trCat !== catId);
     });
-    // Headers de categoría: ocultar todos cuando hay filtro activo (el chip ya indica cuál es)
     document.querySelectorAll('#tablaGastos tr.categoria-header').forEach(tr => {
         tr.classList.toggle('cat-fila-oculta', catId !== null);
     });
+}
+
+function _normalizar(str) {
+    return (str || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+}
+
+function aplicarBusqueda(q) {
+    q = _normalizar(q);
+    app.busqueda = q;
+
+    const btnClear = document.getElementById('btnLimpiarBusqueda');
+    if (btnClear) btnClear.classList.toggle('d-none', !q);
+
+    if (!q) {
+        document.querySelectorAll('#tablaGastos tr.cat-fila-busqueda').forEach(tr => tr.classList.remove('cat-fila-busqueda'));
+        aplicarFiltroCategoria();
+        return;
+    }
+
+    // Al buscar, desactivar filtro de categoría
+    app.categoriaFiltrada = null;
+    renderizarCatNav();
+
+    // Filas de concepto: mostrar solo las que coinciden
+    document.querySelectorAll('#tablaGastos tr[data-concepto-nombre]').forEach(tr => {
+        const nombre = _normalizar(tr.dataset.conceptoNombre);
+        tr.classList.toggle('cat-fila-busqueda', !nombre.includes(q));
+        tr.classList.remove('cat-fila-oculta');
+    });
+
+    // Headers: mostrar solo si tienen al menos una fila visible
+    document.querySelectorAll('#tablaGastos tr.categoria-header').forEach(headerTr => {
+        const catId = headerTr.dataset.catToggleId;
+        const hayVisible = !!document.querySelector(
+            `#tablaGastos tr[data-categoria-id="${catId}"]:not(.cat-fila-busqueda):not(.cat-fila-colapsada)`
+        );
+        headerTr.classList.toggle('cat-fila-busqueda', !hayVisible);
+        headerTr.classList.remove('cat-fila-oculta');
+    });
+}
+
+function limpiarBusqueda() {
+    const input = document.getElementById('inputBusqueda');
+    if (input) { input.value = ''; input.focus(); }
+    aplicarBusqueda('');
 }
 
 // Crear filas de concepto — devuelve array de <tr>
@@ -861,6 +907,7 @@ function crearFilasConcepto(concepto, tipo) {
 function crearFilaSimple(concepto, tipo) {
     const tr = document.createElement('tr');
 
+    tr.dataset.conceptoNombre = concepto.nombre || '';
     if (concepto.categoria_id) {
         tr.dataset.categoriaId     = concepto.categoria_id;
         tr.dataset.categoriaNombre = concepto.categoria_nombre || '';
@@ -1021,6 +1068,19 @@ function crearFilaSimple(concepto, tipo) {
             inputGroup.appendChild(btnYt);
         }
 
+        // Botón: repetir importe del mes anterior
+        if ((concepto.importe_mes_anterior ?? 0) > 0 && !(concepto.importe > 0)) {
+            const btnPrev = document.createElement('button');
+            btnPrev.className = 'btn btn-smvm btn-repetir-anterior';
+            btnPrev.title = `Repetir mes anterior: ${formatearMoneda(concepto.importe_mes_anterior, concepto.moneda || 'ARS')}`;
+            btnPrev.innerHTML = '<i class="bi bi-arrow-repeat"></i>';
+            btnPrev.addEventListener('click', () => {
+                input.value = formatearMoneda(concepto.importe_mes_anterior, concepto.moneda || 'ARS');
+                guardarImporte(concepto.id, concepto.importe_mes_anterior, concepto.registro_id, input);
+            });
+            inputGroup.appendChild(btnPrev);
+        }
+
         const wrap = document.createElement('div');
         wrap.className = 'importe-input-wrap';
         wrap.appendChild(input);
@@ -1086,6 +1146,7 @@ function crearFilasMultiple(concepto, tipo) {
     trHeader.dataset.conceptoId = concepto.id;
     trHeader.addEventListener('click', () => toggleDetalle(concepto.id));
 
+    trHeader.dataset.conceptoNombre = concepto.nombre || '';
     if (concepto.categoria_id) {
         trHeader.dataset.categoriaId     = concepto.categoria_id;
         trHeader.dataset.categoriaNombre = concepto.categoria_nombre || '';
@@ -2125,6 +2186,7 @@ function descargarResumenPDF() {
 
 function abrirModalCuentas() {
     new bootstrap.Modal(document.getElementById('modalCuentas')).show();
+    cargarCuentas();
 }
 
 function abrirModalIngresos() {
@@ -2434,6 +2496,8 @@ function mostrarLoading() {
 function ocultarLoading() {
     document.getElementById('loading').classList.add('d-none');
     document.getElementById('contenidoPrincipal').classList.remove('d-none');
+    document.getElementById('catNav')?.classList.remove('d-none');
+    document.getElementById('busquedaWrap')?.classList.remove('d-none');
 }
 
 // Mostrar error
@@ -2529,6 +2593,7 @@ function renderizarListaConceptos(containerId, conceptos) {
         const item = document.createElement('div');
         item.className = 'concepto-item';
         item.id = `fila-concepto-${c.id}`;
+        item.dataset.nombre = c.nombre.toLowerCase();
 
         item.innerHTML = `
             <!-- Vista lectura -->
@@ -2635,6 +2700,11 @@ function renderizarListaConceptos(containerId, conceptos) {
 
     container.innerHTML = '';
     container.appendChild(lista);
+
+    // Re-aplicar filtro activo si el buscador tiene texto
+    const inputId = containerId === 'listaGastos' ? 'buscarGastos' : null;
+    const q = inputId ? (document.getElementById(inputId)?.value || '') : '';
+    if (q) filtrarConceptos(containerId, q);
 }
 
 function editarConcepto(id) {
@@ -2843,6 +2913,7 @@ function renderizarListaCategorias(categorias) {
 
     categorias.forEach(cat => {
         const tr = document.createElement('tr');
+        tr.dataset.nombre = cat.nombre.toLowerCase();
         tr.id = `fila-categoria-${cat.id}`;
         tr.dataset.catId = cat.id;
         tr.draggable = true;
@@ -2918,6 +2989,24 @@ function renderizarListaCategorias(categorias) {
     wrapper.appendChild(tabla);
     container.innerHTML = '';
     container.appendChild(wrapper);
+
+    // Re-aplicar filtro activo si el buscador tiene texto
+    const q = document.getElementById('buscarCategorias')?.value || '';
+    if (q) filtrarCategorias(q);
+}
+
+function filtrarConceptos(containerId, query) {
+    const q = query.trim().toLowerCase();
+    document.querySelectorAll(`#${containerId} .concepto-item`).forEach(item => {
+        item.style.display = (!q || item.dataset.nombre?.includes(q)) ? '' : 'none';
+    });
+}
+
+function filtrarCategorias(query) {
+    const q = query.trim().toLowerCase();
+    document.querySelectorAll('#tbody-categorias tr').forEach(tr => {
+        tr.style.display = (!q || tr.dataset.nombre?.includes(q)) ? '' : 'none';
+    });
 }
 
 async function guardarOrdenCategorias(tbody) {
@@ -3416,61 +3505,119 @@ async function guardarGastoRapido() {
     }
 }
 
+const _MOV_TIPO = {
+    ingreso:       { label: 'Cobro',         icon: 'bi-arrow-down-circle', cls: 'mov-cobro'         },
+    pago_gasto:    { label: 'Pago',          icon: 'bi-arrow-up-circle',   cls: 'mov-pago'          },
+    transferencia: { label: 'Transferencia', icon: 'bi-arrow-left-right',  cls: 'mov-transferencia' },
+    extraccion:    { label: 'Extracción',    icon: 'bi-cash-stack',        cls: 'mov-extraccion'    },
+};
+
+let _movData = [];
+
 async function abrirModalMovimientos() {
     const modal = new bootstrap.Modal(document.getElementById('modalMovimientos'));
     modal.show();
+    await _cargarMovimientos();
+}
 
+async function _cargarMovimientos() {
     const body = document.getElementById('modalMovimientosBody');
     body.innerHTML = '<div class="text-center py-4"><div class="spinner-border text-primary"></div></div>';
 
+    const elMesAnio = document.getElementById('movMesAnio');
+    if (elMesAnio) elMesAnio.textContent = `${obtenerNombreMes(app.mesActual)} ${app.anioActual}`;
+
     try {
-        const resp = await fetch('api/movimientos_api.php?limit=50');
+        const resp = await fetch(`api/movimientos_api.php?limit=200&mes=${app.mesActual}&anio=${app.anioActual}`);
         const result = await resp.json();
         if (!result.success) throw new Error(result.message);
+        _movData = result.data;
+        _renderizarMovimientos('');
+    } catch (error) {
+        body.innerHTML = `<div class="alert alert-danger m-3">Error: ${error.message}</div>`;
+    }
+}
 
-        if (!result.data.length) {
-            body.innerHTML = '<p class="text-center text-muted py-4">Sin movimientos registrados</p>';
-            return;
-        }
+function _renderizarMovimientos(q) {
+    q = _normalizar(q);
+    const body    = document.getElementById('modalMovimientosBody');
+    const btnClear = document.getElementById('btnLimpiarMov');
+    if (btnClear) btnClear.classList.toggle('d-none', !q);
 
-        const tipoInfo = {
-            ingreso:      { label: 'Cobro',         icon: 'bi-arrow-down-circle text-success', cls: 'text-success' },
-            pago_gasto:   { label: 'Pago',          icon: 'bi-arrow-up-circle text-danger',    cls: 'text-danger'  },
-            transferencia:{ label: 'Transferencia', icon: 'bi-arrow-left-right text-primary',  cls: ''             },
-            extraccion:   { label: 'Extracción Efectivo',icon: 'bi-cash-stack text-warning',        cls: 'text-danger'  },
-        };
+    const data = q ? _movData.filter(m => {
+        const cuenta = m.cuenta_origen || m.cuenta_destino || '';
+        const desc   = m.observaciones || m.descripcion || '';
+        const tipo   = (_MOV_TIPO[m.tipo]?.label || m.tipo);
+        return _normalizar(cuenta + ' ' + desc + ' ' + tipo).includes(q);
+    }) : _movData;
 
-        const rows = result.data.map(m => {
-            const t = tipoInfo[m.tipo] || { label: m.tipo, icon: 'bi-circle', cls: '' };
+    // Resumen
+    const resumen = document.getElementById('movResumen');
+    if (resumen) {
+        const cobros   = data.filter(m => m.tipo === 'ingreso').reduce((s, m) => s + m.importe, 0);
+        const pagos    = data.filter(m => m.tipo === 'pago_gasto').reduce((s, m) => s + m.importe, 0);
+        const transf   = data.filter(m => m.tipo === 'transferencia').length;
+        const items = [
+            cobros > 0 ? `<span class="mov-res-chip mov-cobro"><i class="bi bi-arrow-down-circle me-1"></i>${formatearMoneda(cobros)}</span>` : '',
+            pagos  > 0 ? `<span class="mov-res-chip mov-pago"><i class="bi bi-arrow-up-circle me-1"></i>${formatearMoneda(pagos)}</span>`   : '',
+            transf > 0 ? `<span class="mov-res-chip mov-transferencia"><i class="bi bi-arrow-left-right me-1"></i>${transf} transf.</span>` : '',
+        ].filter(Boolean);
+        resumen.innerHTML = items.join('') || '<span class="text-muted">Sin movimientos</span>';
+    }
+
+    if (!data.length) {
+        body.innerHTML = '<p class="text-center text-muted py-4">Sin resultados</p>';
+        return;
+    }
+
+    // Agrupar por fecha
+    const porFecha = {};
+    data.forEach(m => {
+        const fechaParte = (m.fecha || '').split('T')[0].split(' ')[0];
+        if (!porFecha[fechaParte]) porFecha[fechaParte] = [];
+        porFecha[fechaParte].push(m);
+    });
+
+    const html = Object.entries(porFecha).map(([fecha, movs]) => {
+        const [yy, mm, dd] = fecha.split('-');
+        const diasSemana = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+        const diaSem = diasSemana[new Date(fecha + 'T12:00:00').getDay()] || '';
+        const fechaLabel = fecha ? `${diaSem} ${dd}/${mm}/${(yy||'').slice(2)}` : '—';
+
+        const filas = movs.map(m => {
+            const t = _MOV_TIPO[m.tipo] || { label: m.tipo, icon: 'bi-circle', cls: '' };
             const cuentaStr = m.tipo === 'transferencia'
                 ? `${m.cuenta_origen || '?'} → ${m.cuenta_destino || '?'}`
                 : (m.cuenta_origen || m.cuenta_destino || '—');
             const desc = m.observaciones || m.descripcion || '';
-
-            const fechaStr = (m.fecha || '').replace('T', ' ');
-            const [fechaParte, horaParte] = fechaStr.split(' ');
-            const [yy, mm, dd] = (fechaParte || '').split('-');
-            const fechaFmt = fechaParte ? `${dd}/${mm}/${(yy || '').slice(2)}` : '—';
-            const horaFmt  = horaParte  ? horaParte.slice(0, 5) : '';
+            const esIngreso = m.tipo === 'ingreso';
+            const importeStr = (esIngreso ? '+' : '−') + formatearMoneda(m.importe).replace('-','');
 
             return `
-            <div class="d-flex align-items-start gap-2 px-3 py-2 border-bottom">
-                <div class="text-muted text-center flex-shrink-0" style="min-width:2.8rem;font-size:.72rem;line-height:1.4">
-                    <div>${fechaFmt}</div>
-                    ${horaFmt ? `<div>${horaFmt}</div>` : ''}
+            <div class="mov-fila">
+                <div class="mov-icono ${t.cls}"><i class="bi ${t.icon}"></i></div>
+                <div class="mov-info">
+                    <div class="mov-tipo-cuenta"><span class="mov-tipo-label">${t.label}</span><span class="mov-cuenta">${cuentaStr}</span></div>
+                    ${desc ? `<div class="mov-desc">${desc}</div>` : ''}
                 </div>
-                <div class="flex-grow-1" style="font-size:.82rem;min-width:0">
-                    <div class="text-truncate"><i class="bi ${t.icon} me-1"></i><strong>${t.label}</strong> · ${cuentaStr}</div>
-                    ${desc ? `<div class="text-muted text-truncate">${desc}</div>` : ''}
-                </div>
-                <div class="fw-medium ${t.cls} flex-shrink-0 text-end" style="font-size:.82rem">${formatearMoneda(m.importe)}</div>
+                <div class="mov-importe ${t.cls}">${importeStr}</div>
             </div>`;
         }).join('');
 
-        body.innerHTML = `<div>${rows}</div>`;
-    } catch (error) {
-        body.innerHTML = `<div class="alert alert-danger m-3">Error: ${error.message}</div>`;
-    }
+        return `
+        <div class="mov-grupo">
+            <div class="mov-fecha-header">${fechaLabel}</div>
+            ${filas}
+        </div>`;
+    }).join('');
+
+    body.innerHTML = html;
+}
+
+function limpiarBusquedaMov() {
+    const input = document.getElementById('inputBusquedaMov');
+    if (input) { input.value = ''; }
+    _renderizarMovimientos('');
 }
 
 async function actualizarSaldoCuenta(cuentaId) {

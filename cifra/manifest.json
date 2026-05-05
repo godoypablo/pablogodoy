@@ -1,10 +1,10 @@
 {
-  "id": "/",
+  "id": "/cifra/",
   "name": "Cifra — Control Financiero Personal",
   "short_name": "Cifra",
   "description": "Seguimiento mensual de ingresos y gastos personales",
-  "start_url": "./",
-  "scope": "./",
+  "start_url": "/cifra/index.php",
+  "scope": "/cifra/",
   "display": "standalone",
   "orientation": "portrait-primary",
   "background_color": "#1F2A37",

@@ -1288,6 +1288,7 @@ table.dataTable > tbody > tr > td {
 }
 
 .cat-fila-colapsada { display: none !important; }
+.cat-fila-oculta    { display: none !important; }
 
 .categoria-header-inner {
     display: flex;
@@ -1327,6 +1328,18 @@ table.dataTable > tbody > tr > td {
 
 
 /* ==================== LISTA DE CONCEPTOS (modal ABM) ==================== */
+
+/* Toolbar sticky en modal Conceptos */
+.conceptos-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0 0.625rem;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: var(--bs-body-bg);
+}
 
 .concepto-lista {
     display: flex;
@@ -2344,6 +2357,155 @@ table.dataTable > tbody > tr.tr-pagado .concepto-nombre {
     background: #1E293B;
     border-bottom-color: #334155;
 }
+
+/* ==================== BUSCADOR ==================== */
+.busqueda-wrap {
+    padding: 8px 0 12px;
+}
+.busqueda-inner {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+.busqueda-icon {
+    position: absolute;
+    left: 12px;
+    color: var(--color-gray);
+    font-size: 0.9rem;
+    pointer-events: none;
+}
+.busqueda-input {
+    width: 100%;
+    padding: 8px 36px 8px 36px;
+    border: 1.5px solid var(--bs-border-color);
+    border-radius: 24px;
+    background: var(--bs-body-bg);
+    color: var(--bs-body-color);
+    font-size: 0.9rem;
+    font-family: 'Inter', sans-serif;
+    outline: none;
+    transition: border-color 0.18s, box-shadow 0.18s;
+}
+.busqueda-input:focus {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(99,102,241,0.15);
+}
+.busqueda-input::placeholder { color: var(--color-gray); opacity: 0.7; }
+.busqueda-input::-webkit-search-cancel-button { display: none; }
+.busqueda-clear {
+    position: absolute;
+    right: 8px;
+    background: none;
+    border: none;
+    color: var(--color-gray);
+    font-size: 0.75rem;
+    padding: 4px 6px;
+    cursor: pointer;
+    opacity: 0.7;
+}
+.busqueda-clear:hover { opacity: 1; }
+
+/* Filas ocultas por búsqueda */
+.cat-fila-busqueda { display: none !important; }
+
+[data-bs-theme="dark"] .busqueda-input {
+    background: #1E293B;
+    border-color: #334155;
+    color: #e2e8f0;
+}
+[data-bs-theme="dark"] .busqueda-input:focus {
+    border-color: var(--color-primary-light);
+}
+
+/* ==================== MODAL MOVIMIENTOS ==================== */
+.mov-res-chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-weight: 600;
+    font-size: .75rem;
+}
+.mov-cobro        { color: #059669; }
+.mov-pago         { color: #dc2626; }
+.mov-transferencia{ color: #6366f1; }
+.mov-extraccion   { color: #d97706; }
+
+.mov-res-chip.mov-cobro         { background: rgba(5,150,105,.1);  }
+.mov-res-chip.mov-pago          { background: rgba(220,38,38,.1);  }
+.mov-res-chip.mov-transferencia { background: rgba(99,102,241,.1); }
+
+.mov-grupo { border-bottom: 1px solid var(--bs-border-color); }
+
+.mov-fecha-header {
+    padding: 6px 16px 4px;
+    font-size: .7rem;
+    font-weight: 700;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+    color: var(--color-gray);
+    background: var(--bs-secondary-bg);
+    border-bottom: 1px solid var(--bs-border-color);
+}
+
+.mov-fila {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--bs-border-color);
+    transition: background .12s;
+}
+.mov-fila:last-child { border-bottom: none; }
+.mov-fila:hover { background: var(--bs-tertiary-bg); }
+
+.mov-icono {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    flex-shrink: 0;
+}
+.mov-icono.mov-cobro         { background: rgba(5,150,105,.12);  }
+.mov-icono.mov-pago          { background: rgba(220,38,38,.12);  }
+.mov-icono.mov-transferencia { background: rgba(99,102,241,.12); }
+.mov-icono.mov-extraccion    { background: rgba(217,119,6,.12);  }
+
+.mov-info { flex: 1; min-width: 0; }
+.mov-tipo-cuenta {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: .83rem;
+}
+.mov-tipo-label { font-weight: 600; }
+.mov-cuenta {
+    font-size: .78rem;
+    color: var(--color-gray);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.mov-desc {
+    font-size: .75rem;
+    color: var(--color-gray);
+    margin-top: 1px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.mov-importe {
+    font-weight: 700;
+    font-size: .85rem;
+    flex-shrink: 0;
+    text-align: right;
+}
+
+[data-bs-theme="dark"] .mov-fecha-header { background: #1e293b; }
 
 /* ==================== PANEL GERENCIAL ==================== */
 .ger-divider {

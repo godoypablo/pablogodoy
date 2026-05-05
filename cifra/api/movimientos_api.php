@@ -33,11 +33,21 @@ try {
         case 'GET':
             $cuenta_id = isset($_GET['cuenta_id']) ? (int)$_GET['cuenta_id'] : null;
             $limit     = isset($_GET['limit'])     ? min((int)$_GET['limit'], 200) : 100;
+            $mes       = isset($_GET['mes'])  ? (int)$_GET['mes']  : null;
+            $anio      = isset($_GET['anio']) ? (int)$_GET['anio'] : null;
 
-            $where  = $cuenta_id
-                ? "WHERE (m.cuenta_origen_id = :cid OR m.cuenta_destino_id = :cid2)"
-                : "WHERE 1=1";
-            $params = $cuenta_id ? ['cid' => $cuenta_id, 'cid2' => $cuenta_id] : [];
+            $conditions = [];
+            $params     = [];
+
+            if ($cuenta_id) {
+                $conditions[] = "(m.cuenta_origen_id = :cid OR m.cuenta_destino_id = :cid2)";
+                $params['cid'] = $cuenta_id; $params['cid2'] = $cuenta_id;
+            }
+            if ($mes && $anio) {
+                $conditions[] = "MONTH(m.fecha) = :mes AND YEAR(m.fecha) = :anio";
+                $params['mes'] = $mes; $params['anio'] = $anio;
+            }
+            $where = $conditions ? "WHERE " . implode(" AND ", $conditions) : "WHERE 1=1";
 
             $sql = "SELECT
                         m.id, m.fecha, m.tipo, m.importe, m.descripcion,

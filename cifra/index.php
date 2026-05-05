@@ -1,7 +1,7 @@
 <?php
 require_once 'config/auth_check.php';
 require_auth_or_redirect();
-define('APP_VERSION', '20260418-1');
+define('APP_VERSION', '20260503-7');
 $meses = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 $labelFiltro = $meses[(int)date('n') - 1] . ' ' . date('Y');
 ?>
@@ -167,6 +167,14 @@ $labelFiltro = $meses[(int)date('n') - 1] . ' ' . date('Y');
                             <span class="topbar-stat-label">Cuentas</span>
                             <span class="topbar-stat-valor" id="totalCuentasTopbar">—</span>
                         </div>
+                        <div class="topbar-stat" onclick="abrirModalResumen()" title="Total gastos del mes">
+                            <span class="topbar-stat-label">Gastos</span>
+                            <span class="topbar-stat-valor" id="totalGastosHeader">—</span>
+                        </div>
+                        <div class="topbar-stat" onclick="abrirModalResumen()" title="Gastos pendientes de pago">
+                            <span class="topbar-stat-label">Pendiente</span>
+                            <span class="topbar-stat-valor" id="gastosPorPagarHeader">—</span>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -222,35 +230,26 @@ $labelFiltro = $meses[(int)date('n') - 1] . ' ' . date('Y');
             <p class="text-muted">Cargando datos...</p>
         </div>
 
+        <!-- Nav de categorías sticky (fuera de contenidoPrincipal para no verse afectada por d-none) -->
+        <div id="catNav" class="cat-nav-wrap d-none"></div>
+
+        <!-- Buscador de conceptos -->
+        <div class="busqueda-wrap d-none" id="busquedaWrap">
+            <div class="busqueda-inner">
+                <i class="bi bi-search busqueda-icon"></i>
+                <input type="search" id="inputBusqueda" class="busqueda-input"
+                       placeholder="Buscar concepto…" autocomplete="off" spellcheck="false">
+                <button class="busqueda-clear d-none" id="btnLimpiarBusqueda" onclick="limpiarBusqueda()" title="Limpiar">
+                    <i class="bi bi-x-lg"></i>
+                </button>
+            </div>
+        </div>
+
         <!-- Contenido Principal -->
         <div id="contenidoPrincipal">
 
-            <!-- Nav de categorías sticky (solo mobile) -->
-            <div id="catNav" class="cat-nav-wrap d-md-none"></div>
-
             <!-- Tabla de Gastos -->
             <div class="card shadow-sm mb-4">
-                <div class="card-header seccion-header d-flex justify-content-between align-items-center"
-                     data-bs-toggle="collapse" data-bs-target="#gastosHeaderDetalle"
-                     style="cursor:pointer;user-select:none">
-                    <h3 class="h6 mb-0 fw-bold seccion-titulo">
-                        <i class="bi bi-graph-down me-2"></i>Gastos
-                    </h3>
-                    <div class="d-flex align-items-center gap-2">
-                        <span class="fw-semibold" id="totalGastosHeader" style="font-size:0.85rem"></span>
-                        <i class="bi bi-chevron-down" style="font-size:.75rem;opacity:.5;color:var(--bs-body-color)"></i>
-                    </div>
-                </div>
-                <div class="collapse" id="gastosHeaderDetalle">
-                    <div class="d-flex justify-content-between align-items-center px-3 py-2 border-bottom" style="font-size:.82rem">
-                        <span class="text-muted">Pagados</span>
-                        <span class="fw-medium" id="gastosPagadosHeader"></span>
-                    </div>
-                    <div class="d-flex justify-content-between align-items-center px-3 py-2 border-bottom" style="font-size:.82rem">
-                        <span class="text-muted">Por pagar</span>
-                        <span class="fw-medium" id="gastosPorPagarHeader"></span>
-                    </div>
-                </div>
                 <div class="card-body p-0">
                     <div class="table-responsive">
                         <table class="table table-hover mb-0" id="dtGastos">
@@ -378,11 +377,24 @@ $labelFiltro = $meses[(int)date('n') - 1] . ' ' . date('Y');
     <div class="modal fade" id="modalMovimientos" tabindex="-1" aria-labelledby="modalMovimientosLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg modal-dialog-scrollable">
             <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="modalMovimientosLabel">
-                        <i class="bi bi-journal-text me-2"></i>Movimientos de cuentas
-                    </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <div class="modal-header flex-column align-items-stretch gap-2 pb-2">
+                    <div class="d-flex justify-content-between align-items-center w-100">
+                        <h5 class="modal-title" id="modalMovimientosLabel">
+                            <i class="bi bi-journal-text me-2"></i>Movimientos · <span id="movMesAnio"></span>
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <!-- Resumen rápido -->
+                    <div id="movResumen" class="d-flex gap-3 flex-wrap" style="font-size:.78rem"></div>
+                    <!-- Buscador -->
+                    <div class="busqueda-inner">
+                        <i class="bi bi-search busqueda-icon"></i>
+                        <input type="search" id="inputBusquedaMov" class="busqueda-input"
+                               placeholder="Buscar concepto, cuenta…" autocomplete="off">
+                        <button class="busqueda-clear d-none" id="btnLimpiarMov" onclick="limpiarBusquedaMov()" title="Limpiar">
+                            <i class="bi bi-x-lg"></i>
+                        </button>
+                    </div>
                 </div>
                 <div class="modal-body p-0" id="modalMovimientosBody">
                     <div class="text-center py-4">
@@ -556,8 +568,11 @@ $labelFiltro = $meses[(int)date('n') - 1] . ' ' . date('Y');
 
                         <!-- Gastos -->
                         <div class="tab-pane fade show active" id="tab-gastos" role="tabpanel">
-                            <div class="d-flex justify-content-end mb-2">
-                                <button class="btn btn-danger btn-sm" onclick="mostrarFormNuevo('gasto')">
+                            <div class="conceptos-toolbar">
+                                <input type="search" id="buscarGastos" class="form-control form-control-sm"
+                                       placeholder="Buscar concepto…" autocomplete="off"
+                                       oninput="filtrarConceptos('listaGastos', this.value)">
+                                <button class="btn btn-danger btn-sm flex-shrink-0" onclick="mostrarFormNuevo('gasto')">
                                     <i class="bi bi-plus-lg me-1"></i>Nuevo gasto
                                 </button>
                             </div>
@@ -568,8 +583,11 @@ $labelFiltro = $meses[(int)date('n') - 1] . ' ' . date('Y');
 
                         <!-- Categorías -->
                         <div class="tab-pane fade" id="tab-categorias" role="tabpanel">
-                            <div class="d-flex justify-content-end mb-2">
-                                <button class="btn btn-primary btn-sm" onclick="mostrarFormNuevaCategoria()">
+                            <div class="conceptos-toolbar">
+                                <input type="search" id="buscarCategorias" class="form-control form-control-sm"
+                                       placeholder="Buscar categoría…" autocomplete="off"
+                                       oninput="filtrarCategorias(this.value)">
+                                <button class="btn btn-primary btn-sm flex-shrink-0" onclick="mostrarFormNuevaCategoria()">
                                     <i class="bi bi-plus-lg me-1"></i>Nueva categoría
                                 </button>
                             </div>

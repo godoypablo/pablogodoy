@@ -43,6 +43,9 @@ try {
             $mes = isset($_GET['mes']) ? (int)$_GET['mes'] : date('n');
             $anio = isset($_GET['anio']) ? (int)$_GET['anio'] : date('Y');
 
+            $mes_prev  = $mes == 1 ? 12 : $mes - 1;
+            $anio_prev = $mes == 1 ? $anio - 1 : $anio;
+
             // Conceptos con total agregado, incluyendo datos de categoría
             $sql = "SELECT
                         c.id,
@@ -61,7 +64,11 @@ try {
                         MIN(rm.pagado) as pagado,
                         MIN(rm.fecha_vencimiento) as fecha_vencimiento,
                         MIN(rm.cuenta_id) as cuenta_id,
-                        MIN(rm.fecha) as fecha
+                        MIN(rm.fecha) as fecha,
+                        (SELECT COALESCE(SUM(rp.importe), 0)
+                         FROM registros_mensuales rp
+                         WHERE rp.concepto_id = c.id
+                           AND rp.mes = :mes_prev AND rp.anio = :anio_prev) AS importe_mes_anterior
                     FROM conceptos c
                     LEFT JOIN categorias cat ON c.categoria_id = cat.id
                     LEFT JOIN registros_mensuales rm ON c.id = rm.concepto_id
@@ -74,10 +81,10 @@ try {
                              COALESCE(cat.orden, 9999) ASC,
                              COALESCE(cat.id, 9999) ASC,
                              c.moneda ASC,
-                             c.orden ASC";
+                             c.nombre ASC";
 
             $stmt = $db->prepare($sql);
-            $stmt->execute(['mes' => $mes, 'anio' => $anio]);
+            $stmt->execute(['mes' => $mes, 'anio' => $anio, 'mes_prev' => $mes_prev, 'anio_prev' => $anio_prev]);
             $conceptos = $stmt->fetchAll();
 
             // Detalle de registros para conceptos multi-entrada
@@ -103,9 +110,10 @@ try {
             ];
 
             foreach ($conceptos as &$concepto) {
-                $concepto['permite_multiples'] = (bool)$concepto['permite_multiples'];
-                $concepto['pagado']            = (int)($concepto['pagado'] ?? 0);
-                $concepto['moneda']            = $concepto['moneda'] ?? 'ARS';
+                $concepto['permite_multiples']    = (bool)$concepto['permite_multiples'];
+                $concepto['pagado']               = (int)($concepto['pagado'] ?? 0);
+                $concepto['moneda']               = $concepto['moneda'] ?? 'ARS';
+                $concepto['importe_mes_anterior'] = (float)$concepto['importe_mes_anterior'];
                 if ($concepto['permite_multiples']) {
                     $detalle = $detalles_por_concepto[$concepto['id']] ?? [];
                     foreach ($detalle as &$d) {
@@ -260,12 +268,79 @@ try {
                 $registro_existente = $stmt->fetch();
 
                 if ($registro_existente) {
+                    // Leer estado actual para detectar si está pagado y ajustar saldo
+                    $stmt_cur = $db->prepare(
+                        "SELECT rm.importe AS old_importe, rm.pagado, rm.cuenta_id, rm.fecha,
+                                c.tipo AS concepto_tipo, c.cuenta_id_default
+                         FROM registros_mensuales rm
+                         INNER JOIN conceptos c ON rm.concepto_id = c.id
+                         WHERE rm.id = :id"
+                    );
+                    $stmt_cur->execute(['id' => $registro_existente['id']]);
+                    $cur = $stmt_cur->fetch();
+
+                    $old_importe  = (float)($cur['old_importe'] ?? 0);
+                    $importe_diff = $importe - $old_importe;
+
                     $sets   = ['importe = :importe', 'observaciones = :observaciones'];
                     $params = ['importe' => $importe, 'observaciones' => $observaciones, 'id' => $registro_existente['id']];
                     if (array_key_exists('fecha_vencimiento', $input)) {
                         $sets[]                    = 'fecha_vencimiento = :fecha_vencimiento';
                         $params['fecha_vencimiento'] = $fecha_vencimiento;
                     }
+
+                    // Si ya está pagado y el importe cambió, ajustar saldo y movimiento
+                    if ($cur['pagado'] == 1 && abs($importe_diff) > 0.001) {
+                        $cta_ef = $cur['cuenta_id'] ?: $cur['cuenta_id_default'];
+                        if ($cta_ef) {
+                            $tipo_c   = $cur['concepto_tipo'];
+                            $fecha_m  = $cur['fecha'] ?: date('Y-m-d');
+                            $db->beginTransaction();
+                            try {
+                                $db->prepare("UPDATE registros_mensuales SET " . implode(', ', $sets) . " WHERE id = :id")
+                                   ->execute($params);
+
+                                $stmt_mov2 = $db->prepare(
+                                    "SELECT id FROM movimientos_cuenta
+                                     WHERE registro_id = :rid AND tipo IN ('ingreso','pago_gasto') LIMIT 1"
+                                );
+                                $stmt_mov2->execute(['rid' => $registro_existente['id']]);
+                                $mov2 = $stmt_mov2->fetch();
+
+                                if ($mov2) {
+                                    // Movimiento existe → actualizar importe y ajustar saldo por la diferencia
+                                    $db->prepare("UPDATE movimientos_cuenta SET importe = :imp WHERE id = :id")
+                                       ->execute(['imp' => $importe, 'id' => $mov2['id']]);
+                                    $sign = ($tipo_c === 'ingreso') ? 1 : -1;
+                                    $db->prepare("UPDATE cuentas SET saldo_actual = saldo_actual + :diff, fecha_saldo = CURDATE() WHERE id = :id")
+                                       ->execute(['diff' => $sign * $importe_diff, 'id' => $cta_ef]);
+                                } else {
+                                    // Sin movimiento previo (cobrado sin cuenta) → crear movimiento ahora
+                                    if ($tipo_c === 'ingreso') {
+                                        $db->prepare(
+                                            "INSERT INTO movimientos_cuenta (tipo, cuenta_destino_id, importe, fecha, registro_id)
+                                             VALUES ('ingreso', :cid, :imp, :fecha, :rid)"
+                                        )->execute(['cid' => $cta_ef, 'imp' => $importe, 'fecha' => $fecha_m, 'rid' => $registro_existente['id']]);
+                                        $db->prepare("UPDATE cuentas SET saldo_actual = saldo_actual + :imp, fecha_saldo = CURDATE() WHERE id = :id")
+                                           ->execute(['imp' => $importe, 'id' => $cta_ef]);
+                                    } else {
+                                        $db->prepare(
+                                            "INSERT INTO movimientos_cuenta (tipo, cuenta_origen_id, importe, fecha, registro_id)
+                                             VALUES ('pago_gasto', :cid, :imp, :fecha, :rid)"
+                                        )->execute(['cid' => $cta_ef, 'imp' => $importe, 'fecha' => $fecha_m, 'rid' => $registro_existente['id']]);
+                                        $db->prepare("UPDATE cuentas SET saldo_actual = saldo_actual - :imp, fecha_saldo = CURDATE() WHERE id = :id")
+                                           ->execute(['imp' => $importe, 'id' => $cta_ef]);
+                                    }
+                                }
+                                $db->commit();
+                            } catch (Exception $e) {
+                                $db->rollBack();
+                                throw $e;
+                            }
+                            sendResponse(true, ['id' => $registro_existente['id']], 'Registro actualizado correctamente');
+                        }
+                    }
+
                     $stmt = $db->prepare("UPDATE registros_mensuales SET " . implode(', ', $sets) . " WHERE id = :id");
                     $stmt->execute($params);
                     sendResponse(true, ['id' => $registro_existente['id']], 'Registro actualizado correctamente');
@@ -414,6 +489,13 @@ try {
 
                 // Fallback: si el registro no tiene cuenta_id, usar cuenta_id_default del concepto
                 $cuenta_id_efectiva = $reg['cuenta_id'] ?: $reg['cuenta_id_default'];
+
+                // Bloquear cobro de ingreso sin cuenta cuando tiene importe (evita saldo inconsistente)
+                if ($pagado_nuevo === 1 && $reg && !$cuenta_id_efectiva
+                    && $reg['concepto_tipo'] === 'ingreso' && (float)$reg['importe'] > 0) {
+                    sendResponse(false, null,
+                        'Seleccioná una cuenta para este ingreso antes de marcarlo como cobrado', 422);
+                }
 
                 if ($reg && $cuenta_id_efectiva && (float)$reg['importe'] > 0) {
                     $cuenta_id       = (int)$cuenta_id_efectiva;

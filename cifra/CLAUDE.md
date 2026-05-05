@@ -18,36 +18,49 @@ movimientos_cuenta:  tipo(ingreso|pago_gasto|transferencia|extraccion), cuenta_o
 
 ## APIs (api/)
 ```
-gastos_api.php      GET ?mes&anio | POST | PATCH {registro_id, pagado|fecha|fecha_vencimiento|cuenta_id} | DELETE {registro_id}
+gastos_api.php      GET ?mes&anio → incluye importe_mes_anterior por concepto | POST | PATCH {registro_id, pagado|fecha|fecha_vencimiento|cuenta_id} | DELETE {registro_id}
 conceptos_api.php   GET | POST | PUT {cuenta_id_default} | DELETE
 categorias_api.php  GET | POST | PUT | DELETE
 cuentas_api.php     GET ?mes&anio → cuentas+total_pagado_mes | POST | PUT {id,saldo_actual}
-movimientos_api.php GET | POST transferencia | POST extraccion
+movimientos_api.php GET ?mes&anio&limit | POST transferencia | POST extraccion
 ```
 
 ## Circuito saldo (gastos_api.php) — COMPLETO Y VERIFICADO
 - POST permite_multiples=1 (pagado=1): INSERT registro + movimiento `pago_gasto` + saldo_actual−importe — en transacción
 - POST permite_multiples=0 (nuevo): INSERT con pagado=0, aplica cuenta_id_default — sin movimiento
-- PATCH pagado=1: valida saldo 422 → INSERT movimiento + saldo−importe
-- PATCH pagado=0: elimina movimiento + saldo+importe
+- POST permite_multiples=0 (existente, pagado=1): UPDATE importe + ajusta saldo/movimiento por la diferencia — en transacción
+- PATCH pagado=1: valida saldo 422 → INSERT movimiento + saldo±importe | si ingreso sin cuenta y importe>0 → 422 "Seleccioná una cuenta"
+- PATCH pagado=0: elimina movimiento + saldo±importe (revierte)
 - PATCH cuenta_id (ya pagado): valida saldo nueva cuenta → ajusta ambas cuentas + migra movimiento
 - DELETE: busca movimiento por registro_id → restaura saldo + DELETE movimiento + DELETE registro — en transacción
-- Gastos sin cuenta_id: no generan movimiento ni tocan saldo
+- Gastos sin cuenta_id: no generan movimiento ni tocan saldo (permitido)
 - Ingresos cobrados: tipo `ingreso`, cuenta_destino_id, saldo+importe; al revertir saldo−importe
+- Ingresos sin cuenta_id al cobrar: 422 si importe>0 (obliga a seleccionar cuenta antes)
 
 ## Frontend (app.js)
 - Estado: `app.{mesActual, anioActual, datos, guardandoCambios, dtGastos, categorias[], cuentas[]}`
 - DataTables: ordering:false; drawCallback inyecta `<tr.categoria-header>`
 - Input: neutral→rojo→pulso→verde 2s | `guardandoCambios` previene saves concurrentes
 - Dark mode: localStorage('cifra-theme') | Fechas: `formatearFechaCorta()` → dd/mm/yy
-- Sugerencias: SMVM←dtos.gob.ar | Elena/Spotify←hardcoded | YouTube←USD×dolarapi.com
+- Sugerencias en `crearFilaSimple()`: SMVM←dtos.gob.ar | Elena/Spotify←hardcoded | YouTube←USD×dolarapi.com | **Repetir mes anterior** (`btn-repetir-anterior`, ícono `bi-arrow-repeat`) — aparece si `importe_mes_anterior > 0` y `importe == 0`
 - `guardarCuentaRegistro()`: tras PATCH actualiza `app.datos` en memoria (evita re-render que revierte selección)
+- `periodoExiste` eliminado — saldo_actual siempre se muestra real en cuentas y topbar
 
 ## Layout — pantalla principal
 - Filtro mes/año: Bootstrap collapse, default contraído, localStorage('cifra-filtro-abierto')
-- Topbar sticky: `#saldoFiltroHeader` = total_cuentas − gastos_pendientes_mes (siempre ≤ total cuentas) | `#totalCuentasTopbar` = suma saldos reales
-- Card Gastos: header colapsable → muestra Pagados (`#gastosPagadosHeader`) + Por pagar (`#gastosPorPagarHeader`); total en `#totalGastosHeader`
+- Topbar sticky: `#saldoFiltroHeader` = **ingresos_cobrados − gastos_pagados del mes** | `#totalCuentasTopbar` = suma saldos reales | `#totalGastosHeader` = total gastos del mes | `#gastosPorPagarHeader` = pendientes de pago
+- Card Gastos: **sin header** — empieza directo en `card-body p-0`; los totales viven en el topbar
 - FAB `.fab` bottom-right z-index:1039 → #modalGastoRapido (permite_multiples=1) — estilos en `<style>` de index.php, NO inline
+- `catNav` (chips de categorías) y `busquedaWrap` (buscador) están **fuera** de `#contenidoPrincipal`; se muestran en `ocultarLoading()` con `.classList.remove('d-none')`
+- Chips filtran por categoría en desktop y mobile — `.cat-fila-oculta` es regla global (no solo @media mobile)
+- Buscador filtra filas por `data-concepto-nombre` en tiempo real; `.cat-fila-busqueda` oculta filas que no coinciden
+
+## Modal Administrar Conceptos
+- Tabs: Gastos | Categorías (ambas `.modal-dialog-scrollable`)
+- `.conceptos-toolbar` sticky (top:0, z-index:10, bg var(--bs-body-bg)): buscador `form-control-sm` + botón "Nuevo" — se mantiene visible al scrollear
+- Gastos: `oninput="filtrarConceptos('listaGastos', this.value)"` → oculta `.concepto-item` por `data-nombre`
+- Categorías: `oninput="filtrarCategorias(this.value)"` → oculta filas `tbody-categorias` por `data-nombre`
+- Orden: conceptos servidos alfabéticamente (`ORDER BY c.nombre ASC` en gastos_api.php)
 
 ## Hamburguesa
 Resumen | Cuentas | — | Ingresos | Vencimientos | — | Movimientos | — | Conceptos
@@ -97,8 +110,12 @@ Resumen/Cuentas → modales | Vencimientos → modal+badges | Ingresos → modal
 - Edit: todo en `.cat-nombre-edit` con `d-flex flex-wrap` (nombre+orden+botones), colspan="2" — evita overflow mobile
 
 ## Movimientos modal
-- Layout flex por fila: fecha(dd/mm/yy)+hora(hh:mm) | tipo+cuenta | descripción+importe
+- Layout flex por fila: fecha(dd/mm/yy)+hora(hh:mm, oculta si es 00:00) | tipo+cuenta | descripción+importe
 - Sin tabla, diseño responsive puro flex
+- Filtro por mes/año al abrir: `api/movimientos_api.php?limit=200&mes=X&anio=Y`
+- Buscador interno (`#inputBusquedaMov`) filtra en cliente por texto libre
+- Resumen chips en header: total cobros/pagos/transferencias/extracciones del mes
+- `_cargarMovimientos()` / `_renderizarMovimientos(q)` / `limpiarBusquedaMov()` en app.js
 
 ## Login (login.php)
 - Logo Montserrat + barra degradé índigo→verde + card shadow
@@ -109,7 +126,8 @@ Resumen/Cuentas → modales | Vencimientos → modal+badges | Ingresos → modal
 - SW: HTML network-first, assets cache-first | CACHE_NAME formato: `cifra-YYYYMMDD-N`
 - **Bump CACHE_NAME en sw.js cada vez que cambie CSS o JS** — fuerza re-descarga en todos los dispositivos
 - Si hay varios bumps en el mismo día, incrementar el sufijo: `-1`, `-2`, etc.
-- Deploy FTP: index.php siempre | app.js si JS cambió | styles.css si CSS cambió | sw.js si hay bump
-- Play Store: TWA via PWABuilder (USD 25, HTTPS) | App Store: Capacitor.js (USD 99/año)
-- Monetización: multi-tenant + suscripciones | IA descartada (privacidad)
+- Deploy FTP con NetBeans desde `/home/pablo/git/pablogodoy/` → Upload Directory: `/httpdocs` (configurado en nbproject/)
+- Deploy típico: index.php siempre | app.js si JS cambió | styles.css si CSS cambió | sw.js si hay bump | gastos_api.php si API cambió
+- manifest.json: `"id": "/cifra/"`, `"start_url": "/cifra/index.php"`, `"scope": "/cifra/"` — paths absolutos
 - Android: para limpiar caché de SW → Chrome → ⋮ → Configuración del sitio → Almacenamiento → Borrar
+- Play Store: TWA via PWABuilder (USD 25, HTTPS) | App Store: Capacitor.js (USD 99/año)
