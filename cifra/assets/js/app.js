@@ -385,6 +385,17 @@ async function cargarDatos() {
         if (result.success) {
             app.datos = result.data;
             if (resCuentas.success) app.cuentas = resCuentas.data;
+
+            // Inicializar categoría filtrada: recuperar de localStorage o usar "Gastos Varios"
+            const catGuardada = localStorage.getItem('cifra-categoria-filtrada');
+            if (catGuardada) {
+                app.categoriaFiltrada = catGuardada;
+            } else {
+                // Buscar "Gastos Varios" por defecto
+                const gastosVarios = app.datos.conceptos?.find(c => c.tipo === 'gasto' && c.categoria_nombre === 'Gastos Varios');
+                app.categoriaFiltrada = gastosVarios?.categoria_id?.toString() || null;
+            }
+
             renderizarDatos();
         } else {
             mostrarError('Error al cargar los datos: ' + result.message);
@@ -400,15 +411,22 @@ async function cargarDatos() {
 function renderizarDatos() {
     if (!app.datos) return;
 
-    // Actualizar resumen — resumen viene separado por moneda {ARS: {...}, USD: {...}}
     const resARS = app.datos.resumen?.ARS || { total_ingresos: 0, ingresos_cobrados: 0, total_gastos: 0, gastos_pagados: 0 };
     const resUSD = app.datos.resumen?.USD || { total_ingresos: 0, ingresos_cobrados: 0, total_gastos: 0, gastos_pagados: 0 };
 
-    // Disponible = ingresos cobrados − gastos pagados del mes
-    const disponibleARS = resARS.ingresos_cobrados - resARS.gastos_pagados;
-    const disponibleUSD = resUSD.ingresos_cobrados - resUSD.gastos_pagados;
+    // Saldo Real: suma de saldo_actual de todas las cuentas (dinero que realmente tenés)
+    const saldoRealARS = app.cuentas.filter(c => (c.moneda || 'ARS') === 'ARS').reduce((s, c) => s + parseFloat(c.saldo_actual || 0), 0);
+    const saldoRealUSD = app.cuentas.filter(c => c.moneda === 'USD').reduce((s, c) => s + parseFloat(c.saldo_actual || 0), 0);
 
-    // Topbar ARS
+    // Gastos Pendientes: total_gastos - gastos_pagados del mes (deuda separada)
+    const gastosPendientesARS = resARS.total_gastos - resARS.gastos_pagados;
+    const gastosPendientesUSD = resUSD.total_gastos - resUSD.gastos_pagados;
+
+    // Disponible = Saldo Real (sin mezclar con gastos pendientes)
+    const disponibleARS = saldoRealARS;
+    const disponibleUSD = saldoRealUSD;
+
+    // Topbar ARS: Disponible
     const elSFH = document.getElementById('saldoFiltroHeader');
     if (elSFH) {
         elSFH.textContent = formatearMoneda(disponibleARS);
@@ -426,10 +444,8 @@ function renderizarDatos() {
 
     const elTGH = document.getElementById('totalGastosHeader');
     if (elTGH) elTGH.textContent = formatearMoneda(resARS.total_gastos);
-    const elGPH = document.getElementById('gastosPagadosHeader');
-    if (elGPH) elGPH.textContent = formatearMoneda(resARS.gastos_pagados);
     const elPPH = document.getElementById('gastosPorPagarHeader');
-    if (elPPH) elPPH.textContent = formatearMoneda(resARS.total_gastos - resARS.gastos_pagados);
+    if (elPPH) elPPH.textContent = formatearMoneda(gastosPendientesARS);
 
     // Destruir DataTable gastos antes de limpiar tbody
     if (app.dtGastos) { app.dtGastos.destroy(); app.dtGastos = null; }
@@ -438,10 +454,25 @@ function renderizarDatos() {
     const gastos = app.datos.conceptos.filter(c => c.tipo === 'gasto');
     const tbodyGastos = document.getElementById('tablaGastos');
     tbodyGastos.innerHTML = '';
+    const cardsContainer = document.createElement('div');
+    cardsContainer.id = 'conceptos-cards-container';
+    cardsContainer.className = 'conceptos-cards-container';
+
     gastos.forEach(concepto => {
-        const filas = crearFilasConcepto(concepto, 'gasto');
-        filas.forEach(fila => tbodyGastos.appendChild(fila));
+        if (concepto.permite_multiples == 1) {
+            // Cards renderizadas como divs separados, no en la tabla
+            const card = crearCardConcepto(concepto, 'gasto');
+            cardsContainer.appendChild(card);
+        } else {
+            // Filas simples en DataTables
+            const filas = crearFilasConcepto(concepto, 'gasto');
+            filas.forEach(fila => tbodyGastos.appendChild(fila));
+        }
     });
+
+    // Insertar cards después de la tabla
+    const tabla = document.getElementById('dtGastos');
+    tabla.parentElement.insertBefore(cardsContainer, tabla.nextSibling);
 
     // Actualizar título del mes
     document.getElementById('mesAnioActual').textContent =
@@ -450,6 +481,7 @@ function renderizarDatos() {
 
     inicializarDataTables();
     renderizarCatNav();
+    aplicarFiltroCategoria();
     mostrarBannerPeriodo();
     mostrarBannerVencimientos();
     renderizarCuentas();
@@ -754,9 +786,10 @@ function renderizarCatNav() {
     el.innerHTML = `<div class="cat-nav-scroll">${chips}</div>`;
 }
 
-// Filtro por chip: seleccionar → mostrar solo esa categoría; repetir → mostrar todo
+// Filtro por chip: seleccionar → mostrar solo esa categoría (sin deseleccionar)
 function seleccionarCategoria(catId) {
-    app.categoriaFiltrada = app.categoriaFiltrada === catId ? null : catId;
+    app.categoriaFiltrada = catId;
+    localStorage.setItem('cifra-categoria-filtrada', catId);
     _limpiarChipEnVista();
     _catScrollLastCat = null;
     renderizarCatNav();
@@ -838,15 +871,23 @@ function _limpiarChipEnVista() {
     document.querySelectorAll('.cat-chip.en-vista').forEach(c => c.classList.remove('en-vista'));
 }
 
-// Aplicar/quitar filtro de categoría en las filas del tbody (solo mobile)
+// Aplicar/quitar filtro de categoría en las filas del tbody y cards
 function aplicarFiltroCategoria() {
     const catId = app.categoriaFiltrada;
+
+    // Filtrar filas de tabla
     document.querySelectorAll('#tablaGastos tr[data-categoria-id]').forEach(tr => {
         const trCat = tr.dataset.categoriaId || '';
         tr.classList.toggle('cat-fila-oculta', catId !== null && trCat !== catId);
     });
     document.querySelectorAll('#tablaGastos tr.categoria-header').forEach(tr => {
         tr.classList.toggle('cat-fila-oculta', catId !== null);
+    });
+
+    // Filtrar cards
+    document.querySelectorAll('.concepto-card[data-categoria-id]').forEach(card => {
+        const cardCat = card.dataset.categoriaId || '0';
+        card.classList.toggle('cat-fila-oculta', catId !== null && cardCat !== catId);
     });
 }
 
@@ -1136,71 +1177,151 @@ async function sugerirSMVM(inputElement, btnElement, mes, anio) {
     }
 }
 
-// Filas para concepto de múltiples entradas: solo [trHeader] — detalle via DataTables child row
-function crearFilasMultiple(concepto, tipo) {
+// Crear card como div independiente (no en tabla DataTables)
+function crearCardConcepto(concepto, tipo) {
     const cantRegistros = concepto.detalle ? concepto.detalle.length : 0;
+    const totalImporte = concepto.importe || 0;
+    const moneda = concepto.moneda || 'ARS';
 
-    const trHeader = document.createElement('tr');
-    trHeader.className = 'concepto-multiple-header';
-    trHeader.style.cursor = 'pointer';
-    trHeader.dataset.conceptoId = concepto.id;
-    trHeader.addEventListener('click', () => toggleDetalle(concepto.id));
-
-    trHeader.dataset.conceptoNombre = concepto.nombre || '';
+    // Card container principal
+    const card = document.createElement('div');
+    card.className = 'concepto-card';
+    card.id = `card-${concepto.id}`;
+    card.dataset.conceptoId = concepto.id;
+    card.dataset.conceptoNombre = concepto.nombre || '';
+    card.dataset.categoriaId = concepto.categoria_id || '0';
     if (concepto.categoria_id) {
-        trHeader.dataset.categoriaId     = concepto.categoria_id;
-        trHeader.dataset.categoriaNombre = concepto.categoria_nombre || '';
-        trHeader.dataset.categoriaColor  = concepto.categoria_color  || '';
-        trHeader.dataset.categoriaIcono  = concepto.categoria_icono  || '';
+        card.dataset.categoriaNombre = concepto.categoria_nombre || '';
+        card.dataset.categoriaColor = concepto.categoria_color || '';
+        card.dataset.categoriaIcono = concepto.categoria_icono || '';
     }
 
-    // Guardar el nodo de detalle directamente en el tr (con sus event listeners)
-    trHeader._detalleNode = crearTablaDetalle(concepto);
+    // Card header (expandible)
+    const cardHeader = document.createElement('div');
+    cardHeader.className = 'concepto-card-header';
+    cardHeader.addEventListener('click', () => toggleDetalle(concepto.id));
 
-    // Columna nombre con flecha
-    const tdNombre = document.createElement('td');
-    tdNombre.setAttribute('data-order', concepto.nombre);
-    const divNombre = document.createElement('div');
-    divNombre.className = 'concepto-nombre';
+    // Header: chevron + nombre + badge + total
+    const headerContent = document.createElement('div');
+    headerContent.className = 'concepto-card-header-content';
 
-    divNombre.appendChild(document.createTextNode(concepto.nombre));
+    const chevron = document.createElement('i');
+    chevron.className = 'bi bi-chevron-right concepto-card-chevron';
+    chevron.id = `arrow-${concepto.id}`;
+    headerContent.appendChild(chevron);
+
+    const nombre = document.createElement('span');
+    nombre.className = 'concepto-card-nombre';
+    nombre.textContent = concepto.nombre;
+    headerContent.appendChild(nombre);
 
     const badge = document.createElement('span');
-    badge.className = 'badge badge-count';
+    badge.className = 'concepto-card-badge';
     badge.id = `badge-count-${concepto.id}`;
     badge.textContent = cantRegistros;
-    divNombre.appendChild(badge);
+    headerContent.appendChild(badge);
 
-    const arrow = document.createElement('i');
-    arrow.className = 'bi bi-chevron-down ms-1 detalle-arrow text-muted';
-    arrow.id = `arrow-${concepto.id}`;
-    divNombre.appendChild(arrow);
+    const total = document.createElement('span');
+    total.className = 'concepto-card-total';
+    total.id = `total-concepto-${concepto.id}`;
+    total.textContent = formatearMoneda(totalImporte, moneda);
+    headerContent.appendChild(total);
 
-    tdNombre.appendChild(divNombre);
-    trHeader.appendChild(tdNombre);
+    cardHeader.appendChild(headerContent);
+    card.appendChild(cardHeader);
 
-    // Columna total — mismo estilo visual que entrada única pero readonly
-    const tdTotal = document.createElement('td');
-    tdTotal.className = 'text-end';
-    tdTotal.setAttribute('data-order', concepto.importe);
+    // Card body (detalle — oculto por defecto)
+    const cardBody = document.createElement('div');
+    cardBody.className = 'concepto-card-body';
+    cardBody.id = `card-body-${concepto.id}`;
 
-    const inputGroupTotal = document.createElement('div');
-    inputGroupTotal.className = 'd-flex justify-content-end align-items-center gap-2';
+    // Contenido del detalle
+    const detalleContent = crearContenidoDetalle(concepto, moneda);
+    cardBody.appendChild(detalleContent);
 
-    const spanTotal = document.createElement('span');
-    spanTotal.className = 'importe-pagado';
-    spanTotal.id = `total-concepto-${concepto.id}`;
-    spanTotal.textContent = formatearMoneda(concepto.importe, concepto.moneda || 'ARS');
-    spanTotal.title = 'Total del mes — expandí para ver el detalle';
+    card.appendChild(cardBody);
 
-    inputGroupTotal.appendChild(spanTotal);
-    tdTotal.appendChild(inputGroupTotal);
-    trHeader.appendChild(tdTotal);
-
-    return [trHeader];
+    return card;
 }
 
-// Tabla interior con los registros del concepto múltiple
+// Filas para concepto de múltiples entradas: card expandible (mantener para compatibility)
+function crearFilasMultiple(concepto, tipo) {
+    return []; // Cards se renderizan ahora como divs separados
+}
+
+// Contenido de detalle para card expandible (lista de registros)
+function crearContenidoDetalle(concepto, moneda) {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'concepto-card-detalle';
+
+    // Lista de registros
+    const lista = document.createElement('div');
+    lista.className = 'concepto-detalle-lista';
+
+    if (concepto.detalle && concepto.detalle.length > 0) {
+        concepto.detalle.forEach(reg => {
+            const itemReg = crearItemRegistroDetalle(reg, concepto.id, moneda);
+            lista.appendChild(itemReg);
+        });
+    } else {
+        const vacio = document.createElement('div');
+        vacio.className = 'concepto-detalle-vacio';
+        vacio.innerHTML = '<p class="text-muted text-center mb-0">Sin registros este mes</p>';
+        lista.appendChild(vacio);
+    }
+
+    wrapper.appendChild(lista);
+
+    // Formulario para agregar nuevo registro
+    const formNuevo = crearFormNuevoRegistroCard(concepto.id, moneda, concepto.cuenta_id_default);
+    wrapper.appendChild(formNuevo);
+
+    return wrapper;
+}
+
+// Item individual dentro de la lista de detalle
+function crearItemRegistroDetalle(reg, conceptoId, moneda) {
+    const item = document.createElement('div');
+    item.className = 'concepto-detalle-item';
+    item.id = `registro-${reg.id}`;
+
+    // Fecha
+    const fecha = document.createElement('span');
+    fecha.className = 'concepto-detalle-fecha';
+    fecha.textContent = formatearFechaCorta(reg.fecha);
+
+    // Descripción
+    const desc = document.createElement('span');
+    desc.className = 'concepto-detalle-desc';
+    desc.textContent = reg.observaciones || '—';
+
+    // Importe
+    const importe = document.createElement('span');
+    importe.className = 'concepto-detalle-importe';
+    importe.id = `det-importe-${reg.id}`;
+    importe.textContent = formatearMoneda(reg.importe, moneda);
+
+    // Botón borrar
+    const btnDel = document.createElement('button');
+    btnDel.className = 'concepto-detalle-btn-del';
+    btnDel.title = 'Eliminar registro';
+    btnDel.innerHTML = '<i class="bi bi-trash3"></i>';
+    btnDel.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (confirm('¿Eliminar este registro?')) {
+            eliminarRegistro(reg.id);
+        }
+    });
+
+    item.appendChild(fecha);
+    item.appendChild(desc);
+    item.appendChild(importe);
+    item.appendChild(btnDel);
+
+    return item;
+}
+
+// Tabla interior con los registros del concepto múltiple (mantener para compatibility)
 function crearTablaDetalle(concepto) {
     const wrapper = document.createElement('div');
     wrapper.className = 'detalle-wrapper';
@@ -1275,6 +1396,66 @@ function crearFilaRegistroDetalle(reg, conceptoId, moneda = 'ARS') {
     return tr;
 }
 
+// Formulario para agregar nuevo registro dentro de card
+function crearFormNuevoRegistroCard(conceptoId, moneda = 'ARS', cuentaDefault = null) {
+    const form = document.createElement('div');
+    form.className = 'concepto-card-form';
+    form.id = `form-nuevo-${conceptoId}`;
+
+    const hoy = new Date().toISOString().split('T')[0];
+
+    // Selector de cuenta
+    const cuentasMoneda = (app.cuentas || []).filter(c => (c.moneda || 'ARS') === moneda);
+    const opcionesCuenta = cuentasMoneda
+        .map(c => `<option value="${c.id}" ${c.id == cuentaDefault ? 'selected' : ''}>${c.nombre}</option>`)
+        .join('');
+
+    form.innerHTML = `
+        <div class="concepto-card-form-row">
+            <div class="concepto-card-form-group">
+                <label class="concepto-card-form-label">Fecha</label>
+                <input type="date" class="form-control form-control-sm concepto-card-input"
+                    id="fecha-nuevo-${conceptoId}" value="${hoy}">
+            </div>
+            ${cuentasMoneda.length > 0 ? `
+            <div class="concepto-card-form-group">
+                <label class="concepto-card-form-label">Cuenta</label>
+                <select id="cuenta-nuevo-${conceptoId}" class="form-select form-select-sm concepto-card-input">
+                    ${opcionesCuenta}
+                </select>
+            </div>
+            ` : ''}
+            <div class="concepto-card-form-group">
+                <label class="concepto-card-form-label">Descripción</label>
+                <input type="text" class="form-control form-control-sm concepto-card-input"
+                    id="obs-nuevo-${conceptoId}" placeholder="(opcional)">
+            </div>
+            <div class="concepto-card-form-group">
+                <label class="concepto-card-form-label">Importe</label>
+                <div class="d-flex gap-2 align-items-end">
+                    <input type="number" step="0.01" min="0" class="form-control form-control-sm concepto-card-input"
+                        id="importe-nuevo-${conceptoId}" placeholder="0.00">
+                    <button class="btn btn-success btn-sm py-1 px-3"
+                        title="Agregar"
+                        onclick="agregarRegistroMultiple(${conceptoId})">
+                        <i class="bi bi-plus-lg"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+
+    const inputImporte = form.querySelector(`#importe-nuevo-${conceptoId}`);
+    if (inputImporte) {
+        inputImporte.addEventListener('focus', () => inputImporte.select());
+        inputImporte.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') agregarRegistroMultiple(conceptoId);
+        });
+    }
+
+    return form;
+}
+
 // Fila con formulario para agregar nuevo registro
 function crearFilaFormNuevoRegistro(conceptoId, moneda = 'ARS', cuentaDefault = null) {
     const tr = document.createElement('tr');
@@ -1330,23 +1511,22 @@ function crearFilaFormNuevoRegistro(conceptoId, moneda = 'ARS', cuentaDefault = 
     return tr;
 }
 
-// Toggle expandir/colapsar detalle (usa DataTables child rows)
+// Toggle expandir/colapsar detalle (cards)
 function toggleDetalle(conceptoId) {
-    const trHeader = document.querySelector(`tr[data-concepto-id="${conceptoId}"]`);
-    if (!trHeader) return;
-
+    const card = document.getElementById(`card-${conceptoId}`);
+    const cardBody = document.getElementById(`card-body-${conceptoId}`);
     const arrow = document.getElementById(`arrow-${conceptoId}`);
-    const dtInstance = app.dtGastos;
-    if (!dtInstance) return;
 
-    const row = dtInstance.row(trHeader);
+    if (!card || !cardBody) return;
 
-    if (row.child.isShown()) {
-        row.child.hide();
-        arrow.classList.replace('bi-chevron-up', 'bi-chevron-down');
+    const isExpanded = cardBody.classList.contains('expandido');
+
+    if (isExpanded) {
+        cardBody.classList.remove('expandido');
+        arrow.classList.replace('bi-chevron-down', 'bi-chevron-right');
     } else {
-        row.child(trHeader._detalleNode).show();
-        arrow.classList.replace('bi-chevron-down', 'bi-chevron-up');
+        cardBody.classList.add('expandido');
+        arrow.classList.replace('bi-chevron-right', 'bi-chevron-down');
     }
 }
 
@@ -3206,6 +3386,7 @@ async function cargarCuentas() {
             app.cuentas = result.data;
             renderizarCuentas();
             renderizarCardCuentasHome();
+            renderizarDatos(); // Actualizar topbar con nuevo saldo real
         }
     } catch (_) {}
 }

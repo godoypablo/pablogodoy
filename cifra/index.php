@@ -1,7 +1,7 @@
 <?php
 require_once 'config/auth_check.php';
 require_auth_or_redirect();
-define('APP_VERSION', '20260503-7');
+define('APP_VERSION', '20260507-6');
 $meses = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 $labelFiltro = $meses[(int)date('n') - 1] . ' ' . date('Y');
 ?>
@@ -151,7 +151,7 @@ $labelFiltro = $meses[(int)date('n') - 1] . ' ' . date('Y');
                     <i class="bi bi-eye" id="iconOcultarImportes"></i>
                 </button>
                 <div class="topbar-stats">
-                    <div class="topbar-stat" onclick="abrirModalResumen()" title="Saldo ARS en cuentas menos gastos ARS pendientes del mes">
+                    <div class="topbar-stat" onclick="abrirModalCuentas()" title="Dinero que realmente tenés en todas las cuentas">
                         <span class="topbar-stat-label">Disponible</span>
                         <span class="topbar-stat-valor" id="saldoFiltroHeader">—</span>
                     </div>
@@ -159,19 +159,11 @@ $labelFiltro = $meses[(int)date('n') - 1] . ' ' . date('Y');
                         <i class="bi bi-chevron-left" id="iconStatsMore"></i>
                     </button>
                     <div class="topbar-stats-extra" id="statsExtra">
-                        <div class="topbar-stat d-none" id="statUSD" onclick="abrirModalCuentas()" title="Saldo USD en cuentas menos gastos USD pendientes">
+                        <div class="topbar-stat d-none" id="statUSD" onclick="abrirModalCuentas()" title="Dinero que realmente tenés en cuentas USD">
                             <span class="topbar-stat-label">USD disp.</span>
                             <span class="topbar-stat-valor" id="saldoUSDHeader">—</span>
                         </div>
-                        <div class="topbar-stat" onclick="abrirModalCuentas()" title="Total real en cuentas ARS">
-                            <span class="topbar-stat-label">Cuentas</span>
-                            <span class="topbar-stat-valor" id="totalCuentasTopbar">—</span>
-                        </div>
-                        <div class="topbar-stat" onclick="abrirModalResumen()" title="Total gastos del mes">
-                            <span class="topbar-stat-label">Gastos</span>
-                            <span class="topbar-stat-valor" id="totalGastosHeader">—</span>
-                        </div>
-                        <div class="topbar-stat" onclick="abrirModalResumen()" title="Gastos pendientes de pago">
+                        <div class="topbar-stat" onclick="abrirModalResumen()" title="Gastos que aún no han sido pagados">
                             <span class="topbar-stat-label">Pendiente</span>
                             <span class="topbar-stat-valor" id="gastosPorPagarHeader">—</span>
                         </div>

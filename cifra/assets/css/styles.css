@@ -2949,3 +2949,195 @@ table.dataTable > tbody > tr.tr-pagado .concepto-nombre {
     min-width: 4rem;
     text-align: right;
 }
+
+/* ==================== CARDS EXPANDIBLES PARA CONCEPTOS MÚLTIPLES ==================== */
+.conceptos-cards-container {
+    margin-top: 0.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.concepto-card {
+    background: var(--bs-body-bg);
+    border: 1px solid var(--bs-border-color);
+    border-radius: 0.75rem;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    transition: all 0.2s ease;
+}
+
+.concepto-card.cat-fila-oculta {
+    display: none !important;
+}
+
+.concepto-card-header {
+    padding: 1rem;
+    background: linear-gradient(135deg, rgba(99,102,241,0.08) 0%, rgba(16,185,129,0.05) 100%);
+    border-bottom: 1px solid var(--bs-border-color);
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.concepto-card-header:hover {
+    background: linear-gradient(135deg, rgba(99,102,241,0.12) 0%, rgba(16,185,129,0.08) 100%);
+}
+
+.concepto-card-header-content {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    justify-content: space-between;
+}
+
+.concepto-card-chevron {
+    font-size: 0.9rem;
+    transition: transform 0.3s ease;
+    flex-shrink: 0;
+    color: var(--color-primary);
+}
+
+.concepto-card-nombre {
+    font-weight: 600;
+    color: var(--color-gray-dark);
+    flex: 1;
+}
+
+.concepto-card-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bs-primary);
+    color: white;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    font-size: 0.65rem;
+    font-weight: 600;
+    flex-shrink: 0;
+}
+
+.concepto-card-total {
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: var(--color-primary);
+    flex-shrink: 0;
+}
+
+.concepto-card-body {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease;
+}
+
+.concepto-card-body.expandido {
+    max-height: 1000px;
+}
+
+.concepto-card-detalle {
+    padding: 1rem;
+    border-top: 1px solid var(--bs-border-color);
+}
+
+.concepto-detalle-lista {
+    margin-bottom: 1rem;
+}
+
+.concepto-detalle-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem;
+    border-bottom: 1px solid var(--bs-border-color);
+    font-size: 0.9rem;
+}
+
+.concepto-detalle-item:last-of-type {
+    border-bottom: none;
+}
+
+.concepto-detalle-fecha {
+    font-size: 0.8rem;
+    color: var(--color-gray);
+    font-weight: 600;
+    min-width: 50px;
+}
+
+.concepto-detalle-desc {
+    flex: 1;
+    color: var(--color-gray);
+    font-style: italic;
+}
+
+.concepto-detalle-importe {
+    font-weight: 600;
+    color: var(--color-gray-dark);
+    min-width: 100px;
+    text-align: right;
+}
+
+.concepto-detalle-btn-del {
+    background: none;
+    border: none;
+    padding: 0.25rem 0.5rem;
+    cursor: pointer;
+    color: var(--bs-danger);
+    opacity: 0.6;
+    transition: opacity 0.2s;
+}
+
+.concepto-detalle-btn-del:hover {
+    opacity: 1;
+}
+
+.concepto-detalle-vacio {
+    padding: 1rem;
+    text-align: center;
+    color: var(--color-gray);
+}
+
+.concepto-card-form {
+    padding: 1rem;
+    background: rgba(99,102,241,0.03);
+    border-top: 1px solid var(--bs-border-color);
+}
+
+.concepto-card-form-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 0.75rem;
+}
+
+.concepto-card-form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+.concepto-card-form-label {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--color-gray);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.concepto-card-input {
+    font-size: 0.85rem;
+}
+
+/* ==================== RESPONSIVE CARDS ==================== */
+@media (max-width: 768px) {
+    .concepto-card-header-content {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .concepto-detalle-item {
+        flex-wrap: wrap;
+    }
+
+    .concepto-card-form-row {
+        grid-template-columns: 1fr;
+    }
+}
