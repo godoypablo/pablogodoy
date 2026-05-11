@@ -3069,11 +3069,34 @@ table.dataTable > tbody > tr.tr-pagado .concepto-nombre {
     font-style: italic;
 }
 
+.concepto-detalle-importe-wrapper {
+    display: flex;
+    align-items: center;
+    min-width: 100px;
+}
+
 .concepto-detalle-importe {
     font-weight: 600;
     color: var(--color-gray-dark);
-    min-width: 100px;
     text-align: right;
+    flex: 1;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    transition: background-color 0.2s;
+}
+
+.concepto-detalle-importe:hover {
+    background-color: rgba(99, 102, 241, 0.1);
+}
+
+.concepto-detalle-importe-input {
+    flex: 1;
+    padding: 0.25rem 0.5rem;
+    border: 1px solid var(--bs-primary);
+    border-radius: 4px;
+    font-weight: 600;
+    text-align: right;
+    font-size: 0.9rem;
 }
 
 .concepto-detalle-btn-del {

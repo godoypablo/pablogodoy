@@ -324,12 +324,24 @@ function formatearImporteDisplay(valor) {
 
 function parsearImporte(texto) {
     if (!texto && texto !== 0) return 0;
-    return parseFloat(
-        String(texto)
-            .replace(/[$ ]/g, '')   // eliminar signo $ y espacios
-            .replace(/\./g, '')     // eliminar separadores de miles
-            .replace(',', '.')      // coma decimal → punto
-    ) || 0;
+    let limpio = String(texto)
+        .replace(/[U$\s]/g, '')     // eliminar U$D, $, espacios
+        .trim();
+
+    // Detectar separador decimal: punto o coma
+    // Si tiene ambos, el último es el decimal
+    const ultimoPunto = limpio.lastIndexOf('.');
+    const ultimaComa = limpio.lastIndexOf(',');
+
+    if (ultimoPunto > ultimaComa) {
+        // Punto es el decimal: quitar comas de miles
+        limpio = limpio.replace(/,/g, '');
+    } else if (ultimaComa > ultimoPunto) {
+        // Coma es el decimal: quitar puntos de miles, convertir coma a punto
+        limpio = limpio.replace(/\./g, '').replace(',', '.');
+    }
+
+    return parseFloat(limpio) || 0;
 }
 
 // Inicializar selectores de mes y año
@@ -1308,11 +1320,65 @@ function crearItemRegistroDetalle(reg, conceptoId, moneda) {
     desc.className = 'concepto-detalle-desc';
     desc.textContent = reg.observaciones || '—';
 
-    // Importe
-    const importe = document.createElement('span');
-    importe.className = 'concepto-detalle-importe';
-    importe.id = `det-importe-${reg.id}`;
-    importe.textContent = formatearMoneda(reg.importe, moneda);
+    // Importe editable
+    const importeWrapper = document.createElement('div');
+    importeWrapper.className = 'concepto-detalle-importe-wrapper';
+
+    const importeDisplay = document.createElement('span');
+    importeDisplay.className = 'concepto-detalle-importe';
+    importeDisplay.id = `det-importe-${reg.id}`;
+    importeDisplay.textContent = formatearMoneda(reg.importe, moneda);
+    importeDisplay.title = 'Doble click para editar';
+    importeDisplay.style.cursor = 'pointer';
+
+    const importeInput = document.createElement('input');
+    importeInput.type = 'text';
+    importeInput.className = 'concepto-detalle-importe-input';
+    importeInput.value = reg.importe;
+    importeInput.style.display = 'none';
+
+    // Toggle entre display e input
+    importeDisplay.addEventListener('dblclick', () => {
+        importeDisplay.style.display = 'none';
+        importeInput.style.display = 'inline';
+        importeInput.focus();
+        importeInput.select();
+    });
+
+    // Guardar al perder focus o Enter
+    const guardarImporte = async () => {
+        const nuevoImporte = parsearImporte(importeInput.value);
+        if (Math.abs(nuevoImporte - reg.importe) > 0.001) {
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ registro_id: reg.id, importe: nuevoImporte })
+                });
+                const result = await response.json();
+                if (result.success) {
+                    mostrarToast('Importe actualizado', 'success');
+                    await cargarDatos();
+                } else {
+                    mostrarError('Error: ' + result.message);
+                }
+            } catch (error) {
+                mostrarError('Error de conexión: ' + error.message);
+            }
+        } else {
+            // Sin cambios: solo volver a display
+            importeDisplay.style.display = 'inline';
+            importeInput.style.display = 'none';
+        }
+    };
+
+    importeInput.addEventListener('blur', guardarImporte);
+    importeInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') guardarImporte();
+    });
+
+    importeWrapper.appendChild(importeDisplay);
+    importeWrapper.appendChild(importeInput);
 
     // Botón borrar
     const btnDel = document.createElement('button');
@@ -1321,14 +1387,12 @@ function crearItemRegistroDetalle(reg, conceptoId, moneda) {
     btnDel.innerHTML = '<i class="bi bi-trash3"></i>';
     btnDel.addEventListener('click', (e) => {
         e.stopPropagation();
-        if (confirm('¿Eliminar este registro?')) {
-            eliminarRegistro(reg.id);
-        }
+        eliminarRegistroMultiple(reg.id, conceptoId);
     });
 
     item.appendChild(fecha);
     item.appendChild(desc);
-    item.appendChild(importe);
+    item.appendChild(importeWrapper);
     item.appendChild(btnDel);
 
     return item;
