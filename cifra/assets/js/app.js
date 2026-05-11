@@ -328,18 +328,8 @@ function parsearImporte(texto) {
         .replace(/[U$\s]/g, '')     // eliminar U$D, $, espacios
         .trim();
 
-    // Detectar separador decimal: punto o coma
-    // Si tiene ambos, el último es el decimal
-    const ultimoPunto = limpio.lastIndexOf('.');
-    const ultimaComa = limpio.lastIndexOf(',');
-
-    if (ultimoPunto > ultimaComa) {
-        // Punto es el decimal: quitar comas de miles
-        limpio = limpio.replace(/,/g, '');
-    } else if (ultimaComa > ultimoPunto) {
-        // Coma es el decimal: quitar puntos de miles, convertir coma a punto
-        limpio = limpio.replace(/\./g, '').replace(',', '.');
-    }
+    // Coma es siempre el separador decimal; punto se trata como miles
+    limpio = limpio.replace(/\./g, '').replace(',', '.');
 
     return parseFloat(limpio) || 0;
 }
@@ -479,6 +469,11 @@ function renderizarDatos() {
 
     const tbodyGastos = document.getElementById('tablaGastos');
     tbodyGastos.innerHTML = '';
+
+    // Eliminar contenedor anterior si existe
+    const oldContainer = document.getElementById('conceptos-cards-container');
+    if (oldContainer) oldContainer.remove();
+
     const cardsContainer = document.createElement('div');
     cardsContainer.id = 'conceptos-cards-container';
     cardsContainer.className = 'conceptos-cards-container';
@@ -1613,7 +1608,7 @@ async function agregarRegistroMultiple(conceptoId) {
     const importeVal = document.getElementById(`importe-nuevo-${conceptoId}`).value;
     const observaciones = document.getElementById(`obs-nuevo-${conceptoId}`).value.trim();
 
-    const importe = parseFloat(importeVal) || 0;
+    const importe = parsearImporte(importeVal);
 
     if (!fecha) {
         mostrarError('Ingresá una fecha.');
@@ -3591,7 +3586,7 @@ async function guardarNuevaCuenta() {
         banco:        document.getElementById('nc-banco').value.trim(),
         tipo:         document.getElementById('nc-tipo').value,
         color:        document.getElementById('nc-color').value,
-        saldo_actual: parseFloat(document.getElementById('nc-saldo').value.replace(',', '.')) || 0,
+        saldo_actual: parsearImporte(document.getElementById('nc-saldo').value),
     };
 
     try {

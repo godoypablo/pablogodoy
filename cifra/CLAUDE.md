@@ -45,6 +45,7 @@ movimientos_api.php GET ?mes&anio&limit | POST transferencia | POST extraccion
 - Sugerencias en `crearFilaSimple()`: SMVM←dtos.gob.ar | Elena/Spotify←hardcoded | YouTube←USD×dolarapi.com | **Repetir mes anterior** (`btn-repetir-anterior`, ícono `bi-arrow-repeat`) — aparece si `importe_mes_anterior > 0` y `importe == 0`
 - `guardarCuentaRegistro()`: tras PATCH actualiza `app.datos` en memoria (evita re-render que revierte selección)
 - `periodoExiste` eliminado — saldo_actual siempre se muestra real en cuentas y topbar
+- **Parseo de importes:** `parsearImporte()` interpreta **coma siempre como separador decimal**, punto como miles. Usa: `1.234,56` → 1234.56 | `1,56` → 1.56 | Aplicado a: inputs de importe (conceptos/cards), saldo de cuentas
 
 ## Layout — pantalla principal
 - Filtro mes/año: Bootstrap collapse, default contraído, localStorage('cifra-filtro-abierto')
@@ -100,6 +101,8 @@ Resumen/Cuentas → modales | Vencimientos → modal+badges | Ingresos → modal
 
 ## Detalle múltiple (permite_multiples=1)
 - POST siempre pagado=1, sin fecha_vencimiento
+- Renderizado: Cards como divs separados (`#conceptos-cards-container`), no en tabla DataTables
+- Filtro categoría: oculta cards por clase `.cat-fila-oculta` (sin duplicación — contenedor anterior se elimina en `renderizarDatos()`)
 - Cols: [pagado+fecha + .cuenta-wrap-detalle | descripción | importe | trash]
 - Form: [fecha | descripción | importe | +] | Labels `.form-field-label` (0.58rem uppercase)
 - Badge contador `.badge-count` a la izquierda de la flecha
