@@ -450,8 +450,21 @@ function renderizarDatos() {
     // Destruir DataTable gastos antes de limpiar tbody
     if (app.dtGastos) { app.dtGastos.destroy(); app.dtGastos = null; }
 
-    // Renderizar gastos
-    const gastos = app.datos.conceptos.filter(c => c.tipo === 'gasto');
+    // Renderizar gastos — ordenado: múltiples → importe > 0 → importe = 0
+    let gastos = app.datos.conceptos.filter(c => c.tipo === 'gasto');
+    gastos.sort((a, b) => {
+        // Primero: permite múltiples
+        if (a.permite_multiples !== b.permite_multiples) {
+            return (b.permite_multiples ? 1 : 0) - (a.permite_multiples ? 1 : 0);
+        }
+        // Luego: importe descendente (mayor a menor)
+        if (Math.abs(a.importe - b.importe) > 0.001) {
+            return b.importe - a.importe;
+        }
+        // Finalmente: por nombre alfabético
+        return (a.nombre || '').localeCompare(b.nombre || '');
+    });
+
     const tbodyGastos = document.getElementById('tablaGastos');
     tbodyGastos.innerHTML = '';
     const cardsContainer = document.createElement('div');

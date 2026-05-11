@@ -1,7 +1,7 @@
 <?php
 require_once 'config/auth_check.php';
 require_auth_or_redirect();
-define('APP_VERSION', '20260507-6');
+define('APP_VERSION', '20260507-7');
 $meses = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 $labelFiltro = $meses[(int)date('n') - 1] . ' ' . date('Y');
 ?>
