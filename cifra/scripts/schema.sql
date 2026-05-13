@@ -139,3 +139,9 @@ CREATE TABLE IF NOT EXISTS consumos_tarjeta (
     INDEX idx_tarjeta_mes_anio (tarjeta_id, mes, anio),
     INDEX idx_fecha (fecha)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Cuotas en consumos de tarjeta (agregado 2026-05-13)
+ALTER TABLE consumos_tarjeta
+    ADD COLUMN cuotas_total TINYINT DEFAULT NULL COMMENT 'Cantidad total de cuotas (NULL = pago único)',
+    ADD COLUMN cuota_numero TINYINT DEFAULT NULL COMMENT 'Número de esta cuota (1, 2, 3...)',
+    ADD COLUMN consumo_padre_id INT DEFAULT NULL COMMENT 'FK al consumo de la cuota 1 — agrupa todas las cuotas';

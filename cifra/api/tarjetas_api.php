@@ -121,17 +121,23 @@ try {
             $action = isset($input['action']) ? $input['action'] : null;
 
             if ($action === 'consumo') {
-                // POST: INSERT consumo + upsert resumen
+                // POST: INSERT consumo(s) + upsert resumen(es)
                 if (empty($input['tarjeta_id']) || empty($input['descripcion']) ||
                     !isset($input['importe']) || $input['importe'] <= 0 || empty($input['fecha'])) {
                     sendResponse(false, null, 'Campos requeridos: tarjeta_id, descripcion, importe > 0, fecha', 400);
                 }
 
                 $tarjeta_id = (int)$input['tarjeta_id'];
-                $importe = (float)$input['importe'];
+                $importe_total = (float)$input['importe'];
                 $fecha = trim($input['fecha']);
                 $desc = trim($input['descripcion']);
                 $categoria_id = isset($input['categoria_id']) && $input['categoria_id'] ? (int)$input['categoria_id'] : null;
+                $cuotas_total = isset($input['cuotas_total']) ? (int)$input['cuotas_total'] : 1;
+                $cuota_numero = isset($input['cuota_numero']) ? (int)$input['cuota_numero'] : 1;
+
+                // Validar rango de cuotas
+                $cuotas_total = max(1, min($cuotas_total, 18));
+                $cuota_numero = max(1, min($cuota_numero, $cuotas_total));
 
                 // Validar fecha
                 $fechaObj = DateTime::createFromFormat('Y-m-d', $fecha);
@@ -147,57 +153,90 @@ try {
                     sendResponse(false, null, 'Tarjeta no encontrada', 404);
                 }
 
-                // Calcular mes/anio del resumen según cierre_dia
-                $dia = (int)$fechaObj->format('j');
-                $mes = (int)$fechaObj->format('n');
-                $anio = (int)$fechaObj->format('Y');
+                // Calcular importe por cuota
+                $es_cuotas = $cuotas_total > 1;
+                $importe_cuota = $es_cuotas ? round($importe_total / $cuotas_total, 2) : $importe_total;
 
-                // Si el día es posterior al cierre, el consumo va al resumen del mes siguiente
-                if ($dia > $tarjeta['cierre_dia']) {
-                    $fechaObj->modify('+1 month');
-                    $mes = (int)$fechaObj->format('n');
-                    $anio = (int)$fechaObj->format('Y');
+                // Calcular fecha base: la cuota 1 ocurrió (cuota_numero - 1) meses antes
+                $fechaBase = clone $fechaObj;
+                if ($cuota_numero > 1) {
+                    $fechaBase->modify('-' . ($cuota_numero - 1) . ' months');
                 }
 
                 // Transacción
                 $db->beginTransaction();
                 try {
-                    // 1. Upsert resumen (INSERT ... ON DUPLICATE KEY UPDATE)
-                    $sqlResumen = "INSERT INTO resumenes_tarjeta (tarjeta_id, mes, anio, total_consumido)
-                                   VALUES (:tid, :mes, :anio, 0)
-                                   ON DUPLICATE KEY UPDATE id=LAST_INSERT_ID(id)";
-                    $stmtRes = $db->prepare($sqlResumen);
-                    $stmtRes->execute(['tid' => $tarjeta_id, 'mes' => $mes, 'anio' => $anio]);
-                    $resumen_id = $db->lastInsertId();
+                    $consumo_padre_id = null;
+                    $consumos_ids = [];
+                    $resumenes_procesados = [];
 
-                    // 2. UPDATE total_consumido en el resumen
-                    $sqlUpdate = "UPDATE resumenes_tarjeta SET total_consumido = total_consumido + :imp WHERE id = :rid";
-                    $stmtUpd = $db->prepare($sqlUpdate);
-                    $stmtUpd->execute(['imp' => $importe, 'rid' => $resumen_id]);
+                    // Generar todas las cuotas
+                    for ($i = 1; $i <= $cuotas_total; $i++) {
+                        // Calcular fecha de esta cuota (desde la base)
+                        $fechaCuota = clone $fechaBase;
+                        $fechaCuota->modify('+' . ($i - 1) . ' months');
 
-                    // 3. INSERT consumo
-                    $sqlCons = "INSERT INTO consumos_tarjeta (tarjeta_id, resumen_id, descripcion, importe, fecha, mes, anio, categoria_id)
-                                VALUES (:tid, :rid, :desc, :imp, :fecha, :mes, :anio, :cat)";
-                    $stmtCons = $db->prepare($sqlCons);
-                    $stmtCons->execute([
-                        'tid' => $tarjeta_id,
-                        'rid' => $resumen_id,
-                        'desc' => $desc,
-                        'imp' => $importe,
-                        'fecha' => $fecha,
-                        'mes' => $mes,
-                        'anio' => $anio,
-                        'cat' => $categoria_id,
-                    ]);
-                    $consumo_id = $db->lastInsertId();
+                        // Calcular mes/año del resumen según cierre_dia
+                        $dia = (int)$fechaCuota->format('j');
+                        $mes = (int)$fechaCuota->format('n');
+                        $anio = (int)$fechaCuota->format('Y');
+
+                        // Si el día es posterior al cierre, va al resumen del mes siguiente
+                        if ($dia > $tarjeta['cierre_dia']) {
+                            $fechaCuota->modify('+1 month');
+                            $mes = (int)$fechaCuota->format('n');
+                            $anio = (int)$fechaCuota->format('Y');
+                        }
+
+                        // Upsert resumen
+                        $sqlResumen = "INSERT INTO resumenes_tarjeta (tarjeta_id, mes, anio, total_consumido)
+                                       VALUES (:tid, :mes, :anio, 0)
+                                       ON DUPLICATE KEY UPDATE id=LAST_INSERT_ID(id)";
+                        $stmtRes = $db->prepare($sqlResumen);
+                        $stmtRes->execute(['tid' => $tarjeta_id, 'mes' => $mes, 'anio' => $anio]);
+                        $resumen_id = $db->lastInsertId();
+
+                        // Recordar resumenes para no actualizar duplicados
+                        $resumenes_procesados[$resumen_id] = true;
+
+                        // INSERT consumo con cuotas_total, cuota_numero y consumo_padre_id
+                        $sqlCons = "INSERT INTO consumos_tarjeta
+                                    (tarjeta_id, resumen_id, descripcion, importe, fecha, mes, anio, categoria_id, cuotas_total, cuota_numero, consumo_padre_id)
+                                    VALUES (:tid, :rid, :desc, :imp, :fecha, :mes, :anio, :cat, :cuotas_total, :cuota_num, :padre_id)";
+                        $stmtCons = $db->prepare($sqlCons);
+                        $stmtCons->execute([
+                            'tid' => $tarjeta_id,
+                            'rid' => $resumen_id,
+                            'desc' => $desc,
+                            'imp' => $importe_cuota,
+                            'fecha' => $fechaCuota->format('Y-m-d'),
+                            'mes' => $mes,
+                            'anio' => $anio,
+                            'cat' => $categoria_id,
+                            'cuotas_total' => $es_cuotas ? $cuotas_total : null,
+                            'cuota_num' => $es_cuotas ? $i : null,
+                            'padre_id' => $i === 1 ? null : $consumo_padre_id,
+                        ]);
+
+                        $consumo_id = $db->lastInsertId();
+                        if ($i === 1) {
+                            $consumo_padre_id = $consumo_id;
+                        }
+                        $consumos_ids[] = $consumo_id;
+                    }
+
+                    // Actualizar total_consumido en todos los resumenes afectados (una sola vez cada uno)
+                    foreach (array_keys($resumenes_procesados) as $rid) {
+                        $sqlUpdate = "UPDATE resumenes_tarjeta SET total_consumido = total_consumido + :imp WHERE id = :rid";
+                        $stmtUpd = $db->prepare($sqlUpdate);
+                        $stmtUpd->execute(['imp' => $importe_cuota, 'rid' => $rid]);
+                    }
 
                     $db->commit();
 
                     sendResponse(true, [
-                        'consumo_id' => $consumo_id,
-                        'resumen_id' => $resumen_id,
-                        'mes_resumen' => $mes,
-                        'anio_resumen' => $anio,
+                        'consumo_ids' => $consumos_ids,
+                        'cuotas_generadas' => count($consumos_ids),
                     ], 'Consumo agregado');
 
                 } catch (Exception $e) {
@@ -367,7 +406,7 @@ try {
             break;
 
         case 'DELETE':
-            // Eliminar consumo
+            // Eliminar consumo (y opcionalmente todas sus cuotas relacionadas)
             $input = json_decode(file_get_contents('php://input'), true);
 
             if (empty($input['consumo_id'])) {
@@ -375,11 +414,12 @@ try {
             }
 
             $consumo_id = (int)$input['consumo_id'];
+            $eliminar_todas = isset($input['eliminar_todas']) && $input['eliminar_todas'];
 
             $db->beginTransaction();
             try {
-                // 1. SELECT consumo (verificar existe + obtener resumen_id, importe)
-                $sqlCons = "SELECT resumen_id, importe FROM consumos_tarjeta WHERE id = :cid";
+                // 1. SELECT consumo
+                $sqlCons = "SELECT resumen_id, importe, cuotas_total, cuota_numero, consumo_padre_id FROM consumos_tarjeta WHERE id = :cid";
                 $stmtCons = $db->prepare($sqlCons);
                 $stmtCons->execute(['cid' => $consumo_id]);
                 $consumo = $stmtCons->fetch();
@@ -389,36 +429,74 @@ try {
                     sendResponse(false, null, 'Consumo no encontrado', 404);
                 }
 
-                $resumen_id = $consumo['resumen_id'];
-                $importe = (float)$consumo['importe'];
+                // 2. Si es un consumo con cuotas, buscar hermanos
+                $consumos_a_eliminar = [$consumo_id];
+                if ($consumo['cuotas_total'] && $consumo['cuotas_total'] > 1) {
+                    $padre_id = $consumo['consumo_padre_id'] ?? $consumo_id;
 
-                // 2. Verificar que el resumen no esté pagado
-                if ($resumen_id) {
-                    $sqlVerif = "SELECT pagado FROM resumenes_tarjeta WHERE id = :rid";
-                    $stmtVerif = $db->prepare($sqlVerif);
-                    $stmtVerif->execute(['rid' => $resumen_id]);
-                    $resumen = $stmtVerif->fetch();
+                    // Obtener todos los consumos del grupo
+                    $sqlHermanos = "SELECT id FROM consumos_tarjeta WHERE consumo_padre_id = :padre OR id = :padre ORDER BY cuota_numero ASC";
+                    $stmtHermanos = $db->prepare($sqlHermanos);
+                    $stmtHermanos->execute(['padre' => $padre_id]);
+                    $hermanos = $stmtHermanos->fetchAll();
 
-                    if ($resumen && $resumen['pagado']) {
+                    if (count($hermanos) > 1 && !$eliminar_todas) {
+                        // Retornar 409 Conflict con la lista de cuotas
                         $db->rollBack();
-                        sendResponse(false, null, 'No se puede eliminar un consumo de un resumen ya pagado', 422);
+                        $cuota_info = [];
+                        foreach ($hermanos as $h) {
+                            $cuota_info[] = $h;
+                        }
+                        sendResponse(false, $cuota_info, 'Este consumo tiene ' . count($hermanos) . ' cuotas. Confirmar eliminación de todas.', 409);
+                    }
+
+                    if ($eliminar_todas) {
+                        $consumos_a_eliminar = array_map(fn($h) => $h['id'], $hermanos);
                     }
                 }
 
-                // 3. UPDATE resumen descontando el importe
-                if ($resumen_id) {
-                    $sqlActu = "UPDATE resumenes_tarjeta SET total_consumido = total_consumido - :imp WHERE id = :rid";
-                    $stmtActu = $db->prepare($sqlActu);
-                    $stmtActu->execute(['imp' => $importe, 'rid' => $resumen_id]);
+                // 3. Verificar que ninguno de los resumenes esté pagado
+                $resumenes_affected = [];
+                foreach ($consumos_a_eliminar as $cid) {
+                    $sqlConsVerif = "SELECT resumen_id, importe FROM consumos_tarjeta WHERE id = :cid";
+                    $stmtConsVerif = $db->prepare($sqlConsVerif);
+                    $stmtConsVerif->execute(['cid' => $cid]);
+                    $consVerif = $stmtConsVerif->fetch();
+
+                    if ($consVerif && $consVerif['resumen_id']) {
+                        $sqlResFinal = "SELECT pagado FROM resumenes_tarjeta WHERE id = :rid";
+                        $stmtResFinal = $db->prepare($sqlResFinal);
+                        $stmtResFinal->execute(['rid' => $consVerif['resumen_id']]);
+                        $resFinal = $stmtResFinal->fetch();
+
+                        if ($resFinal && $resFinal['pagado']) {
+                            $db->rollBack();
+                            sendResponse(false, null, 'No se puede eliminar consumos de resúmenes ya pagados', 422);
+                        }
+
+                        $resumenes_affected[$consVerif['resumen_id']] = (float)$consVerif['importe'];
+                    }
                 }
 
-                // 4. DELETE consumo
-                $sqlDel = "DELETE FROM consumos_tarjeta WHERE id = :cid";
-                $stmtDel = $db->prepare($sqlDel);
-                $stmtDel->execute(['cid' => $consumo_id]);
+                // 4. UPDATE resumenes descontando importes
+                foreach ($resumenes_affected as $rid => $imp) {
+                    $sqlActu = "UPDATE resumenes_tarjeta SET total_consumido = total_consumido - :imp WHERE id = :rid";
+                    $stmtActu = $db->prepare($sqlActu);
+                    $stmtActu->execute(['imp' => $imp, 'rid' => $rid]);
+                }
+
+                // 5. DELETE consumos
+                foreach ($consumos_a_eliminar as $cid) {
+                    $sqlDel = "DELETE FROM consumos_tarjeta WHERE id = :cid";
+                    $stmtDel = $db->prepare($sqlDel);
+                    $stmtDel->execute(['cid' => $cid]);
+                }
 
                 $db->commit();
-                sendResponse(true, null, 'Consumo eliminado');
+                $msg = count($consumos_a_eliminar) > 1
+                    ? count($consumos_a_eliminar) . ' cuotas eliminadas'
+                    : 'Consumo eliminado';
+                sendResponse(true, null, $msg);
 
             } catch (Exception $e) {
                 $db->rollBack();

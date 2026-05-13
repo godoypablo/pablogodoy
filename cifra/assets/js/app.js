@@ -4199,6 +4199,18 @@ async function _renderizarTarjetaDetalle(tarjetaId) {
                         ).join('')}
                     </select>
                 </div>
+                <div class="col-6 col-sm-1">
+                    <label class="form-field-label">Cuotas</label>
+                    <input type="number" id="tarjNuevaCuotas" class="form-control form-control-sm text-center"
+                           min="1" max="18" value="1"
+                           oninput="actualizarPreviewCuota()">
+                </div>
+                <div class="col-6 col-sm-1" id="tarjCuotaActualWrap" style="display:none">
+                    <label class="form-field-label">Cuota #</label>
+                    <input type="number" id="tarjCuotaActual" class="form-control form-control-sm text-center"
+                           min="1" max="18" value="1"
+                           oninput="actualizarPreviewCuota()">
+                </div>
                 <div class="col-12 col-sm-1 d-flex align-items-end">
                     <button class="btn btn-sm w-100"
                             style="background:linear-gradient(135deg,#6366f1 0%,#10b981 100%);color:#fff;border:none"
@@ -4207,6 +4219,7 @@ async function _renderizarTarjetaDetalle(tarjetaId) {
                     </button>
                 </div>
             </div>
+            <div id="tarjPreviewCuota" class="tarj-preview-cuota d-none"></div>
         </div>` : '';
 
         const pagoHtml = `
@@ -4237,6 +4250,10 @@ async function _renderizarTarjetaDetalle(tarjetaId) {
                 <span class="tarj-consumo-fecha">${formatearFechaCorta(c.fecha)}</span>
                 <span class="tarj-consumo-desc">
                     ${c.descripcion || '—'}
+                    ${c.cuotas_total && c.cuotas_total > 1
+                        ? `<span class="tarj-badge-cuota">${c.cuota_numero}/${c.cuotas_total}</span>`
+                        : ''
+                    }
                     ${c.categoria_nombre
                         ? `<small class="tarj-consumo-cat" style="color:${c.categoria_color || 'inherit'}">${c.categoria_nombre}</small>`
                         : ''
@@ -4246,7 +4263,7 @@ async function _renderizarTarjetaDetalle(tarjetaId) {
                 ${!esPagado ? `
                 <button class="btn btn-ghost-muted btn-sm tarj-btn-del"
                         title="Eliminar"
-                        onclick="eliminarConsumoTarjeta(${c.id}, ${tarjetaId})">
+                        onclick="eliminarConsumoTarjeta(${c.id}, ${tarjetaId}, ${c.cuotas_total || 1})">
                     <i class="bi bi-trash3"></i>
                 </button>` : ''}
             </div>`).join('')
@@ -4259,11 +4276,43 @@ async function _renderizarTarjetaDetalle(tarjetaId) {
     }
 }
 
+function actualizarPreviewCuota() {
+    const cuotas = parseInt(document.getElementById('tarjNuevaCuotas').value) || 1;
+    const wrap   = document.getElementById('tarjCuotaActualWrap');
+    const prev   = document.getElementById('tarjPreviewCuota');
+
+    if (!wrap || !prev) return;
+
+    wrap.style.display = cuotas > 1 ? '' : 'none';
+
+    if (cuotas <= 1) {
+        prev.classList.add('d-none');
+        return;
+    }
+
+    const importe   = parsearImporte(document.getElementById('tarjNuevoImporte').value);
+    const nro       = parseInt(document.getElementById('tarjCuotaActual').value) || 1;
+    const cuotaAmt  = importe > 0 ? formatearMoneda(importe / cuotas) : '—';
+
+    const hoy       = new Date();
+    const mesInicio = new Date(hoy.getFullYear(), hoy.getMonth() - (nro - 1), 1);
+    const mesFin    = new Date(mesInicio.getFullYear(), mesInicio.getMonth() + cuotas - 1, 1);
+    const labelDe   = `${MESES_NOMBRES[mesInicio.getMonth()]} ${mesInicio.getFullYear()}`;
+    const labelA    = `${MESES_NOMBRES[mesFin.getMonth()]} ${mesFin.getFullYear()}`;
+
+    prev.classList.remove('d-none');
+    prev.textContent = `${cuotas} cuotas de ${cuotaAmt} — genera de ${labelDe} a ${labelA}`;
+}
+
 async function agregarConsumoTarjeta(tarjetaId) {
-    const fecha    = document.getElementById('tarjNuevaFecha').value;
-    const desc     = document.getElementById('tarjNuevaDesc').value.trim();
-    const importe  = parsearImporte(document.getElementById('tarjNuevoImporte').value);
-    const catId    = document.getElementById('tarjNuevaCategoria').value || null;
+    const fecha       = document.getElementById('tarjNuevaFecha').value;
+    const desc        = document.getElementById('tarjNuevaDesc').value.trim();
+    const importe     = parsearImporte(document.getElementById('tarjNuevoImporte').value);
+    const catId       = document.getElementById('tarjNuevaCategoria').value || null;
+    const cuotasTotal = parseInt(document.getElementById('tarjNuevaCuotas').value) || 1;
+    const cuotaNumero = cuotasTotal > 1
+        ? parseInt(document.getElementById('tarjCuotaActual').value) || 1
+        : 1;
 
     if (!fecha)        { mostrarError('Ingresá una fecha.'); return; }
     if (!desc)         { mostrarError('Ingresá una descripción.'); return; }
@@ -4280,14 +4329,23 @@ async function agregarConsumoTarjeta(tarjetaId) {
                 descripcion:  desc,
                 importe,
                 categoria_id: catId ? parseInt(catId) : null,
+                cuotas_total: cuotasTotal,
+                cuota_numero: cuotaNumero,
             })
         });
         const result = await resp.json();
         if (!result.success) throw new Error(result.message);
 
-        mostrarToast('Consumo agregado', 'success');
+        const cuotasMsg = result.data?.cuotas_generadas > 1
+            ? ` (${result.data.cuotas_generadas} cuotas generadas)`
+            : '';
+        mostrarToast('Consumo agregado' + cuotasMsg, 'success');
         document.getElementById('tarjNuevaDesc').value    = '';
         document.getElementById('tarjNuevoImporte').value = '';
+        document.getElementById('tarjNuevaCuotas').value  = '1';
+        document.getElementById('tarjCuotaActual').value  = '1';
+        const preview = document.getElementById('tarjPreviewCuota');
+        if (preview) preview.classList.add('d-none');
         await _cargarTarjetas();
     } catch (error) {
         mostrarError('Error: ' + error.message);
@@ -4389,19 +4447,45 @@ async function _confirmarPagoTarjeta(resumenId, tarjetaId) {
     }
 }
 
-async function eliminarConsumoTarjeta(consumoId, tarjetaId) {
-    if (!confirm('¿Eliminar este consumo?')) return;
+async function eliminarConsumoTarjeta(consumoId, tarjetaId, cuotasTotal) {
+    cuotasTotal = cuotasTotal || 1;
+    let eliminarTodas = false;
+
+    if (cuotasTotal > 1) {
+        const resp = confirm(
+            `Este consumo tiene ${cuotasTotal} cuotas.\n` +
+            `¿Eliminás TODAS las cuotas o solo esta?`
+        );
+        if (resp === null) return;
+        eliminarTodas = resp;
+    } else {
+        if (!confirm('¿Eliminar este consumo?')) return;
+    }
 
     try {
         const resp = await fetch(TARJETAS_API_URL, {
             method: 'DELETE',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ consumo_id: consumoId })
+            body: JSON.stringify({
+                consumo_id: consumoId,
+                eliminar_todas: eliminarTodas
+            })
         });
         const result = await resp.json();
-        if (!result.success) throw new Error(result.message);
 
-        mostrarToast('Consumo eliminado', 'success');
+        if (!result.success) {
+            if (resp.status === 409) {
+                mostrarError('Confirmar eliminación de cuotas.');
+            } else {
+                throw new Error(result.message);
+            }
+            return;
+        }
+
+        const msg = cuotasTotal > 1
+            ? `${cuotasTotal} cuotas ${eliminarTodas ? 'eliminadas' : 'modificadas'}`
+            : 'Consumo eliminado';
+        mostrarToast(msg, 'success');
         await _cargarTarjetas();
     } catch (error) {
         mostrarError('Error: ' + error.message);
@@ -4425,7 +4509,7 @@ async function _verHistorialTarjeta(tarjetaId) {
 
         const filas = mesesList.map(r => `
         <div class="tarj-historial-fila">
-            <span class="tarj-hist-periodo">${meses[r.mes - 1]} ${r.anio}</span>
+            <span class="tarj-hist-periodo">${MESES_NOMBRES[r.mes - 1]} ${r.anio}</span>
             <span class="tarj-hist-importe">${formatearMoneda(r.total_consumido)}</span>
             <span class="tarj-hist-estado ${r.pagado ? 'tarj-hist-pagado' : 'tarj-hist-pendiente'}">
                 ${r.pagado

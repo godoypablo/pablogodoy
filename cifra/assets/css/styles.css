@@ -3354,3 +3354,33 @@ table.dataTable > tbody > tr.tr-pagado .concepto-nombre {
 .tarj-historial-header {
     gap: 0.5rem;
 }
+
+.tarj-badge-cuota {
+    display: inline-flex;
+    align-items: center;
+    font-size: 0.6rem;
+    font-weight: 700;
+    padding: 0.1em 0.4em;
+    border-radius: 0.25rem;
+    background: rgba(99, 102, 241, 0.12);
+    color: var(--bs-primary);
+    margin-left: 0.3rem;
+    vertical-align: middle;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+[data-bs-theme="dark"] .tarj-badge-cuota {
+    background: rgba(129, 140, 248, 0.18);
+}
+
+.tarj-preview-cuota {
+    font-size: 0.75rem;
+    color: var(--bs-primary);
+    background: rgba(99, 102, 241, 0.06);
+    border-radius: 0.375rem;
+    padding: 0.3rem 0.6rem;
+    margin-top: 0.4rem;
+}
+[data-bs-theme="dark"] .tarj-preview-cuota {
+    background: rgba(129, 140, 248, 0.1);
+}
