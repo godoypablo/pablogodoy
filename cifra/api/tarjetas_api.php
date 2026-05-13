@@ -145,12 +145,26 @@ try {
                     sendResponse(false, null, 'Fecha inválida (formato Y-m-d)', 400);
                 }
 
-                // Obtener tarjeta para el cierre_dia
-                $stmtTarj = $db->prepare("SELECT cierre_dia FROM tarjetas WHERE id = :id");
-                $stmtTarj->execute(['id' => $tarjeta_id]);
-                $tarjeta = $stmtTarj->fetch();
-                if (!$tarjeta) {
-                    sendResponse(false, null, 'Tarjeta no encontrada', 404);
+                // Obtener cierre_dia del resumen del mes actual (o usar valor por defecto de la tarjeta)
+                $dia_calc = (int)$fechaObj->format('j');
+                $mes_calc = (int)$fechaObj->format('n');
+                $anio_calc = (int)$fechaObj->format('Y');
+
+                $sqlCierre = "SELECT cierre_dia FROM resumenes_tarjeta WHERE tarjeta_id = :tid AND mes = :mes AND anio = :anio";
+                $stmtCierre = $db->prepare($sqlCierre);
+                $stmtCierre->execute(['tid' => $tarjeta_id, 'mes' => $mes_calc, 'anio' => $anio_calc]);
+                $resumenCierre = $stmtCierre->fetch();
+
+                // Si no existe resumen configurado, usar valor de la tarjeta
+                $cierre_dia = $resumenCierre ? (int)$resumenCierre['cierre_dia'] : null;
+                if (!$cierre_dia) {
+                    $stmtTarj = $db->prepare("SELECT cierre_dia FROM tarjetas WHERE id = :id");
+                    $stmtTarj->execute(['id' => $tarjeta_id]);
+                    $tarjeta = $stmtTarj->fetch();
+                    if (!$tarjeta) {
+                        sendResponse(false, null, 'Tarjeta no encontrada', 404);
+                    }
+                    $cierre_dia = (int)$tarjeta['cierre_dia'];
                 }
 
                 // Calcular importe por cuota
@@ -176,13 +190,20 @@ try {
                         $fechaCuota = clone $fechaBase;
                         $fechaCuota->modify('+' . ($i - 1) . ' months');
 
-                        // Calcular mes/año del resumen según cierre_dia
+                        // Calcular mes/año y obtener cierre_dia de ese período
                         $dia = (int)$fechaCuota->format('j');
                         $mes = (int)$fechaCuota->format('n');
                         $anio = (int)$fechaCuota->format('Y');
 
+                        // Obtener cierre_dia del resumen de este mes
+                        $sqlCierreMes = "SELECT cierre_dia FROM resumenes_tarjeta WHERE tarjeta_id = :tid AND mes = :mes AND anio = :anio";
+                        $stmtCierreMes = $db->prepare($sqlCierreMes);
+                        $stmtCierreMes->execute(['tid' => $tarjeta_id, 'mes' => $mes, 'anio' => $anio]);
+                        $resumenMes = $stmtCierreMes->fetch();
+                        $cierre_mes = $resumenMes ? (int)$resumenMes['cierre_dia'] : $cierre_dia;
+
                         // Si el día es posterior al cierre, va al resumen del mes siguiente
-                        if ($dia > $tarjeta['cierre_dia']) {
+                        if ($dia > $cierre_mes) {
                             $fechaCuota->modify('+1 month');
                             $mes = (int)$fechaCuota->format('n');
                             $anio = (int)$fechaCuota->format('Y');
@@ -345,6 +366,59 @@ try {
                 ]);
 
                 sendResponse(true, ['id' => $db->lastInsertId()], 'Tarjeta creada');
+            }
+            elseif ($action === 'configurar_mes') {
+                // POST: guardar configuración de tarjetas para un mes específico
+                if (empty($input['mes']) || empty($input['anio']) || empty($input['tarjetas'])) {
+                    sendResponse(false, null, 'Campos requeridos: mes, anio, tarjetas[]', 400);
+                }
+
+                $mes = (int)$input['mes'];
+                $anio = (int)$input['anio'];
+                $tarjetas = $input['tarjetas']; // array de {tarjeta_id, limite, cierre_dia, vencimiento_dia}
+
+                if ($mes < 1 || $mes > 12) {
+                    sendResponse(false, null, 'mes debe estar entre 1 y 12', 400);
+                }
+
+                $db->beginTransaction();
+                try {
+                    foreach ($tarjetas as $t) {
+                        if (empty($t['tarjeta_id'])) continue;
+
+                        $tid = (int)$t['tarjeta_id'];
+                        $limite = isset($t['limite']) ? (float)$t['limite'] : 0;
+                        $cierre_dia = isset($t['cierre_dia']) ? (int)$t['cierre_dia'] : 1;
+                        $vencimiento_dia = isset($t['vencimiento_dia']) ? (int)$t['vencimiento_dia'] : 10;
+
+                        // Validar rangos
+                        if ($cierre_dia < 1 || $cierre_dia > 31) $cierre_dia = 1;
+                        if ($vencimiento_dia < 1 || $vencimiento_dia > 31) $vencimiento_dia = 10;
+
+                        // INSERT or UPDATE resumen (si no existe, crear vacío; si existe, actualizar)
+                        $sqlUpsert = "INSERT INTO resumenes_tarjeta (tarjeta_id, mes, anio, cierre_dia, vencimiento_dia, total_consumido)
+                                      VALUES (:tid, :mes, :anio, :cdia, :vdia, 0)
+                                      ON DUPLICATE KEY UPDATE
+                                          cierre_dia = :cdia,
+                                          vencimiento_dia = :vdia,
+                                          id = LAST_INSERT_ID(id)";
+                        $stmtUpsert = $db->prepare($sqlUpsert);
+                        $stmtUpsert->execute([
+                            'tid' => $tid,
+                            'mes' => $mes,
+                            'anio' => $anio,
+                            'cdia' => $cierre_dia,
+                            'vdia' => $vencimiento_dia,
+                        ]);
+                    }
+
+                    $db->commit();
+                    sendResponse(true, null, 'Configuración guardada');
+
+                } catch (Exception $e) {
+                    $db->rollBack();
+                    throw $e;
+                }
             }
             else {
                 sendResponse(false, null, 'action no reconocido', 400);

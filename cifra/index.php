@@ -86,6 +86,12 @@ $labelFiltro = $meses[(int)date('n') - 1] . ' ' . date('Y');
                             </a>
                         </li>
                         <li>
+                            <a class="dropdown-item d-flex align-items-center gap-2" href="#" onclick="abrirConfigurartarjetas();return false;">
+                                <i class="bi bi-gear menu-icon"></i>
+                                Configurar tarjetas
+                            </a>
+                        </li>
+                        <li>
                             <a class="dropdown-item d-flex align-items-center gap-2" href="#" onclick="abrirModalTarjetas();return false;">
                                 <i class="bi bi-credit-card menu-icon"></i>
                                 Tarjetas
@@ -424,6 +430,28 @@ $labelFiltro = $meses[(int)date('n') - 1] . ' ' . date('Y');
                         <i class="bi bi-plus-lg me-1"></i>Nueva tarjeta
                     </button>
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Configurar Tarjetas -->
+    <div class="modal fade" id="modalConfigurarTarjetas" tabindex="-1" aria-labelledby="modalConfigurarTarjetasLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalConfigurarTarjetasLabel">
+                        <i class="bi bi-gear me-2" style="color:#6366f1"></i>
+                        Configurar tarjetas — <span id="confTarjMesAnio"></span>
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-3" id="modalConfigurarTarjetasBody"></div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn" style="background:linear-gradient(135deg,#6366f1 0%,#10b981 100%);color:#fff;border:none" onclick="guardarConfiguraciontarjetas()">
+                        <i class="bi bi-check-lg me-1"></i>Guardar
+                    </button>
                 </div>
             </div>
         </div>

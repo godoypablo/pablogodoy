@@ -4038,6 +4038,99 @@ let _tarjData     = [];
 let _tarjIdActiva = null;
 let _tarjConsumos = [];
 
+function abrirConfigurartarjetas() {
+    document.getElementById('confTarjMesAnio').textContent =
+        `${MESES_NOMBRES[app.mesActual - 1]} ${app.anioActual}`;
+    new bootstrap.Modal(document.getElementById('modalConfigurarTarjetas')).show();
+    _cargarConfiguracion();
+}
+
+async function _cargarConfiguracion() {
+    const body = document.getElementById('modalConfigurarTarjetasBody');
+    body.innerHTML = '<div class="text-center py-5"><span class="spinner-border spinner-border-sm"></span></div>';
+
+    try {
+        const resp = await fetch(`${TARJETAS_API_URL}?action=lista&mes=${app.mesActual}&anio=${app.anioActual}`);
+        const result = await resp.json();
+        if (!result.success) throw new Error(result.message);
+
+        _tarjData = result.data;
+        _renderizarConfiguracion();
+    } catch (error) {
+        body.innerHTML = `<div class="alert alert-danger m-3">Error: ${error.message}</div>`;
+    }
+}
+
+function _renderizarConfiguracion() {
+    const body = document.getElementById('modalConfigurarTarjetasBody');
+    if (!_tarjData.length) {
+        body.innerHTML = '<p class="text-center text-muted py-5">Sin tarjetas configuradas.</p>';
+        return;
+    }
+
+    const filas = _tarjData.map(t => `
+    <div class="conf-tarj-fila">
+        <div class="conf-tarj-nombre">${t.nombre}</div>
+        <div class="conf-tarj-inputs">
+            <div class="conf-input-group">
+                <label class="form-field-label">Límite</label>
+                <input type="text" inputmode="decimal" class="form-control form-control-sm confTarjLimite"
+                       data-tid="${t.id}" value="${t.limite || 0}">
+            </div>
+            <div class="conf-input-group">
+                <label class="form-field-label">Cierre</label>
+                <input type="number" class="form-control form-control-sm confTarjCierre"
+                       data-tid="${t.id}" min="1" max="31" value="7">
+            </div>
+            <div class="conf-input-group">
+                <label class="form-field-label">Vencimiento</label>
+                <input type="number" class="form-control form-control-sm confTarjVenc"
+                       data-tid="${t.id}" min="1" max="31" value="15">
+            </div>
+        </div>
+    </div>`).join('');
+
+    body.innerHTML = `<div class="conf-tarjetas-lista">${filas}</div>`;
+}
+
+async function guardarConfiguraciontarjetas() {
+    const tarjetas = [];
+    document.querySelectorAll('.confTarjLimite').forEach(el => {
+        const tid = parseInt(el.getAttribute('data-tid'));
+        const limite = parsearImporte(el.value);
+        const cierre = parseInt(document.querySelector(`.confTarjCierre[data-tid="${tid}"]`).value) || 1;
+        const venc = parseInt(document.querySelector(`.confTarjVenc[data-tid="${tid}"]`).value) || 15;
+
+        tarjetas.push({
+            tarjeta_id: tid,
+            limite,
+            cierre_dia: cierre,
+            vencimiento_dia: venc
+        });
+    });
+
+    try {
+        const resp = await fetch(TARJETAS_API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                action: 'configurar_mes',
+                mes: app.mesActual,
+                anio: app.anioActual,
+                tarjetas
+            })
+        });
+        const result = await resp.json();
+        if (!result.success) throw new Error(result.message);
+
+        mostrarToast('Configuración guardada', 'success');
+        bootstrap.Modal.getInstance(document.getElementById('modalConfigurarTarjetas')).hide();
+        await _cargarTarjetas();
+    } catch (error) {
+        mostrarError('Error: ' + error.message);
+    }
+}
+
 function abrirModalTarjetas() {
     document.getElementById('tarjMesAnio').textContent =
         `${MESES_NOMBRES[app.mesActual - 1]} ${app.anioActual}`;
@@ -4228,20 +4321,10 @@ async function _renderizarTarjetaDetalle(tarjetaId) {
                 <span class="fw-semibold">${MESES_NOMBRES[app.mesActual - 1]} ${app.anioActual}</span>
                 <span class="ms-2 fw-bold">${formatearMoneda(usado)}</span>
             </div>
-            <div class="d-flex gap-1 align-items-center">
-                ${esPagado
-                    ? `<span class="badge tarj-badge-pagado"><i class="bi bi-check-circle-fill me-1"></i>Pagado</span>`
-                    : `<button class="btn btn-sm tarj-btn-pagar"
-                               onclick="pagarResumenTarjeta(${tarjetaId})"
-                               ${usado <= 0 ? 'disabled' : ''}>
-                           <i class="bi bi-cash-coin me-1"></i>Pagar
-                       </button>`
-                }
-                <button class="btn btn-ghost-muted btn-sm" title="Ver historial"
-                        onclick="_verHistorialTarjeta(${tarjetaId})">
-                    <i class="bi bi-clock-history"></i>
-                </button>
-            </div>
+            <button class="btn btn-ghost-muted btn-sm" title="Ver historial"
+                    onclick="_verHistorialTarjeta(${tarjetaId})">
+                <i class="bi bi-clock-history"></i>
+            </button>
         </div>`;
 
         const consumosHtml = _tarjConsumos.length

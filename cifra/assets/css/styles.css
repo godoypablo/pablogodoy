@@ -3384,3 +3384,44 @@ table.dataTable > tbody > tr.tr-pagado .concepto-nombre {
 [data-bs-theme="dark"] .tarj-preview-cuota {
     background: rgba(129, 140, 248, 0.1);
 }
+
+.conf-tarjetas-lista {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.conf-tarj-fila {
+    padding: 1rem;
+    border: 1px solid var(--bs-border-color);
+    border-radius: 0.5rem;
+    background: var(--bs-body-bg);
+}
+
+.conf-tarj-nombre {
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+    font-size: 0.95rem;
+}
+
+.conf-tarj-inputs {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 0.75rem;
+}
+
+.conf-input-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.conf-input-group label {
+    font-size: 0.7rem;
+    margin-bottom: 0.25rem;
+    color: var(--bs-body-color);
+}
+
+.conf-input-group input {
+    font-size: 0.9rem;
+    padding: 0.4rem 0.6rem;
+}
