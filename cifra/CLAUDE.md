@@ -11,6 +11,9 @@ registros_mensuales: concepto_id, importe, mes, anio, fecha, pagado, fecha_venci
 categorias:          nombre, color(hex), icono(BS), orden, activo
 cuentas:             nombre, banco, tipo(cuenta_corriente|caja_ahorro|billetera), color(hex), saldo_actual, fecha_saldo, activo
 movimientos_cuenta:  tipo(ingreso|pago_gasto|transferencia|extraccion), cuenta_origen_id, cuenta_destino_id, importe, fecha, descripcion, registro_id?
+tarjetas:            nombre, banco, limite DECIMAL, cierre_dia TINYINT, vencimiento_dia TINYINT, color CHAR(7), activo
+resumenes_tarjeta:   tarjeta_id, mes, anio, total_consumido DECIMAL, pagado, fecha_pago, cuenta_pago_id, movimiento_id — UNIQUE(tarjeta_id,mes,anio)
+consumos_tarjeta:    tarjeta_id, resumen_id, descripcion, importe, fecha, mes, anio, categoria_id, cuotas_total?, cuota_numero?, consumo_padre_id?
 ```
 
 ## Cuentas del usuario
@@ -23,6 +26,7 @@ conceptos_api.php   GET | POST | PUT {cuenta_id_default} | DELETE
 categorias_api.php  GET | POST | PUT | DELETE
 cuentas_api.php     GET ?mes&anio → cuentas+total_pagado_mes | POST | PUT {id,saldo_actual}
 movimientos_api.php GET ?mes&anio&limit | POST transferencia | POST extraccion
+tarjetas_api.php    GET ?action=lista&mes&anio | GET ?action=resumenes&tarjeta_id | GET ?action=consumos&tarjeta_id&mes&anio | POST action=consumo | POST action=pago | POST action=nueva_tarjeta | PUT {id,...} | DELETE {consumo_id, eliminar_todas?}
 ```
 
 ## Circuito saldo (gastos_api.php) — COMPLETO Y VERIFICADO
@@ -119,6 +123,20 @@ Resumen/Cuentas → modales | Vencimientos → modal+badges | Ingresos → modal
 - Buscador interno (`#inputBusquedaMov`) filtra en cliente por texto libre
 - Resumen chips en header: total cobros/pagos/transferencias/extracciones del mes
 - `_cargarMovimientos()` / `_renderizarMovimientos(q)` / `limpiarBusquedaMov()` en app.js
+
+## Tarjetas de crédito (modal)
+- Menú: Hamburguesa → "Tarjetas" abre #modalTarjetas
+- Header sticky: chips con nombre tarjeta + porcentaje uso + resumen total usado/disponible
+- Tabs scrolleables `.tarj-tabs-scroll`: una tab por tarjeta activa con dot de color + nombre + % usado
+- Cuerpo: barra de progreso (rojo >85%, azul ≤85%) | resumen mes/importe | botón Pagar | historial
+- Formulario nuevo consumo: fecha | descripción | importe | categoría | **cuotas (1-18)** | **cuota # (si >1)** | preview dinámico | +
+- **Cuotas:** campo opcional. Si >1: muestra "N cuotas de $X — genera de Mes A a Mes B" (preview dinámico con mes actual como referencia)
+- **Consumos con cuotas:** badge X/N en lista (ej: "2/6"), DELETE pide confirmación si múltiples hermanos
+- **Consumo padre:** `consumo_padre_id=NULL` es cuota 1, hermanos tienen `consumo_padre_id=id_cuota1`; calcula mes de inicio retrocediendo según `cuota_numero`
+- Mes/año de consumo: según `cierre_dia` de tarjeta (si día > cierre_dia, resumen va al mes siguiente)
+- Pago: modal dialog → select cuenta → importe (default total) → pago descuenta saldo de cuenta + marca resumen como pagado
+- Historial: lista de resúmenes anteriores (mes/importe/estado) con fecha_pago y cuenta_pago_id
+- Validación DELETE: 409 si resumen pagado, permite eliminar cuota individual O todas las hermanas con `eliminar_todas=true`
 
 ## Login (login.php)
 - Logo Montserrat + barra degradé índigo→verde + card shadow
