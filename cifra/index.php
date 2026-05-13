@@ -1,7 +1,7 @@
 <?php
 require_once 'config/auth_check.php';
 require_auth_or_redirect();
-define('APP_VERSION', '20260510-1');
+define('APP_VERSION', '20260512-1');
 $meses = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 $labelFiltro = $meses[(int)date('n') - 1] . ' ' . date('Y');
 ?>
@@ -83,6 +83,12 @@ $labelFiltro = $meses[(int)date('n') - 1] . ' ' . date('Y');
                             <a class="dropdown-item d-flex align-items-center gap-2" href="#" onclick="abrirModalIngresos();return false;">
                                 <i class="bi bi-graph-up menu-icon"></i>
                                 Ingresos
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item d-flex align-items-center gap-2" href="#" onclick="abrirModalTarjetas();return false;">
+                                <i class="bi bi-credit-card menu-icon"></i>
+                                Tarjetas
                             </a>
                         </li>
                         <li>
@@ -392,6 +398,32 @@ $labelFiltro = $meses[(int)date('n') - 1] . ' ' . date('Y');
                     <div class="text-center py-4">
                         <div class="spinner-border text-primary"></div>
                     </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Tarjetas -->
+    <div class="modal fade" id="modalTarjetas" tabindex="-1" aria-labelledby="modalTarjetasLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <div class="d-flex flex-column flex-sm-row align-items-start align-items-sm-center gap-2 w-100 pe-3">
+                        <h5 class="modal-title mb-0" id="modalTarjetasLabel">
+                            <i class="bi bi-credit-card me-2" style="color:#6366f1"></i>
+                            Tarjetas <span class="text-muted fw-normal fs-6 ms-1" id="tarjMesAnio"></span>
+                        </h5>
+                        <div class="ms-sm-auto d-flex gap-2 flex-wrap" id="tarjChipsHeader"></div>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="tarj-selector-wrap border-bottom px-3 py-2" id="tarjSelectorWrap"></div>
+                <div class="modal-body p-0" id="modalTarjetasBody"></div>
+                <div class="modal-footer">
+                    <button class="btn btn-sm tarj-btn-nueva" style="background:linear-gradient(135deg,#6366f1 0%,#4f46e5 100%);color:#fff;border:none" onclick="abrirFormNuevaTarjeta()">
+                        <i class="bi bi-plus-lg me-1"></i>Nueva tarjeta
+                    </button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
                 </div>
             </div>
         </div>

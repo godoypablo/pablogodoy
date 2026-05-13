@@ -79,3 +79,63 @@ SELECT
 FROM registros_mensuales rm
 INNER JOIN conceptos c ON rm.concepto_id = c.id
 GROUP BY rm.mes, rm.anio;
+
+-- ============================================================
+-- MÓDULO TARJETAS DE CRÉDITO
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS tarjetas (
+    id               INT AUTO_INCREMENT PRIMARY KEY,
+    nombre           VARCHAR(100) NOT NULL,
+    banco            VARCHAR(100) NOT NULL DEFAULT '',
+    limite           DECIMAL(14,2) NOT NULL DEFAULT 0.00,
+    cierre_dia       TINYINT NOT NULL DEFAULT 1
+                         COMMENT 'Día del mes en que cierra el resumen (1-31)',
+    vencimiento_dia  TINYINT NOT NULL DEFAULT 10
+                         COMMENT 'Día del mes en que vence el pago (1-31)',
+    color            CHAR(7) NOT NULL DEFAULT '#6366f1'
+                         COMMENT 'Hex color para la UI',
+    activo           TINYINT(1) NOT NULL DEFAULT 1,
+    fecha_creacion   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_activo (activo)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS resumenes_tarjeta (
+    id               INT AUTO_INCREMENT PRIMARY KEY,
+    tarjeta_id       INT NOT NULL,
+    mes              TINYINT NOT NULL  COMMENT '1-12',
+    anio             SMALLINT NOT NULL,
+    total_consumido  DECIMAL(14,2) NOT NULL DEFAULT 0.00,
+    pagado           TINYINT(1) NOT NULL DEFAULT 0,
+    fecha_pago       DATE DEFAULT NULL,
+    cuenta_pago_id   INT DEFAULT NULL
+                         COMMENT 'Cuenta bancaria desde la que se pagó',
+    movimiento_id    INT DEFAULT NULL
+                         COMMENT 'FK a movimientos_cuenta (pago_tarjeta)',
+    fecha_creacion   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    fecha_modificacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY uk_tarjeta_mes_anio (tarjeta_id, mes, anio),
+    FOREIGN KEY (tarjeta_id)     REFERENCES tarjetas(id)          ON DELETE CASCADE,
+    FOREIGN KEY (cuenta_pago_id) REFERENCES cuentas(id)           ON DELETE SET NULL,
+    FOREIGN KEY (movimiento_id)  REFERENCES movimientos_cuenta(id) ON DELETE SET NULL,
+    INDEX idx_mes_anio (mes, anio)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS consumos_tarjeta (
+    id           INT AUTO_INCREMENT PRIMARY KEY,
+    tarjeta_id   INT NOT NULL,
+    resumen_id   INT DEFAULT NULL
+                     COMMENT 'FK al resumen del período; NULL si el resumen aún no existe',
+    descripcion  VARCHAR(200) NOT NULL DEFAULT '',
+    importe      DECIMAL(14,2) NOT NULL,
+    fecha        DATE NOT NULL,
+    mes          TINYINT NOT NULL  COMMENT '1-12 — mes del resumen al que pertenece',
+    anio         SMALLINT NOT NULL COMMENT 'Año del resumen',
+    categoria_id INT DEFAULT NULL,
+    fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (tarjeta_id)   REFERENCES tarjetas(id)          ON DELETE CASCADE,
+    FOREIGN KEY (resumen_id)   REFERENCES resumenes_tarjeta(id) ON DELETE SET NULL,
+    FOREIGN KEY (categoria_id) REFERENCES categorias(id)        ON DELETE SET NULL,
+    INDEX idx_tarjeta_mes_anio (tarjeta_id, mes, anio),
+    INDEX idx_fecha (fecha)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
