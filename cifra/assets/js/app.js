@@ -4033,13 +4033,14 @@ function _renderizarTablaAnual(data) {
 // ============================================================
 
 const TARJETAS_API_URL = 'api/tarjetas_api.php';
+const MESES_NOMBRES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 let _tarjData     = [];
 let _tarjIdActiva = null;
 let _tarjConsumos = [];
 
 function abrirModalTarjetas() {
     document.getElementById('tarjMesAnio').textContent =
-        `${meses[app.mesActual - 1]} ${app.anioActual}`;
+        `${MESES_NOMBRES[app.mesActual - 1]} ${app.anioActual}`;
     new bootstrap.Modal(document.getElementById('modalTarjetas')).show();
     _cargarTarjetas();
 }
@@ -4211,7 +4212,7 @@ async function _renderizarTarjetaDetalle(tarjetaId) {
         const pagoHtml = `
         <div class="d-flex align-items-center justify-content-between px-3 py-2 border-bottom">
             <div>
-                <span class="fw-semibold">${meses[app.mesActual - 1]} ${app.anioActual}</span>
+                <span class="fw-semibold">${MESES_NOMBRES[app.mesActual - 1]} ${app.anioActual}</span>
                 <span class="ms-2 fw-bold">${formatearMoneda(usado)}</span>
             </div>
             <div class="d-flex gap-1 align-items-center">
@@ -4329,7 +4330,7 @@ async function pagarResumenTarjeta(tarjetaId) {
             <div class="modal-body">
                 <p class="mb-3">
                     Total a pagar: <strong>${formatearMoneda(usado)}</strong>
-                    (${meses[app.mesActual - 1]} ${app.anioActual})
+                    (${MESES_NOMBRES[app.mesActual - 1]} ${app.anioActual})
                 </p>
                 <div class="mb-3">
                     <label class="form-label form-field-label">Cuenta desde la que pagás</label>
