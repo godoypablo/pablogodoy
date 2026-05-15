@@ -124,18 +124,29 @@ Resumen/Cuentas → modales | Vencimientos → modal+badges | Ingresos → modal
 - Resumen chips en header: total cobros/pagos/transferencias/extracciones del mes
 - `_cargarMovimientos()` / `_renderizarMovimientos(q)` / `limpiarBusquedaMov()` en app.js
 
-## Tarjetas de crédito (modal)
-- Menú: Hamburguesa → "Tarjetas" abre #modalTarjetas
+## Tarjetas de crédito — dos modales separados
+
+### Configurar tarjetas (#modalConfigurarTarjetas)
+- Menú: Hamburguesa → **"Configurar tarjetas"** (nuevo)
+- Por mes/año: lista cada tarjeta activa con inputs para:
+  - **Límite** (editable, parsea como moneda)
+  - **Cierre día** (1-31, ej: Santander = 7 en mayo, 11 en junio)
+  - **Vencimiento día** (1-31, ej: 15 o 19)
+- Guardar → POST action=configurar_mes → crea/actualiza resumen de cada tarjeta con cierre_dia y vencimiento_dia
+- **Diferencia clave:** cierre_dia y vencimiento_dia se guardan en `resumenes_tarjeta` (por período), no en `tarjetas` (tabla estática)
+
+### Ver consumos (#modalTarjetas)
+- Menú: Hamburguesa → **"Tarjetas"**
 - Header sticky: chips con nombre tarjeta + porcentaje uso + resumen total usado/disponible
 - Tabs scrolleables `.tarj-tabs-scroll`: una tab por tarjeta activa con dot de color + nombre + % usado
-- Cuerpo: barra de progreso (rojo >85%, azul ≤85%) | resumen mes/importe | botón Pagar | historial
-- Formulario nuevo consumo: fecha | descripción | importe | categoría | **cuotas (1-18)** | **cuota # (si >1)** | preview dinámico | +
+- Cuerpo: barra de progreso (rojo >85%, azul ≤85%) | resumen mes/importe | historial
+- **Formulario nuevo consumo:** fecha | descripción | importe | categoría | **cuotas (1-18)** | **cuota # (si >1)** | preview dinámico | +
 - **Cuotas:** campo opcional. Si >1: muestra "N cuotas de $X — genera de Mes A a Mes B" (preview dinámico con mes actual como referencia)
 - **Consumos con cuotas:** badge X/N en lista (ej: "2/6"), DELETE pide confirmación si múltiples hermanos
 - **Consumo padre:** `consumo_padre_id=NULL` es cuota 1, hermanos tienen `consumo_padre_id=id_cuota1`; calcula mes de inicio retrocediendo según `cuota_numero`
-- Mes/año de consumo: según `cierre_dia` de tarjeta (si día > cierre_dia, resumen va al mes siguiente)
-- Pago: modal dialog → select cuenta → importe (default total) → pago descuenta saldo de cuenta + marca resumen como pagado
-- Historial: lista de resúmenes anteriores (mes/importe/estado) con fecha_pago y cuenta_pago_id
+- Mes/año de consumo: según `cierre_dia` del resumen del mes (si día > cierre_dia, resumen va al mes siguiente)
+- **Sin botón Pagar:** los pagos de tarjeta se registran en módulo Gastos (registros_mensuales)
+- Historial: lista de resúmenes anteriores (mes/importe) con opción ver detalles
 - Validación DELETE: 409 si resumen pagado, permite eliminar cuota individual O todas las hermanas con `eliminar_todas=true`
 
 ## Login (login.php)
