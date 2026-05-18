@@ -117,6 +117,12 @@ $labelFiltro = $meses[(int)date('n') - 1] . ' ' . date('Y');
                                 Movimientos
                             </a>
                         </li>
+                        <li>
+                            <a class="dropdown-item d-flex align-items-center gap-2" href="#" onclick="abrirModalMovimientosTarjetas();return false;">
+                                <i class="bi bi-credit-card menu-icon"></i>
+                                Movimientos Tarjetas
+                            </a>
+                        </li>
                         <li><hr class="dropdown-divider"></li>
                         <li>
                             <a class="dropdown-item d-flex align-items-center gap-2" href="#" onclick="abrirModalConceptos();return false;">
@@ -409,6 +415,38 @@ $labelFiltro = $meses[(int)date('n') - 1] . ' ' . date('Y');
         </div>
     </div>
 
+    <!-- Modal Movimientos Tarjetas -->
+    <div class="modal fade" id="modalMovimientosTarjetas" tabindex="-1" aria-labelledby="modalMovimientosTarjetasLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header flex-column align-items-stretch gap-2 pb-2">
+                    <div class="d-flex justify-content-between align-items-center w-100">
+                        <h5 class="modal-title" id="modalMovimientosTarjetasLabel">
+                            <i class="bi bi-credit-card me-2"></i>Movimientos Tarjetas · <span id="movTarjMesAnio"></span>
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <!-- Tabs por tarjeta -->
+                    <div id="movTarjTabs" class="tarj-tabs-scroll d-flex gap-2 overflow-auto pb-1"></div>
+                    <!-- Buscador -->
+                    <div class="busqueda-inner">
+                        <i class="bi bi-search busqueda-icon"></i>
+                        <input type="search" id="inputBusquedaMovTarj" class="busqueda-input"
+                               placeholder="Buscar descripción…" autocomplete="off">
+                        <button class="busqueda-clear d-none" id="btnLimpiarMovTarj" onclick="limpiarBusquedaMovTarj()" title="Limpiar">
+                            <i class="bi bi-x-lg"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="modal-body p-0" id="modalMovimientosTarjetasBody">
+                    <div class="text-center py-4">
+                        <div class="spinner-border text-primary"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Modal Tarjetas -->
     <div class="modal fade" id="modalTarjetas" tabindex="-1" aria-labelledby="modalTarjetasLabel" aria-hidden="true">
         <div class="modal-dialog modal-xl modal-dialog-scrollable">
@@ -439,19 +477,20 @@ $labelFiltro = $meses[(int)date('n') - 1] . ' ' . date('Y');
     <div class="modal fade" id="modalConfigurarTarjetas" tabindex="-1" aria-labelledby="modalConfigurarTarjetasLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg modal-dialog-scrollable">
             <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="modalConfigurarTarjetasLabel">
-                        <i class="bi bi-gear me-2" style="color:#6366f1"></i>
-                        Configurar tarjetas — <span id="confTarjMesAnio"></span>
-                    </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <div class="modal-header flex-column align-items-stretch gap-2 pb-2">
+                    <div class="d-flex justify-content-between align-items-center w-100">
+                        <h5 class="modal-title" id="modalConfigurarTarjetasLabel">
+                            <i class="bi bi-gear me-2" style="color:#6366f1"></i>
+                            Configurar tarjetas
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <!-- Tabs por tarjeta -->
+                    <div id="confTarjetasTabs" class="d-flex gap-2 pb-1"></div>
                 </div>
                 <div class="modal-body p-3" id="modalConfigurarTarjetasBody"></div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="button" class="btn" style="background:linear-gradient(135deg,#6366f1 0%,#10b981 100%);color:#fff;border:none" onclick="guardarConfiguraciontarjetas()">
-                        <i class="bi bi-check-lg me-1"></i>Guardar
-                    </button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
                 </div>
             </div>
         </div>

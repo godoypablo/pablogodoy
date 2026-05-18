@@ -12,9 +12,11 @@ categorias:          nombre, color(hex), icono(BS), orden, activo
 cuentas:             nombre, banco, tipo(cuenta_corriente|caja_ahorro|billetera), color(hex), saldo_actual, fecha_saldo, activo
 movimientos_cuenta:  tipo(ingreso|pago_gasto|transferencia|extraccion), cuenta_origen_id, cuenta_destino_id, importe, fecha, descripcion, registro_id?
 tarjetas:            nombre, banco, limite DECIMAL, cierre_dia TINYINT, vencimiento_dia TINYINT, color CHAR(7), activo
-resumenes_tarjeta:   tarjeta_id, mes, anio, total_consumido DECIMAL, pagado, fecha_pago, cuenta_pago_id, movimiento_id — UNIQUE(tarjeta_id,mes,anio)
+resumenes_tarjeta:   tarjeta_id, mes, anio, total_consumido DECIMAL, pagado, fecha_pago, cuenta_pago_id, movimiento_id, cierre_dia, vencimiento_dia — UNIQUE(tarjeta_id,mes,anio)
 consumos_tarjeta:    tarjeta_id, resumen_id, descripcion, importe, fecha, mes, anio, categoria_id, cuotas_total?, cuota_numero?, consumo_padre_id?
 ```
+
+**Cambio may-2026:** `limite` movido a tabla `tarjetas` (genérico para todos los períodos). `cierre_dia` y `vencimiento_dia` en `resumenes_tarjeta` (por período, pueden variar mes a mes).
 
 ## Cuentas del usuario
 1=Entre Ríos (cuenta_corriente) | 2=Santander (caja_ahorro) | 3=Personal Pay (billetera) | 4=Efectivo (billetera, #22c55e)
@@ -26,7 +28,7 @@ conceptos_api.php   GET | POST | PUT {cuenta_id_default} | DELETE
 categorias_api.php  GET | POST | PUT | DELETE
 cuentas_api.php     GET ?mes&anio → cuentas+total_pagado_mes | POST | PUT {id,saldo_actual}
 movimientos_api.php GET ?mes&anio&limit | POST transferencia | POST extraccion
-tarjetas_api.php    GET ?action=lista&mes&anio | GET ?action=resumenes&tarjeta_id | GET ?action=consumos&tarjeta_id&mes&anio | POST action=consumo | POST action=pago | POST action=nueva_tarjeta | PUT {id,...} | DELETE {consumo_id, eliminar_todas?}
+tarjetas_api.php    GET ?action=lista&mes&anio | GET ?action=todos_periodos | GET ?action=periodos_activos | GET ?action=consumos_periodos&tarjeta_id | GET ?action=consumos_por_tarjeta&mes&anio | GET ?action=resumenes&tarjeta_id | GET ?action=consumos&tarjeta_id&mes&anio | POST action=consumo | POST action=pago | POST action=nueva_tarjeta | POST action=configurar_mes | PUT {id,...} | PATCH {consumo_id, fecha?, cuota_numero?} | DELETE {consumo_id, eliminar_todas?} | DELETE {action:periodo, resumen_id}
 ```
 
 ## Circuito saldo (gastos_api.php) — COMPLETO Y VERIFICADO

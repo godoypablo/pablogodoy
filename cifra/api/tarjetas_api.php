@@ -5,7 +5,7 @@
 
 header('Content-Type: application/json; charset=utf-8');
 header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE');
+header('Access-Control-Allow-Methods: GET, POST, PUT, PATCH, DELETE');
 header('Access-Control-Allow-Headers: Content-Type');
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') { http_response_code(200); exit; }
@@ -22,6 +22,65 @@ function sendResponse($success, $data = null, $message = '', $code = 200) {
 
 $method = $_SERVER['REQUEST_METHOD'];
 
+function _calcularPeriodos($cierre_dia, $vencimiento_dia) {
+    $hoy = new DateTime('now');
+    $dia_hoy = (int)$hoy->format('j');
+
+    if ($dia_hoy > $cierre_dia) {
+        $cerrado_mes = (int)$hoy->format('n');
+        $cerrado_anio = (int)$hoy->format('Y');
+        $acumulando_mes = $cerrado_mes + 1;
+        $acumulando_anio = $cerrado_anio;
+        if ($acumulando_mes > 12) {
+            $acumulando_mes = 1;
+            $acumulando_anio++;
+        }
+    } else {
+        $acumulando_mes = (int)$hoy->format('n');
+        $acumulando_anio = (int)$hoy->format('Y');
+        $cerrado_mes = $acumulando_mes - 1;
+        $cerrado_anio = $acumulando_anio;
+        if ($cerrado_mes < 1) {
+            $cerrado_mes = 12;
+            $cerrado_anio--;
+        }
+    }
+
+    if ($vencimiento_dia > $cierre_dia) {
+        $fecha_vencimiento = new DateTime("$cerrado_anio-" . str_pad($cerrado_mes, 2, '0', STR_PAD_LEFT) . '-' . str_pad($vencimiento_dia, 2, '0', STR_PAD_LEFT));
+    } else {
+        $fecha_vence_mes = $cerrado_mes + 1;
+        $fecha_vence_anio = $cerrado_anio;
+        if ($fecha_vence_mes > 12) {
+            $fecha_vence_mes = 1;
+            $fecha_vence_anio++;
+        }
+        $fecha_vencimiento = new DateTime("$fecha_vence_anio-" . str_pad($fecha_vence_mes, 2, '0', STR_PAD_LEFT) . '-' . str_pad($vencimiento_dia, 2, '0', STR_PAD_LEFT));
+    }
+
+    $fecha_fin_cerrado = new DateTime("$cerrado_anio-" . str_pad($cerrado_mes, 2, '0', STR_PAD_LEFT) . '-' . str_pad($cierre_dia, 2, '0', STR_PAD_LEFT));
+    $fecha_inicio_cerrado = (clone $fecha_fin_cerrado)->modify('-1 month')->modify('+1 day');
+
+    $fecha_fin_acumulando = new DateTime("$acumulando_anio-" . str_pad($acumulando_mes, 2, '0', STR_PAD_LEFT) . '-' . str_pad($cierre_dia, 2, '0', STR_PAD_LEFT));
+    $fecha_inicio_acumulando = (clone $fecha_fin_acumulando)->modify('-1 month')->modify('+1 day');
+
+    return [
+        'cerrado' => [
+            'mes' => $cerrado_mes,
+            'anio' => $cerrado_anio,
+            'fecha_inicio' => $fecha_inicio_cerrado->format('Y-m-d'),
+            'fecha_fin' => $fecha_fin_cerrado->format('Y-m-d')
+        ],
+        'acumulando' => [
+            'mes' => $acumulando_mes,
+            'anio' => $acumulando_anio,
+            'fecha_inicio' => $fecha_inicio_acumulando->format('Y-m-d'),
+            'fecha_fin' => $fecha_fin_acumulando->format('Y-m-d')
+        ],
+        'fecha_vencimiento' => $fecha_vencimiento->format('Y-m-d')
+    ];
+}
+
 try {
     $db = Database::getInstance()->getConnection();
 
@@ -36,8 +95,9 @@ try {
                 $anio = isset($_GET['anio']) ? (int)$_GET['anio'] : date('Y');
 
                 $sql = "SELECT
-                            t.id, t.nombre, t.banco, t.limite, t.cierre_dia,
-                            t.vencimiento_dia, t.color, t.activo,
+                            t.id, t.nombre, t.banco, t.limite, t.color, t.activo,
+                            COALESCE(r.cierre_dia, t.cierre_dia) AS cierre_dia,
+                            COALESCE(r.vencimiento_dia, t.vencimiento_dia) AS vencimiento_dia,
                             COALESCE(r.total_consumido, 0) AS total_consumido,
                             COALESCE(r.pagado, 0) AS pagado,
                             r.id AS resumen_id,
@@ -57,6 +117,212 @@ try {
                     $t['disponible'] = (float)$t['disponible'];
                     $t['limite'] = (float)$t['limite'];
                     $t['pagado'] = (int)$t['pagado'];
+                }
+                unset($t);
+
+                sendResponse(true, $tarjetas);
+            }
+            elseif ($action === 'todos_periodos') {
+                $sql = "SELECT t.id, t.nombre, t.limite, t.color,
+                               t.cierre_dia AS cierre_dia_def, t.vencimiento_dia AS vencimiento_dia_def
+                        FROM tarjetas t WHERE t.activo = 1 ORDER BY t.id ASC";
+                $stmt = $db->prepare($sql);
+                $stmt->execute();
+                $tarjetas = $stmt->fetchAll();
+
+                foreach ($tarjetas as &$t) {
+                    $t['limite'] = (float)$t['limite'];
+                    $cdia_def = (int)$t['cierre_dia_def'];
+                    $vdia_def = (int)$t['vencimiento_dia_def'];
+
+                    $sqlP = "SELECT r.id, r.mes, r.anio,
+                                    COALESCE(r.cierre_dia, :cdia) AS cierre_dia,
+                                    COALESCE(r.vencimiento_dia, :vdia) AS vencimiento_dia,
+                                    COALESCE(r.total_consumido, 0) AS total_consumido,
+                                    COALESCE(r.pagado, 0) AS pagado,
+                                    (SELECT COUNT(*) FROM consumos_tarjeta WHERE resumen_id = r.id) AS total_items
+                             FROM resumenes_tarjeta r
+                             WHERE r.tarjeta_id = :tid
+                             ORDER BY r.anio DESC, r.mes DESC";
+                    $stmtP = $db->prepare($sqlP);
+                    $stmtP->execute(['tid' => (int)$t['id'], 'cdia' => $cdia_def, 'vdia' => $vdia_def]);
+                    $periodos = $stmtP->fetchAll();
+
+                    foreach ($periodos as &$p) {
+                        $p['total_consumido'] = (float)$p['total_consumido'];
+                        $p['pagado']          = (int)$p['pagado'];
+                        $p['tiene_consumos']  = (int)$p['total_items'] > 0;
+                        $cdia = (int)$p['cierre_dia'];
+                        $vdia = (int)$p['vencimiento_dia'];
+                        $mes  = (int)$p['mes'];
+                        $anio = (int)$p['anio'];
+                        $p['fecha_cierre'] = sprintf('%04d-%02d-%02d', $anio, $mes, $cdia);
+                        if ($vdia > $cdia) {
+                            $p['fecha_vencimiento'] = sprintf('%04d-%02d-%02d', $anio, $mes, $vdia);
+                        } else {
+                            $vm = $mes + 1; $va = $anio;
+                            if ($vm > 12) { $vm = 1; $va++; }
+                            $p['fecha_vencimiento'] = sprintf('%04d-%02d-%02d', $va, $vm, $vdia);
+                        }
+                        unset($p['total_items']);
+                    }
+                    unset($p);
+                    $t['periodos'] = $periodos;
+                    unset($t['cierre_dia_def'], $t['vencimiento_dia_def']);
+                }
+                unset($t);
+
+                sendResponse(true, $tarjetas);
+            }
+            elseif ($action === 'periodos_activos') {
+                $sql = "SELECT t.id, t.nombre, t.banco, t.limite, t.cierre_dia, t.vencimiento_dia, t.color
+                        FROM tarjetas t
+                        WHERE t.activo = 1
+                        ORDER BY t.id ASC";
+
+                $stmt = $db->prepare($sql);
+                $stmt->execute();
+                $tarjetas = $stmt->fetchAll();
+
+                foreach ($tarjetas as &$t) {
+                    $t['limite'] = (float)$t['limite'];
+                    $cierre_dia = (int)$t['cierre_dia'];
+                    $vencimiento_dia = (int)$t['vencimiento_dia'];
+
+                    $periodos = _calcularPeriodos($cierre_dia, $vencimiento_dia);
+                    $mes_cerrado = $periodos['cerrado']['mes'];
+                    $anio_cerrado = $periodos['cerrado']['anio'];
+                    $mes_acum = $periodos['acumulando']['mes'];
+                    $anio_acum = $periodos['acumulando']['anio'];
+                    $fecha_vencimiento = $periodos['fecha_vencimiento'];
+
+                    $sqlCerrado = "SELECT COALESCE(total_consumido, 0) AS total, COALESCE(pagado, 0) AS pagado, id AS resumen_id
+                                   FROM resumenes_tarjeta
+                                   WHERE tarjeta_id = :tid AND mes = :mes AND anio = :anio";
+                    $stmtCerrado = $db->prepare($sqlCerrado);
+                    $stmtCerrado->execute(['tid' => (int)$t['id'], 'mes' => $mes_cerrado, 'anio' => $anio_cerrado]);
+                    $cerrado = $stmtCerrado->fetch();
+
+                    $sqlAcum = "SELECT COALESCE(total_consumido, 0) AS total, id AS resumen_id
+                                FROM resumenes_tarjeta
+                                WHERE tarjeta_id = :tid AND mes = :mes AND anio = :anio";
+                    $stmtAcum = $db->prepare($sqlAcum);
+                    $stmtAcum->execute(['tid' => (int)$t['id'], 'mes' => $mes_acum, 'anio' => $anio_acum]);
+                    $acum = $stmtAcum->fetch();
+
+                    $t['periodo_cerrado'] = [
+                        'mes' => $mes_cerrado,
+                        'anio' => $anio_cerrado,
+                        'total' => (float)($cerrado ? $cerrado['total'] : 0),
+                        'pagado' => (int)($cerrado ? $cerrado['pagado'] : 0),
+                        'resumen_id' => $cerrado ? (int)$cerrado['resumen_id'] : null,
+                        'fecha_vencimiento' => $fecha_vencimiento
+                    ];
+
+                    $t['periodo_acumulando'] = [
+                        'mes' => $mes_acum,
+                        'anio' => $anio_acum,
+                        'total' => (float)($acum ? $acum['total'] : 0),
+                        'resumen_id' => $acum ? (int)$acum['resumen_id'] : null
+                    ];
+                }
+                unset($t);
+
+                sendResponse(true, $tarjetas);
+            }
+            elseif ($action === 'consumos_periodos') {
+                $tarjeta_id = isset($_GET['tarjeta_id']) ? (int)$_GET['tarjeta_id'] : 0;
+                if (!$tarjeta_id) sendResponse(false, null, 'tarjeta_id es requerido', 400);
+
+                $sqlTarj = "SELECT cierre_dia, vencimiento_dia FROM tarjetas WHERE id = :tid";
+                $stmtTarj = $db->prepare($sqlTarj);
+                $stmtTarj->execute(['tid' => $tarjeta_id]);
+                $tarjeta = $stmtTarj->fetch();
+
+                if (!$tarjeta) sendResponse(false, null, 'Tarjeta no encontrada', 404);
+
+                $cierre_dia = (int)$tarjeta['cierre_dia'];
+                $vencimiento_dia = (int)$tarjeta['vencimiento_dia'];
+                $periodos = _calcularPeriodos($cierre_dia, $vencimiento_dia);
+
+                $mes_cerrado = $periodos['cerrado']['mes'];
+                $anio_cerrado = $periodos['cerrado']['anio'];
+                $mes_acum = $periodos['acumulando']['mes'];
+                $anio_acum = $periodos['acumulando']['anio'];
+                $fecha_vencimiento = $periodos['fecha_vencimiento'];
+
+                $sqlConsumosCerrado = "SELECT ct.*, cat.nombre AS categoria_nombre, cat.color AS categoria_color
+                                       FROM consumos_tarjeta ct
+                                       LEFT JOIN categorias cat ON cat.id = ct.categoria_id
+                                       WHERE ct.tarjeta_id = :tid AND ct.mes = :mes AND ct.anio = :anio
+                                       ORDER BY ct.fecha DESC, ct.id DESC";
+                $stmtCerrado = $db->prepare($sqlConsumosCerrado);
+                $stmtCerrado->execute(['tid' => $tarjeta_id, 'mes' => $mes_cerrado, 'anio' => $anio_cerrado]);
+                $consumosCerrado = $stmtCerrado->fetchAll();
+
+                $sqlConsumosAcum = "SELECT ct.*, cat.nombre AS categoria_nombre, cat.color AS categoria_color
+                                    FROM consumos_tarjeta ct
+                                    LEFT JOIN categorias cat ON cat.id = ct.categoria_id
+                                    WHERE ct.tarjeta_id = :tid AND ct.mes = :mes AND ct.anio = :anio
+                                    ORDER BY ct.fecha DESC, ct.id DESC";
+                $stmtAcum = $db->prepare($sqlConsumosAcum);
+                $stmtAcum->execute(['tid' => $tarjeta_id, 'mes' => $mes_acum, 'anio' => $anio_acum]);
+                $consumosAcum = $stmtAcum->fetchAll();
+
+                $sqlResumenCerrado = "SELECT total_consumido, pagado FROM resumenes_tarjeta
+                                      WHERE tarjeta_id = :tid AND mes = :mes AND anio = :anio";
+                $stmtResumenCerrado = $db->prepare($sqlResumenCerrado);
+                $stmtResumenCerrado->execute(['tid' => $tarjeta_id, 'mes' => $mes_cerrado, 'anio' => $anio_cerrado]);
+                $resumenCerrado = $stmtResumenCerrado->fetch();
+
+                foreach ($consumosCerrado as &$c) $c['importe'] = (float)$c['importe'];
+                foreach ($consumosAcum as &$c) $c['importe'] = (float)$c['importe'];
+                unset($c);
+
+                sendResponse(true, [
+                    'periodo_cerrado' => [
+                        'mes' => $mes_cerrado,
+                        'anio' => $anio_cerrado,
+                        'total' => (float)($resumenCerrado ? $resumenCerrado['total_consumido'] : 0),
+                        'pagado' => (int)($resumenCerrado ? $resumenCerrado['pagado'] : 0),
+                        'fecha_vencimiento' => $fecha_vencimiento,
+                        'consumos' => $consumosCerrado
+                    ],
+                    'periodo_acumulando' => [
+                        'mes' => $mes_acum,
+                        'anio' => $anio_acum,
+                        'total' => array_sum(array_column($consumosAcum, 'importe')),
+                        'consumos' => $consumosAcum
+                    ]
+                ]);
+            }
+            elseif ($action === 'consumos_por_tarjeta') {
+                // GET ?action=consumos_por_tarjeta&mes=X&anio=Y → consumos de todas las tarjetas del mes
+                $mes  = isset($_GET['mes'])  ? (int)$_GET['mes']  : date('n');
+                $anio = isset($_GET['anio']) ? (int)$_GET['anio'] : date('Y');
+
+                $sql = "SELECT t.id, t.nombre, t.color FROM tarjetas t WHERE t.activo = 1 ORDER BY t.id ASC";
+                $stmt = $db->prepare($sql);
+                $stmt->execute();
+                $tarjetas = $stmt->fetchAll();
+
+                foreach ($tarjetas as &$t) {
+                    $sqlCons = "SELECT ct.id, ct.fecha, ct.descripcion, ct.importe, ct.categoria_id, ct.cuotas_total, ct.cuota_numero,
+                                       cat.nombre AS categoria_nombre, cat.color AS categoria_color
+                                FROM consumos_tarjeta ct
+                                LEFT JOIN categorias cat ON cat.id = ct.categoria_id
+                                WHERE ct.tarjeta_id = :tid AND ct.mes = :mes AND ct.anio = :anio
+                                ORDER BY ct.fecha DESC, ct.id DESC";
+                    $stmtCons = $db->prepare($sqlCons);
+                    $stmtCons->execute(['tid' => (int)$t['id'], 'mes' => $mes, 'anio' => $anio]);
+                    $consumos = $stmtCons->fetchAll();
+
+                    foreach ($consumos as &$c) {
+                        $c['importe'] = (float)$c['importe'];
+                    }
+                    unset($c);
+
+                    $t['consumos'] = $consumos;
                 }
                 unset($t);
 
@@ -395,7 +661,14 @@ try {
                         if ($cierre_dia < 1 || $cierre_dia > 31) $cierre_dia = 1;
                         if ($vencimiento_dia < 1 || $vencimiento_dia > 31) $vencimiento_dia = 10;
 
-                        // INSERT or UPDATE resumen (si no existe, crear vacío; si existe, actualizar)
+                        // Guardar límite en tabla tarjetas (genérico)
+                        if ($limite > 0) {
+                            $sqlLimite = "UPDATE tarjetas SET limite = :lim WHERE id = :tid";
+                            $stmtLimite = $db->prepare($sqlLimite);
+                            $stmtLimite->execute(['lim' => $limite, 'tid' => $tid]);
+                        }
+
+                        // INSERT or UPDATE resumen (cierre_dia y vencimiento_dia por período)
                         $sqlUpsert = "INSERT INTO resumenes_tarjeta (tarjeta_id, mes, anio, cierre_dia, vencimiento_dia, total_consumido)
                                       VALUES (:tid, :mes, :anio, :cdia, :vdia, 0)
                                       ON DUPLICATE KEY UPDATE
@@ -479,10 +752,162 @@ try {
             sendResponse(true, null, 'Tarjeta actualizada');
             break;
 
-        case 'DELETE':
-            // Eliminar consumo (y opcionalmente todas sus cuotas relacionadas)
+        case 'PATCH':
             $input = json_decode(file_get_contents('php://input'), true);
 
+            if (empty($input['consumo_id'])) {
+                sendResponse(false, null, 'consumo_id es requerido', 400);
+            }
+
+            $consumo_id = (int)$input['consumo_id'];
+            $nueva_fecha = isset($input['fecha']) && $input['fecha'] ? trim($input['fecha']) : null;
+            $nueva_cuota = isset($input['cuota_numero']) ? (int)$input['cuota_numero'] : null;
+
+            if (!$nueva_fecha && $nueva_cuota === null) {
+                sendResponse(false, null, 'Debe especificar fecha y/o cuota_numero', 400);
+            }
+
+            $db->beginTransaction();
+            try {
+                $sqlCons = "SELECT id, tarjeta_id, resumen_id, importe, mes, anio, cuotas_total, cuota_numero FROM consumos_tarjeta WHERE id = :cid";
+                $stmtCons = $db->prepare($sqlCons);
+                $stmtCons->execute(['cid' => $consumo_id]);
+                $consumo = $stmtCons->fetch();
+
+                if (!$consumo) {
+                    $db->rollBack();
+                    sendResponse(false, null, 'Consumo no encontrado', 404);
+                }
+
+                $resumen_id_viejo = (int)$consumo['resumen_id'];
+                $sqlVerif = "SELECT pagado FROM resumenes_tarjeta WHERE id = :rid";
+                $stmtVerif = $db->prepare($sqlVerif);
+                $stmtVerif->execute(['rid' => $resumen_id_viejo]);
+                $resumen = $stmtVerif->fetch();
+
+                if ($resumen && $resumen['pagado']) {
+                    $db->rollBack();
+                    sendResponse(false, null, 'No se puede editar un consumo de un resumen pagado', 422);
+                }
+
+                $tarjeta_id = (int)$consumo['tarjeta_id'];
+                $importe = (float)$consumo['importe'];
+                $mes_nuevo = (int)$consumo['mes'];
+                $anio_nuevo = (int)$consumo['anio'];
+                $resumen_id_nuevo = $resumen_id_viejo;
+
+                if ($nueva_fecha) {
+                    $fechaObj = DateTime::createFromFormat('Y-m-d', $nueva_fecha);
+                    if (!$fechaObj || $fechaObj->format('Y-m-d') !== $nueva_fecha) {
+                        $db->rollBack();
+                        sendResponse(false, null, 'Fecha inválida (formato Y-m-d)', 400);
+                    }
+
+                    $dia = (int)$fechaObj->format('j');
+                    $mes_fecha = (int)$fechaObj->format('n');
+                    $anio_fecha = (int)$fechaObj->format('Y');
+
+                    $sqlCierre = "SELECT cierre_dia FROM resumenes_tarjeta WHERE tarjeta_id = :tid AND mes = :mes AND anio = :anio";
+                    $stmtCierre = $db->prepare($sqlCierre);
+                    $stmtCierre->execute(['tid' => $tarjeta_id, 'mes' => $mes_fecha, 'anio' => $anio_fecha]);
+                    $resumenCierre = $stmtCierre->fetch();
+
+                    $cierre_dia = $resumenCierre ? (int)$resumenCierre['cierre_dia'] : null;
+                    if (!$cierre_dia) {
+                        $stmtTarj = $db->prepare("SELECT cierre_dia FROM tarjetas WHERE id = :id");
+                        $stmtTarj->execute(['id' => $tarjeta_id]);
+                        $tarjeta = $stmtTarj->fetch();
+                        if (!$tarjeta) {
+                            $db->rollBack();
+                            sendResponse(false, null, 'Tarjeta no encontrada', 404);
+                        }
+                        $cierre_dia = (int)$tarjeta['cierre_dia'];
+                    }
+
+                    if ($dia > $cierre_dia) {
+                        $fechaObj->modify('+1 month');
+                        $mes_fecha = (int)$fechaObj->format('n');
+                        $anio_fecha = (int)$fechaObj->format('Y');
+                    }
+
+                    $mes_nuevo = $mes_fecha;
+                    $anio_nuevo = $anio_fecha;
+
+                    if ($mes_nuevo !== (int)$consumo['mes'] || $anio_nuevo !== (int)$consumo['anio']) {
+                        $sqlResumenNuevo = "INSERT INTO resumenes_tarjeta (tarjeta_id, mes, anio, total_consumido)
+                                           VALUES (:tid, :mes, :anio, 0)
+                                           ON DUPLICATE KEY UPDATE id=LAST_INSERT_ID(id)";
+                        $stmtResNuevo = $db->prepare($sqlResumenNuevo);
+                        $stmtResNuevo->execute(['tid' => $tarjeta_id, 'mes' => $mes_nuevo, 'anio' => $anio_nuevo]);
+                        $resumen_id_nuevo = $db->lastInsertId();
+
+                        $sqlDescontar = "UPDATE resumenes_tarjeta SET total_consumido = total_consumido - :imp WHERE id = :rid";
+                        $stmtDesc = $db->prepare($sqlDescontar);
+                        $stmtDesc->execute(['imp' => $importe, 'rid' => $resumen_id_viejo]);
+
+                        $sqlSumar = "UPDATE resumenes_tarjeta SET total_consumido = total_consumido + :imp WHERE id = :rid";
+                        $stmtSum = $db->prepare($sqlSumar);
+                        $stmtSum->execute(['imp' => $importe, 'rid' => $resumen_id_nuevo]);
+                    }
+                }
+
+                $fields = [];
+                $params = ['cid' => $consumo_id];
+
+                if ($nueva_fecha) {
+                    $fields[] = 'fecha = :fecha';
+                    $params['fecha'] = $nueva_fecha;
+                    $fields[] = 'mes = :mes';
+                    $params['mes'] = $mes_nuevo;
+                    $fields[] = 'anio = :anio';
+                    $params['anio'] = $anio_nuevo;
+                    $fields[] = 'resumen_id = :resumen_id';
+                    $params['resumen_id'] = $resumen_id_nuevo;
+                }
+
+                if ($nueva_cuota !== null) {
+                    $cuotas_total = (int)$consumo['cuotas_total'];
+                    if ($cuotas_total > 1) {
+                        $nueva_cuota = max(1, min($nueva_cuota, $cuotas_total));
+                        $fields[] = 'cuota_numero = :cuota_numero';
+                        $params['cuota_numero'] = $nueva_cuota;
+                    }
+                }
+
+                if (!empty($fields)) {
+                    $db->prepare(
+                        "UPDATE consumos_tarjeta SET " . implode(', ', $fields) . " WHERE id = :cid"
+                    )->execute($params);
+                }
+
+                $db->commit();
+                sendResponse(true, null, 'Consumo actualizado');
+
+            } catch (Exception $e) {
+                $db->rollBack();
+                throw $e;
+            }
+            break;
+
+        case 'DELETE':
+            $input = json_decode(file_get_contents('php://input'), true);
+
+            // Eliminar período (resumen sin consumos)
+            if (!empty($input['action']) && $input['action'] === 'periodo') {
+                $resumen_id = (int)($input['resumen_id'] ?? 0);
+                if (!$resumen_id) sendResponse(false, null, 'resumen_id es requerido', 400);
+
+                $stmtCheck = $db->prepare("SELECT COUNT(*) AS cnt FROM consumos_tarjeta WHERE resumen_id = :rid");
+                $stmtCheck->execute(['rid' => $resumen_id]);
+                if ((int)$stmtCheck->fetch()['cnt'] > 0) {
+                    sendResponse(false, null, 'No se puede eliminar un período con consumos', 422);
+                }
+
+                $db->prepare("DELETE FROM resumenes_tarjeta WHERE id = :rid")->execute(['rid' => $resumen_id]);
+                sendResponse(true, null, 'Período eliminado');
+            }
+
+            // Eliminar consumo (y opcionalmente todas sus cuotas relacionadas)
             if (empty($input['consumo_id'])) {
                 sendResponse(false, null, 'consumo_id es requerido', 400);
             }

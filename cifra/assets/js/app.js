@@ -803,7 +803,15 @@ function renderizarCatNav() {
                 </button>`;
     }).join('');
 
-    el.innerHTML = `<div class="cat-nav-scroll">${chips}</div>`;
+    const totalAcumulando = (_tarjData || []).reduce((s, t) => s + (t.periodo_acumulando?.total || 0), 0);
+    const totalTarjetasHtml = totalAcumulando > 0 ? formatearMoneda(totalAcumulando) : '—';
+    const chipTarjetas = `<button class="cat-chip" style="--chip-color:#10b981" onclick="abrirModalTarjetas()">
+        <i class="bi bi-credit-card-2-front cat-chip-icon"></i>
+        <span class="cat-chip-nombre">Tarjetas</span>
+        <span class="cat-chip-total">${totalTarjetasHtml}</span>
+    </button>`;
+
+    el.innerHTML = `<div class="cat-nav-scroll">${chips}${chipTarjetas}</div>`;
 }
 
 // Filtro por chip: seleccionar → mostrar solo esa categoría (sin deseleccionar)
@@ -3758,6 +3766,19 @@ async function guardarGastoRapido() {
     }
 }
 
+const _CAT_ICONO = {
+    'Alimentación': 'bi-bag-fill',
+    'Transporte': 'bi-car-front-fill',
+    'Vivienda': 'bi-house-fill',
+    'Entretenimiento': 'bi-film',
+    'Educación': 'bi-book-fill',
+    'Salud': 'bi-heart-pulse-fill',
+    'Servicios': 'bi-wrench-adjustable-circle-fill',
+    'Compras': 'bi-bag-check-fill',
+    'Viajes': 'bi-airplane-fill',
+    'Otros': 'bi-tag-fill'
+};
+
 const _MOV_TIPO = {
     ingreso:       { label: 'Cobro',         icon: 'bi-arrow-down-circle', cls: 'mov-cobro'         },
     pago_gasto:    { label: 'Pago',          icon: 'bi-arrow-up-circle',   cls: 'mov-pago'          },
@@ -3871,6 +3892,149 @@ function limpiarBusquedaMov() {
     const input = document.getElementById('inputBusquedaMov');
     if (input) { input.value = ''; }
     _renderizarMovimientos('');
+}
+
+let _movTarjData = [];
+let _movTarjActiva = null;
+
+async function abrirModalMovimientosTarjetas() {
+    document.getElementById('movTarjMesAnio').textContent =
+        `${MESES_NOMBRES[app.mesActual - 1]} ${app.anioActual}`;
+    new bootstrap.Modal(document.getElementById('modalMovimientosTarjetas')).show();
+    await _cargarMovimientosTarjetas();
+}
+
+async function _cargarMovimientosTarjetas() {
+    const body = document.getElementById('modalMovimientosTarjetasBody');
+    body.innerHTML = '<div class="text-center py-4"><div class="spinner-border text-primary"></div></div>';
+
+    try {
+        const resp = await fetch(`${TARJETAS_API_URL}?action=consumos_por_tarjeta&mes=${app.mesActual}&anio=${app.anioActual}`);
+        const result = await resp.json();
+        if (!result.success) throw new Error(result.message);
+
+        _movTarjData = result.data;
+        if (_movTarjData.length > 0) {
+            _movTarjActiva = _movTarjData[0].id;
+        }
+        _renderizarTabsMovTarj();
+        _renderizarMovimientosTarj('');
+    } catch (error) {
+        body.innerHTML = `<div class="alert alert-danger m-3">Error: ${error.message}</div>`;
+    }
+}
+
+function _renderizarTabsMovTarj() {
+    const tabsContainer = document.getElementById('movTarjTabs');
+    const tabs = _movTarjData.map(t => {
+        const activo = _movTarjActiva === t.id ? 'active' : '';
+        return `
+            <button class="btn btn-sm btn-outline-secondary py-1 px-2 ${activo}"
+                    style="white-space:nowrap"
+                    onclick="_cambiarTarjetaMov(${t.id})">
+                <span class="dot-sm" style="background:${t.color}"></span> ${t.nombre}
+            </button>`;
+    }).join('');
+
+    tabsContainer.innerHTML = tabs;
+}
+
+function _cambiarTarjetaMov(tarjeta_id) {
+    _movTarjActiva = tarjeta_id;
+    _renderizarTabsMovTarj();
+    _renderizarMovimientosTarj('');
+}
+
+function _renderizarMovimientosTarj(q) {
+    q = _normalizar(q);
+    const body = document.getElementById('modalMovimientosTarjetasBody');
+    const btnClear = document.getElementById('btnLimpiarMovTarj');
+    if (btnClear) btnClear.classList.toggle('d-none', !q);
+
+    const tarjeta = (_movTarjData || []).find(t => t.id === _movTarjActiva);
+    if (!tarjeta) {
+        body.innerHTML = '<p class="text-center text-muted py-4">Sin consumos</p>';
+        return;
+    }
+
+    let consumos = tarjeta.consumos || [];
+    if (q) {
+        consumos = consumos.filter(c => _normalizar(c.descripcion).includes(q));
+    }
+
+    if (!consumos.length) {
+        body.innerHTML = '<p class="text-center text-muted py-4">Sin consumos que coincidan</p>';
+        return;
+    }
+
+    // Agrupar por fecha
+    const porFecha = {};
+    consumos.forEach(c => {
+        if (!porFecha[c.fecha]) porFecha[c.fecha] = [];
+        porFecha[c.fecha].push(c);
+    });
+
+    // Calcular total
+    const total = consumos.reduce((sum, c) => sum + parseFloat(c.importe), 0);
+
+    // Resumen superior
+    const resumen = `
+        <div style="background:#f8f9fa;padding:1rem;margin:-1rem -1rem 1rem -1rem;border-bottom:1px solid #dee2e6">
+            <div style="font-size:0.85rem;color:#666">Total consumido</div>
+            <div style="font-size:1.5rem;font-weight:bold;color:#333">${formatearMoneda(total)}</div>
+            <div style="font-size:0.75rem;color:#999;margin-top:0.25rem">${consumos.length} consumo${consumos.length !== 1 ? 's' : ''}</div>
+        </div>`;
+
+    // Agrupar por fecha y renderizar
+    const html = Object.entries(porFecha)
+        .sort((a, b) => new Date(b[0]) - new Date(a[0]))
+        .map(([fecha, movs]) => {
+            const [y, m, d] = fecha.split('-');
+            const diasSemana = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+            const diaSem = diasSemana[new Date(fecha + 'T12:00:00').getDay()] || '';
+            const fechaLabel = `${diaSem} ${parseInt(d)}/${parseInt(m)}/${y.slice(-2)}`;
+
+            const filas = movs.map(c => {
+                const cuota = c.cuotas_total
+                    ? `<span class="badge bg-secondary ms-1" style="font-size:0.7rem">${c.cuota_numero}/${c.cuotas_total}</span>`
+                    : '';
+                const catColor = c.categoria_color ? c.categoria_color : '#6b7280';
+                const catIcon = _CAT_ICONO[c.categoria_nombre] || 'bi-tag';
+                return `
+                    <div style="padding:0.75rem;border-bottom:1px solid #f3f4f6;display:flex;gap:0.75rem;align-items:flex-start">
+                        <div style="background:${catColor}20;border-radius:50%;width:2.5rem;height:2.5rem;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                            <i class="bi ${catIcon}" style="color:${catColor};font-size:1.1rem"></i>
+                        </div>
+                        <div style="flex:1;min-width:0">
+                            <div style="display:flex;justify-content:space-between;align-items:baseline;gap:1rem;margin-bottom:0.25rem">
+                                <div style="font-weight:500;word-break:break-word">${c.descripcion}</div>
+                                <div style="font-weight:600;color:${catColor};white-space:nowrap">${formatearMoneda(c.importe)}</div>
+                            </div>
+                            <div style="display:flex;justify-content:space-between;gap:1rem;font-size:0.8rem;color:#666">
+                                <div>${c.categoria_nombre || '—'}${cuota}</div>
+                            </div>
+                        </div>
+                    </div>`;
+            }).join('');
+
+            return `
+                <div style="margin-bottom:1rem">
+                    <div style="padding:0.5rem 0.75rem;background:#f3f4f6;font-size:0.8rem;font-weight:600;color:#666;border-radius:0.25rem">
+                        ${fechaLabel}
+                    </div>
+                    <div style="background:#fff;border-radius:0.375rem;overflow:hidden;border:1px solid #e5e7eb">
+                        ${filas}
+                    </div>
+                </div>`;
+        }).join('');
+
+    body.innerHTML = resumen + html;
+}
+
+function limpiarBusquedaMovTarj() {
+    const input = document.getElementById('inputBusquedaMovTarj');
+    if (input) { input.value = ''; }
+    _renderizarMovimientosTarj('');
 }
 
 async function actualizarSaldoCuenta(cuentaId) {
@@ -4034,13 +4198,22 @@ function _renderizarTablaAnual(data) {
 
 const TARJETAS_API_URL = 'api/tarjetas_api.php';
 const MESES_NOMBRES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+
+function _labelPeriodo(fecha_inicio, fecha_fin) {
+    if (!fecha_inicio || !fecha_fin) return '—';
+    const [ay, am, ad] = fecha_inicio.split('-');
+    const [by, bm, bd] = fecha_fin.split('-');
+    const mismoAnio = ay === by;
+    return `${parseInt(ad)}/${parseInt(am)}${!mismoAnio ? '/' + ay : ''} – ${parseInt(bd)}/${parseInt(bm)}${!mismoAnio ? '/' + by : ''}`;
+}
+
 let _tarjData     = [];
 let _tarjIdActiva = null;
 let _tarjConsumos = [];
+let _confTarjData = [];
+let _confTarjActiva = null;
 
 function abrirConfigurartarjetas() {
-    document.getElementById('confTarjMesAnio').textContent =
-        `${MESES_NOMBRES[app.mesActual - 1]} ${app.anioActual}`;
     new bootstrap.Modal(document.getElementById('modalConfigurarTarjetas')).show();
     _cargarConfiguracion();
 }
@@ -4050,64 +4223,235 @@ async function _cargarConfiguracion() {
     body.innerHTML = '<div class="text-center py-5"><span class="spinner-border spinner-border-sm"></span></div>';
 
     try {
-        const resp = await fetch(`${TARJETAS_API_URL}?action=lista&mes=${app.mesActual}&anio=${app.anioActual}`);
+        const resp = await fetch(`${TARJETAS_API_URL}?action=todos_periodos`);
         const result = await resp.json();
         if (!result.success) throw new Error(result.message);
 
-        _tarjData = result.data;
+        _confTarjData = result.data;
+        if (_confTarjData.length > 0 && !_confTarjActiva) {
+            _confTarjActiva = _confTarjData[0].id;
+        }
+        _renderizarTabsConfiguracion();
         _renderizarConfiguracion();
     } catch (error) {
         body.innerHTML = `<div class="alert alert-danger m-3">Error: ${error.message}</div>`;
     }
 }
 
+function _renderizarTabsConfiguracion() {
+    const tabsContainer = document.getElementById('confTarjetasTabs');
+    if (!tabsContainer) return;
+
+    const tabs = _confTarjData.map(t => {
+        const activo = _confTarjActiva === t.id ? 'active' : '';
+        return `
+            <button class="btn btn-sm btn-outline-secondary py-1 px-2 ${activo}"
+                    style="white-space:nowrap"
+                    onclick="_cambiarTarjetaConf(${t.id})">
+                <span class="dot-sm" style="background:${t.color}"></span>
+                ${t.nombre} <span class="text-muted">(${formatearMoneda(t.limite)})</span>
+            </button>`;
+    }).join('');
+
+    tabsContainer.innerHTML = tabs;
+}
+
+function _cambiarTarjetaConf(tarjeta_id) {
+    _confTarjActiva = String(tarjeta_id);
+    _renderizarTabsConfiguracion();
+    _renderizarConfiguracion();
+}
+
+function _formatFechaConf(dateStr) {
+    if (!dateStr) return '—';
+    const [y, m, d] = dateStr.split('-');
+    return `${parseInt(d)}/${parseInt(m)}/${y}`;
+}
+
 function _renderizarConfiguracion() {
     const body = document.getElementById('modalConfigurarTarjetasBody');
-    if (!_tarjData.length) {
+    if (!_confTarjData.length) {
         body.innerHTML = '<p class="text-center text-muted py-5">Sin tarjetas configuradas.</p>';
         return;
     }
 
-    const filas = _tarjData.map(t => `
-    <div class="conf-tarj-fila">
-        <div class="conf-tarj-nombre">${t.nombre}</div>
-        <div class="conf-tarj-inputs">
+    const tarjeta = _confTarjData.find(t => t.id === _confTarjActiva);
+    if (!tarjeta) return;
+
+    // Editor de límite (inline)
+    const limiteEditor = `
+        <div class="mb-3 p-3 bg-light rounded">
+            <label class="form-label mb-2">Límite general (para todos los períodos)</label>
+            <div class="input-group">
+                <input type="text" inputmode="decimal" class="form-control" id="editLimiteGral-${tarjeta.id}"
+                       value="${tarjeta.limite}" placeholder="Ej: 14.000.000">
+                <button class="btn btn-success" type="button" onclick="_guardarLimiteGral(${tarjeta.id})">
+                    <i class="bi bi-check-lg"></i> Guardar
+                </button>
+            </div>
+        </div>`;
+
+    // Tabla de períodos
+    const filasPeriodos = (tarjeta.periodos || []).map(p => {
+        const pagado = parseInt(p.pagado) === 1;
+        const badge = pagado ? '<span class="badge bg-success">Pagado</span>' : '';
+        const btnEditar = !pagado
+            ? `<button class="btn btn-sm btn-outline-secondary" onclick="_editarPeriodoConf(${p.id})" title="Editar"><i class="bi bi-pencil"></i></button>`
+            : '';
+        const btnEliminar = !pagado && !p.tiene_consumos
+            ? `<button class="btn btn-sm btn-outline-danger" onclick="_eliminarPeriodoConf(${p.id})" title="Eliminar"><i class="bi bi-trash"></i></button>`
+            : '';
+        return `
+            <tr data-resumen-id="${p.id}">
+                <td>${_formatFechaConf(p.fecha_cierre)}</td>
+                <td>${_formatFechaConf(p.fecha_vencimiento)}</td>
+                <td>${badge}</td>
+                <td class="text-end" style="width:120px">
+                    <div class="btn-group btn-group-sm" role="group">
+                        ${btnEditar}
+                        ${btnEliminar}
+                    </div>
+                </td>
+            </tr>`;
+    }).join('');
+
+    const tabla = filasPeriodos
+        ? `<table class="table table-sm table-hover mb-3">
+            <thead class="table-light">
+                <tr>
+                    <th>Cierre</th>
+                    <th>Vencimiento</th>
+                    <th>Estado</th>
+                    <th style="width:120px"></th>
+                </tr>
+            </thead>
+            <tbody>
+                ${filasPeriodos}
+            </tbody>
+        </table>`
+        : '<p class="text-muted text-center py-3">Sin períodos configurados</p>';
+
+    const html = `
+        ${limiteEditor}
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h6 class="mb-0">Períodos de cierre</h6>
+            <button class="btn btn-sm btn-primary" onclick="_agregarPeriodoConf(${tarjeta.id})">
+                <i class="bi bi-plus-lg me-1"></i>Agregar período
+            </button>
+        </div>
+        ${tabla}`;
+
+    body.innerHTML = html;
+}
+
+async function _guardarLimiteGral(tarjeta_id) {
+    const input = document.getElementById(`editLimiteGral-${tarjeta_id}`);
+    const limite = parsearImporte(input.value);
+
+    if (limite <= 0) { mostrarError('Ingresá un límite válido'); return; }
+
+    try {
+        const resp = await fetch(TARJETAS_API_URL, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: tarjeta_id, limite })
+        });
+        const result = await resp.json();
+        if (!result.success) throw new Error(result.message);
+        mostrarToast('Límite actualizado', 'success');
+        await _cargarConfiguracion();
+    } catch (error) {
+        mostrarError('Error: ' + error.message);
+    }
+}
+
+function _editarPeriodoConf(resumen_id) {
+    let periodo = null, tarjeta_id = null;
+    resumen_id = String(resumen_id);
+    for (const t of _confTarjData) {
+        const p = (t.periodos || []).find(p => String(p.id) === resumen_id);
+        if (p) { periodo = p; tarjeta_id = t.id; break; }
+    }
+    if (!periodo || !tarjeta_id) return;
+
+    const fila = document.querySelector(`tr[data-resumen-id="${resumen_id}"]`);
+    if (!fila) return;
+
+    fila.innerHTML = `
+        <td>
+            <input type="date" class="form-control form-control-sm" id="editCierre-${resumen_id}" value="${periodo.fecha_cierre}">
+        </td>
+        <td>
+            <input type="date" class="form-control form-control-sm" id="editVenc-${resumen_id}" value="${periodo.fecha_vencimiento}">
+        </td>
+        <td></td>
+        <td class="text-end" style="width:120px">
+            <div class="btn-group btn-group-sm" role="group">
+                <button class="btn btn-outline-success" onclick="_guardarPeriodoConf(${tarjeta_id}, '${resumen_id}')"><i class="bi bi-check-lg"></i></button>
+                <button class="btn btn-outline-secondary" onclick="_renderizarConfiguracion()"><i class="bi bi-x-lg"></i></button>
+            </div>
+        </td>`;
+}
+
+function _addOneMonth(dateStr) {
+    const [y, m, d] = dateStr.split('-').map(Number);
+    let nm = m + 1, ny = y;
+    if (nm > 12) { nm = 1; ny++; }
+    return `${ny}-${String(nm).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+}
+
+function _agregarPeriodoConf(tarjeta_id) {
+    const lista = document.getElementById(`confPeriodos-${tarjeta_id}`);
+    if (!lista) return;
+    const existing = lista.querySelector('[data-resumen-id="new"]');
+    if (existing) return;
+
+    const tarjeta = (_confTarjData || []).find(t => t.id === tarjeta_id);
+    let cierrePrellenado = '', vencPrellenado = '';
+    if (tarjeta && tarjeta.periodos && tarjeta.periodos.length > 0) {
+        const periodoMasReciente = tarjeta.periodos[0];
+        cierrePrellenado = _addOneMonth(periodoMasReciente.fecha_cierre);
+        vencPrellenado = _addOneMonth(periodoMasReciente.fecha_vencimiento);
+    }
+
+    const limitePrellenado = tarjeta ? tarjeta.limite : 0;
+
+    const fila = document.createElement('div');
+    fila.className = 'conf-periodo-fila d-flex align-items-center py-1 px-1 border-bottom';
+    fila.dataset.resumenId = 'new';
+    fila.innerHTML = `
+        <div class="d-flex align-items-center gap-2 flex-wrap flex-grow-1">
             <div class="conf-input-group">
                 <label class="form-field-label">Límite</label>
-                <input type="text" inputmode="decimal" class="form-control form-control-sm confTarjLimite"
-                       data-tid="${t.id}" value="${t.limite || 0}">
+                <input type="text" inputmode="decimal" class="form-control form-control-sm" id="newLimite-${tarjeta_id}" value="${limitePrellenado}">
             </div>
             <div class="conf-input-group">
                 <label class="form-field-label">Cierre</label>
-                <input type="number" class="form-control form-control-sm confTarjCierre"
-                       data-tid="${t.id}" min="1" max="31" value="7">
+                <input type="date" class="form-control form-control-sm" id="newCierre-${tarjeta_id}" value="${cierrePrellenado}">
             </div>
             <div class="conf-input-group">
                 <label class="form-field-label">Vencimiento</label>
-                <input type="number" class="form-control form-control-sm confTarjVenc"
-                       data-tid="${t.id}" min="1" max="31" value="15">
+                <input type="date" class="form-control form-control-sm" id="newVenc-${tarjeta_id}" value="${vencPrellenado}">
             </div>
         </div>
-    </div>`).join('');
-
-    body.innerHTML = `<div class="conf-tarjetas-lista">${filas}</div>`;
+        <button class="btn btn-sm btn-success ms-1" onclick="_guardarPeriodoConf(${tarjeta_id}, null)"><i class="bi bi-check-lg"></i></button>
+        <button class="btn btn-sm btn-secondary ms-1" onclick="_renderizarConfiguracion()"><i class="bi bi-x-lg"></i></button>`;
+    lista.appendChild(fila);
 }
 
-async function guardarConfiguraciontarjetas() {
-    const tarjetas = [];
-    document.querySelectorAll('.confTarjLimite').forEach(el => {
-        const tid = parseInt(el.getAttribute('data-tid'));
-        const limite = parsearImporte(el.value);
-        const cierre = parseInt(document.querySelector(`.confTarjCierre[data-tid="${tid}"]`).value) || 1;
-        const venc = parseInt(document.querySelector(`.confTarjVenc[data-tid="${tid}"]`).value) || 15;
+async function _guardarPeriodoConf(tarjeta_id, resumen_id) {
+    const idLimite = resumen_id ? `editLimite-${resumen_id}` : `newLimite-${tarjeta_id}`;
+    const idCierre = resumen_id ? `editCierre-${resumen_id}` : `newCierre-${tarjeta_id}`;
+    const idVenc   = resumen_id ? `editVenc-${resumen_id}`   : `newVenc-${tarjeta_id}`;
+    const limiteVal = document.getElementById(idLimite)?.value;
+    const cierreVal = document.getElementById(idCierre)?.value;
+    const vencVal   = document.getElementById(idVenc)?.value;
 
-        tarjetas.push({
-            tarjeta_id: tid,
-            limite,
-            cierre_dia: cierre,
-            vencimiento_dia: venc
-        });
-    });
+    if (!cierreVal) { mostrarError('Ingresá la fecha de cierre'); return; }
+
+    const limite = limiteVal ? parsearImporte(limiteVal) : ((_tarjData || []).find(t => t.id === tarjeta_id)?.limite || 0);
+    const [anio, mes, dia] = cierreVal.split('-').map(Number);
+    const vencDia = vencVal ? parseInt(vencVal.split('-')[2]) : 15;
 
     try {
         const resp = await fetch(TARJETAS_API_URL, {
@@ -4115,17 +4459,32 @@ async function guardarConfiguraciontarjetas() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 action: 'configurar_mes',
-                mes: app.mesActual,
-                anio: app.anioActual,
-                tarjetas
+                mes, anio,
+                tarjetas: [{ tarjeta_id, limite, cierre_dia: dia, vencimiento_dia: vencDia }]
             })
         });
         const result = await resp.json();
         if (!result.success) throw new Error(result.message);
+        mostrarToast('Período guardado', 'success');
+        await _cargarConfiguracion();
+    } catch (error) {
+        mostrarError('Error: ' + error.message);
+    }
+}
 
-        mostrarToast('Configuración guardada', 'success');
-        bootstrap.Modal.getInstance(document.getElementById('modalConfigurarTarjetas')).hide();
-        await _cargarTarjetas();
+async function _eliminarPeriodoConf(resumen_id) {
+    if (!confirm('¿Eliminar este período?')) return;
+    resumen_id = parseInt(resumen_id);
+    try {
+        const resp = await fetch(TARJETAS_API_URL, {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'periodo', resumen_id })
+        });
+        const result = await resp.json();
+        if (!result.success) throw new Error(result.message);
+        mostrarToast('Período eliminado', 'success');
+        await _cargarConfiguracion();
     } catch (error) {
         mostrarError('Error: ' + error.message);
     }
@@ -4155,7 +4514,7 @@ async function _cargarTarjetas() {
     }
 
     try {
-        const resp   = await fetch(`${TARJETAS_API_URL}?mes=${app.mesActual}&anio=${app.anioActual}`);
+        const resp   = await fetch(`${TARJETAS_API_URL}?action=periodos_activos`);
         const result = await resp.json();
         if (!result.success) throw new Error(result.message);
 
@@ -4186,13 +4545,13 @@ function _renderizarChipsHeaderTarjetas() {
 
     if (!_tarjData.length) { el.innerHTML = ''; return; }
 
-    const totalUsado = _tarjData.reduce((s, t) => s + (t.total_consumido || 0), 0);
+    const totalUsado = _tarjData.reduce((s, t) => s + (t.periodo_acumulando?.total || 0), 0);
     const totalLim   = _tarjData.reduce((s, t) => s + (t.limite || 0), 0);
 
     el.innerHTML = `
         <span class="tarj-chip tarj-chip-usado">
             <i class="bi bi-credit-card me-1"></i>
-            Usado: ${formatearMoneda(totalUsado)}
+            Acumulando: ${formatearMoneda(totalUsado)}
         </span>
         ${totalLim > 0 ? `<span class="tarj-chip tarj-chip-disp">
             Disponible: ${formatearMoneda(totalLim - totalUsado)}
@@ -4205,8 +4564,9 @@ function _renderizarSelectorTarjeta() {
     if (!el) return;
 
     const btns = _tarjData.map(t => {
+        const totalAcum = t.periodo_acumulando?.total || 0;
         const pct = t.limite > 0
-            ? Math.min(100, Math.round((t.total_consumido / t.limite) * 100))
+            ? Math.min(100, Math.round((totalAcum / t.limite) * 100))
             : null;
         const activa = t.id == _tarjIdActiva ? ' tarj-tab-activa' : '';
         return `
@@ -4215,7 +4575,7 @@ function _renderizarSelectorTarjeta() {
             <span class="tarj-tab-nombre">${t.nombre}</span>
             ${pct !== null
                 ? `<span class="tarj-tab-pct">${pct}%</span>`
-                : `<span class="tarj-tab-pct">${formatearMoneda(t.total_consumido).replace(/[^\d,.]/g, '')}</span>`
+                : `<span class="tarj-tab-pct">${formatearMoneda(totalAcum).replace(/[^\d,.]/g, '')}</span>`
             }
         </button>`;
     }).join('');
@@ -4234,125 +4594,148 @@ async function _renderizarTarjetaDetalle(tarjetaId) {
     body.innerHTML = '<div class="text-center py-4"><span class="spinner-border spinner-border-sm"></span></div>';
 
     try {
-        const resp   = await fetch(
-            `${TARJETAS_API_URL}?action=consumos&tarjeta_id=${tarjetaId}&mes=${app.mesActual}&anio=${app.anioActual}`
-        );
+        const resp   = await fetch(`${TARJETAS_API_URL}?action=consumos_periodos&tarjeta_id=${tarjetaId}`);
         const result = await resp.json();
         if (!result.success) throw new Error(result.message);
-        _tarjConsumos = result.data;
 
-        const tarjeta = _tarjData.find(t => t.id == tarjetaId);
-        if (!tarjeta) return;
+        const data = result.data;
+        const cerrado = data.periodo_cerrado;
+        const acumulando = data.periodo_acumulando;
+        const limite = _tarjData.find(t => t.id == tarjetaId)?.limite || 0;
 
-        const usado    = tarjeta.total_consumido || 0;
-        const limite   = tarjeta.limite || 0;
-        const pct      = limite > 0 ? Math.min(100, (usado / limite) * 100) : 0;
-        const esPagado = tarjeta.pagado === 1;
-
-        const barraHtml = limite > 0 ? `
-        <div class="tarj-uso-wrap px-3 py-2 border-bottom">
-            <div class="d-flex justify-content-between mb-1">
-                <small class="text-muted">Usado: ${formatearMoneda(usado)}</small>
-                <small class="text-muted">Límite: ${formatearMoneda(limite)}</small>
-            </div>
-            <div class="progress tarj-progress">
-                <div class="progress-bar ${pct > 85 ? 'bg-danger' : 'bg-primary'}"
-                     style="width:${pct.toFixed(1)}%"></div>
-            </div>
-            <div class="d-flex justify-content-between mt-1">
-                <small class="text-muted">Disponible: ${formatearMoneda(limite - usado)}</small>
-                <small class="text-muted">${pct.toFixed(0)}% usado</small>
-            </div>
-        </div>` : '';
-
-        const formHtml = !esPagado ? `
-        <div class="tarj-form-nuevo px-3 py-2 border-bottom">
-            <div class="row g-2 align-items-end">
-                <div class="col-12 col-sm-3">
-                    <label class="form-field-label">Fecha</label>
-                    <input type="date" id="tarjNuevaFecha" class="form-control form-control-sm"
-                           value="${new Date().toISOString().split('T')[0]}">
-                </div>
-                <div class="col-12 col-sm-4">
-                    <label class="form-field-label">Descripción</label>
-                    <input type="text" id="tarjNuevaDesc" class="form-control form-control-sm"
-                           placeholder="Ej: Supermercado">
-                </div>
-                <div class="col-6 col-sm-2">
-                    <label class="form-field-label">Importe</label>
-                    <input type="text" inputmode="decimal" id="tarjNuevoImporte"
-                           class="form-control form-control-sm text-end" placeholder="0,00">
-                </div>
-                <div class="col-6 col-sm-2">
-                    <label class="form-field-label">Categoría</label>
-                    <select id="tarjNuevaCategoria" class="form-select form-select-sm">
-                        <option value="">— Sin cat. —</option>
-                        ${app.categorias.map(c =>
-                            `<option value="${c.id}">${c.nombre}</option>`
-                        ).join('')}
-                    </select>
-                </div>
-                <div class="col-6 col-sm-1">
-                    <label class="form-field-label">Cuotas</label>
-                    <input type="number" id="tarjNuevaCuotas" class="form-control form-control-sm text-center"
-                           min="1" max="18" value="1"
-                           oninput="actualizarPreviewCuota()">
-                </div>
-                <div class="col-6 col-sm-1" id="tarjCuotaActualWrap" style="display:none">
-                    <label class="form-field-label">Cuota #</label>
-                    <input type="number" id="tarjCuotaActual" class="form-control form-control-sm text-center"
-                           min="1" max="18" value="1"
-                           oninput="actualizarPreviewCuota()">
-                </div>
-                <div class="col-12 col-sm-1 d-flex align-items-end">
-                    <button class="btn btn-sm w-100"
-                            style="background:linear-gradient(135deg,#6366f1 0%,#10b981 100%);color:#fff;border:none"
-                            onclick="agregarConsumoTarjeta(${tarjetaId})">
-                        <i class="bi bi-plus-lg"></i>
+        const renderizarConsumos = (consumos, puedeEditar) => {
+            return consumos.length
+                ? consumos.map(c => `
+                <div class="tarj-consumo-fila" data-id="${c.id}">
+                    <span class="tarj-consumo-fecha">${formatearFechaCorta(c.fecha)}</span>
+                    <span class="tarj-consumo-desc">
+                        ${c.descripcion || '—'}
+                        ${c.cuotas_total && c.cuotas_total > 1
+                            ? `<span class="tarj-badge-cuota">${c.cuota_numero}/${c.cuotas_total}</span>`
+                            : ''
+                        }
+                        ${c.categoria_nombre
+                            ? `<small class="tarj-consumo-cat" style="color:${c.categoria_color || 'inherit'}">${c.categoria_nombre}</small>`
+                            : ''
+                        }
+                    </span>
+                    <span class="tarj-consumo-importe">${formatearMoneda(c.importe)}</span>
+                    ${puedeEditar ? `
+                    <button class="btn btn-ghost-muted btn-sm tarj-btn-edit"
+                            title="Editar"
+                            onclick="_editarConsumoTarjeta(${c.id}, '${c.fecha}', ${c.cuota_numero || 1}, ${c.cuotas_total || 1})">
+                        <i class="bi bi-pencil"></i>
                     </button>
-                </div>
-            </div>
-            <div id="tarjPreviewCuota" class="tarj-preview-cuota d-none"></div>
-        </div>` : '';
+                    <button class="btn btn-ghost-muted btn-sm tarj-btn-del"
+                            title="Eliminar"
+                            onclick="eliminarConsumoTarjeta(${c.id}, ${tarjetaId}, ${c.cuotas_total || 1})">
+                        <i class="bi bi-trash3"></i>
+                    </button>` : ''}
+                </div>`).join('')
+                : `<p class="text-center text-muted py-3 px-3">Sin consumos.</p>`;
+        };
 
-        const pagoHtml = `
-        <div class="d-flex align-items-center justify-content-between px-3 py-2 border-bottom">
-            <div>
-                <span class="fw-semibold">${MESES_NOMBRES[app.mesActual - 1]} ${app.anioActual}</span>
-                <span class="ms-2 fw-bold">${formatearMoneda(usado)}</span>
-            </div>
-            <button class="btn btn-ghost-muted btn-sm" title="Ver historial"
-                    onclick="_verHistorialTarjeta(${tarjetaId})">
-                <i class="bi bi-clock-history"></i>
+        const pctCerrado = limite > 0 ? Math.min(100, (cerrado.total / limite) * 100) : 0;
+        const pctAcum = limite > 0 ? Math.min(100, (acumulando.total / limite) * 100) : 0;
+
+        const labelCerrado = _labelPeriodo(cerrado.fecha_inicio, cerrado.fecha_fin);
+        const labelAcum = _labelPeriodo(acumulando.fecha_inicio, acumulando.fecha_fin);
+        const fechaVencFormatted = cerrado.fecha_vencimiento.split('-').reverse().join('/');
+
+        const htmlCerrado = `
+        <div class="tarj-periodo-cerrado border-top mt-3 pt-3">
+            <button class="btn btn-sm w-100 text-start btn-ghost-muted mb-2" data-bs-toggle="collapse" data-bs-target="#tarjColapseCerrado">
+                <i class="bi bi-chevron-down me-2"></i>
+                <span class="fw-semibold">${labelCerrado} — Vence ${fechaVencFormatted}</span>
+                <span class="ms-2 text-muted">${formatearMoneda(cerrado.total)}</span>
+                <span class="ms-auto">
+                    <span class="tarj-estado-badge ${cerrado.pagado ? 'tarj-pagado' : 'tarj-pendiente'} ms-2">
+                        ${cerrado.pagado ? '<i class="bi bi-check-circle-fill me-1"></i>Pagado' : '<i class="bi bi-clock me-1"></i>Pendiente'}
+                    </span>
+                </span>
             </button>
+            <div class="collapse" id="tarjColapseCerrado">
+                ${limite > 0 ? `
+                <div class="progress tarj-progress mb-2">
+                    <div class="progress-bar ${pctCerrado > 85 ? 'bg-danger' : 'bg-info'}" style="width:${pctCerrado.toFixed(1)}%"></div>
+                </div>
+                <small class="text-muted">${pctCerrado.toFixed(0)}% del límite</small>
+                ` : ''}
+                <div class="tarj-consumos-lista mt-2">${renderizarConsumos(cerrado.consumos, !cerrado.pagado)}</div>
+                <button class="btn btn-ghost-muted btn-sm mt-2" title="Ver historial" onclick="_verHistorialTarjeta(${tarjetaId})">
+                    <i class="bi bi-clock-history me-1"></i>Ver historial
+                </button>
+            </div>
         </div>`;
 
-        const consumosHtml = _tarjConsumos.length
-            ? _tarjConsumos.map(c => `
-            <div class="tarj-consumo-fila" data-id="${c.id}">
-                <span class="tarj-consumo-fecha">${formatearFechaCorta(c.fecha)}</span>
-                <span class="tarj-consumo-desc">
-                    ${c.descripcion || '—'}
-                    ${c.cuotas_total && c.cuotas_total > 1
-                        ? `<span class="tarj-badge-cuota">${c.cuota_numero}/${c.cuotas_total}</span>`
-                        : ''
-                    }
-                    ${c.categoria_nombre
-                        ? `<small class="tarj-consumo-cat" style="color:${c.categoria_color || 'inherit'}">${c.categoria_nombre}</small>`
-                        : ''
-                    }
-                </span>
-                <span class="tarj-consumo-importe">${formatearMoneda(c.importe)}</span>
-                ${!esPagado ? `
-                <button class="btn btn-ghost-muted btn-sm tarj-btn-del"
-                        title="Eliminar"
-                        onclick="eliminarConsumoTarjeta(${c.id}, ${tarjetaId}, ${c.cuotas_total || 1})">
-                    <i class="bi bi-trash3"></i>
-                </button>` : ''}
-            </div>`).join('')
-            : `<p class="text-center text-muted py-4 px-3">Sin consumos registrados para este período.</p>`;
+        const htmlAcum = `
+        <div class="tarj-periodo-acumulando px-3 py-3 bg-light rounded mb-3">
+            <div class="d-flex align-items-baseline gap-3 mb-3">
+                <div>
+                    <div class="text-muted fs-7">A pagar en el próximo corte</div>
+                    <div class="tarj-total-acum fs-5 fw-bold">${formatearMoneda(acumulando.total)}</div>
+                    <small class="text-muted">${labelAcum}</small>
+                </div>
+                ${limite > 0 ? `
+                <div class="ms-auto text-end">
+                    <div class="text-muted fs-7">Disponible</div>
+                    <div class="fs-5 fw-bold" style="color:#10b981">${formatearMoneda(limite - acumulando.total)}</div>
+                    <small class="text-muted">${pctAcum.toFixed(0)}% usado</small>
+                </div>
+                ` : ''}
+            </div>
+            ${limite > 0 ? `
+            <div class="progress tarj-progress mb-2">
+                <div class="progress-bar ${pctAcum > 85 ? 'bg-danger' : 'bg-success'}" style="width:${pctAcum.toFixed(1)}%"></div>
+            </div>
+            ` : ''}
+            <div class="tarj-form-nuevo mb-3">
+                <div class="row g-2 align-items-end">
+                    <div class="col-12 col-sm-3">
+                        <label class="form-field-label">Fecha</label>
+                        <input type="date" id="tarjNuevaFecha" name="fecha" class="form-control form-control-sm"
+                               value="${new Date().toISOString().split('T')[0]}">
+                    </div>
+                    <div class="col-12 col-sm-4">
+                        <label class="form-field-label">Descripción</label>
+                        <input type="text" id="tarjNuevaDesc" name="descripcion" class="form-control form-control-sm"
+                               placeholder="Ej: Supermercado">
+                    </div>
+                    <div class="col-6 col-sm-2">
+                        <label class="form-field-label">Importe</label>
+                        <input type="text" inputmode="decimal" id="tarjNuevoImporte" name="importe"
+                               class="form-control form-control-sm text-end" placeholder="0,00">
+                    </div>
+                    <div class="col-6 col-sm-2">
+                        <label class="form-field-label">Categoría</label>
+                        <select id="tarjNuevaCategoria" name="categoria_id" class="form-select form-select-sm">
+                            <option value="">— Sin cat. —</option>
+                            ${app.categorias.map(c => `<option value="${c.id}">${c.nombre}</option>`).join('')}
+                        </select>
+                    </div>
+                    <div class="col-6 col-sm-1">
+                        <label class="form-field-label">Cuotas</label>
+                        <input type="number" id="tarjNuevaCuotas" name="cuotas" class="form-control form-control-sm text-center"
+                               min="1" max="18" value="1" oninput="actualizarPreviewCuota()">
+                    </div>
+                    <div class="col-6 col-sm-1" id="tarjCuotaActualWrap" style="display:none">
+                        <label class="form-field-label">Cuota #</label>
+                        <input type="number" id="tarjCuotaActual" name="cuota_numero" class="form-control form-control-sm text-center"
+                               min="1" max="18" value="1" oninput="actualizarPreviewCuota()">
+                    </div>
+                    <div class="col-12 col-sm-1 d-flex align-items-end">
+                        <button class="btn btn-sm w-100" style="background:linear-gradient(135deg,#6366f1 0%,#10b981 100%);color:#fff;border:none"
+                                onclick="agregarConsumoTarjeta(${tarjetaId})">
+                            <i class="bi bi-plus-lg"></i>
+                        </button>
+                    </div>
+                </div>
+                <div id="tarjPreviewCuota" class="tarj-preview-cuota d-none"></div>
+            </div>
+            <div class="tarj-consumos-lista">${renderizarConsumos(acumulando.consumos, true)}</div>
+        </div>`;
 
-        body.innerHTML = barraHtml + pagoHtml + formHtml + `<div class="tarj-consumos-lista">${consumosHtml}</div>`;
+        body.innerHTML = htmlAcum + htmlCerrado;
 
     } catch (error) {
         body.innerHTML = `<div class="alert alert-danger m-3">Error: ${error.message}</div>`;
@@ -4573,6 +4956,60 @@ async function eliminarConsumoTarjeta(consumoId, tarjetaId, cuotasTotal) {
     } catch (error) {
         mostrarError('Error: ' + error.message);
     }
+}
+
+function _editarConsumoTarjeta(consumoId, fechaActual, cuotaActual, cuotasTotal) {
+    const fila = document.querySelector(`.tarj-consumo-fila[data-id="${consumoId}"]`);
+    if (!fila) return;
+
+    const formHtml = `
+    <div class="tarj-edicion-form d-flex gap-2 align-items-center py-2">
+        <input type="date" class="form-control form-control-sm" id="editFecha" value="${fechaActual}" style="flex: 1; max-width: 140px;">
+        ${cuotasTotal > 1 ? `
+        <input type="number" class="form-control form-control-sm text-center" id="editCuota" min="1" max="${cuotasTotal}" value="${cuotaActual}" style="width: 60px;">
+        ` : ''}
+        <button class="btn btn-sm btn-success" onclick="_guardarEdicionConsumo(${consumoId}, '${fechaActual}', ${cuotaActual}, ${cuotasTotal})">
+            <i class="bi bi-check"></i>
+        </button>
+        <button class="btn btn-sm btn-secondary" onclick="_cancelarEdicionConsumo(${consumoId})">
+            <i class="bi bi-x"></i>
+        </button>
+    </div>`;
+
+    fila.innerHTML = formHtml;
+    document.getElementById('editFecha').focus();
+}
+
+async function _guardarEdicionConsumo(consumoId, fechaAnterior, cuotaAnterior, cuotasTotal) {
+    const fecha = document.getElementById('editFecha').value.trim();
+    const cuota = cuotasTotal > 1 ? parseInt(document.getElementById('editCuota').value) || cuotaAnterior : null;
+
+    if (!fecha) {
+        mostrarError('Ingresá una fecha');
+        return;
+    }
+
+    try {
+        const resp = await fetch(TARJETAS_API_URL, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                consumo_id: consumoId,
+                fecha,
+                ...(cuota !== null && { cuota_numero: cuota })
+            })
+        });
+        const result = await resp.json();
+        if (!result.success) throw new Error(result.message);
+        mostrarToast('Consumo actualizado', 'success');
+        await _cargarTarjetas();
+    } catch (error) {
+        mostrarError('Error: ' + error.message);
+    }
+}
+
+function _cancelarEdicionConsumo(consumoId) {
+    _renderizarTarjetaDetalle(_tarjIdActiva);
 }
 
 async function _verHistorialTarjeta(tarjetaId) {
