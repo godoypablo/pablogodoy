@@ -3,7 +3,7 @@
  * Estrategia: network-first para HTML (siempre fresco), cache-first para assets estáticos
  */
 
-const CACHE_NAME = 'cifra-20260518-7';
+const CACHE_NAME = 'cifra-20260519-9';
 
 const ASSETS_ESTATICOS = [
     './assets/css/styles.css',

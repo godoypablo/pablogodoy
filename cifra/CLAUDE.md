@@ -139,17 +139,20 @@ Resumen/Cuentas → modales | Vencimientos → modal+badges | Ingresos → modal
 
 ### Ver consumos (#modalTarjetas)
 - Menú: Hamburguesa → **"Tarjetas"**
+- **Prioridad visual:** período acumulando (no pagado) en primer lugar con fondo `.tarj-periodo-principal` (respeta dark mode) | período cerrado colapsable al final
 - Header sticky: chips con nombre tarjeta + porcentaje uso + resumen total usado/disponible
 - Tabs scrolleables `.tarj-tabs-scroll`: una tab por tarjeta activa con dot de color + nombre + % usado
-- Cuerpo: barra de progreso (rojo >85%, azul ≤85%) | resumen mes/importe | historial
+- **Período acumulando:** "A pagar en el próximo corte" + total + disponible + % usado | formulario nuevo consumo | lista consumos
+- **Período cerrado:** colapsable | si Pendiente: botón "Pagar" con form inline (select cuenta + importe + confirmar) | si Pagado: badge verde | historial con botón ver detalles
 - **Formulario nuevo consumo:** fecha | descripción | importe | categoría | **cuotas (1-18)** | **cuota # (si >1)** | preview dinámico | +
+- **Edición de consumos:** click lápiz → form inline con fecha + descripción + importe + cuota # (si aplica) → confirmar/cancelar
 - **Cuotas:** campo opcional. Si >1: muestra "N cuotas de $X — genera de Mes A a Mes B" (preview dinámico con mes actual como referencia)
 - **Consumos con cuotas:** badge X/N en lista (ej: "2/6"), DELETE pide confirmación si múltiples hermanos
 - **Consumo padre:** `consumo_padre_id=NULL` es cuota 1, hermanos tienen `consumo_padre_id=id_cuota1`; calcula mes de inicio retrocediendo según `cuota_numero`
 - Mes/año de consumo: según `cierre_dia` del resumen del mes (si día > cierre_dia, resumen va al mes siguiente)
-- **Sin botón Pagar:** los pagos de tarjeta se registran en módulo Gastos (registros_mensuales)
-- Historial: lista de resúmenes anteriores (mes/importe) con opción ver detalles
+- **Pago de período:** botón "Pagar" en período cerrado Pendiente → seleccionar cuenta + ingresar importe → POST action=pago (transaccional, descuenta saldo cuenta)
 - Validación DELETE: 409 si resumen pagado, permite eliminar cuota individual O todas las hermanas con `eliminar_todas=true`
+- **Chip "Tarjetas"** en catNav: se pre-carga al iniciar sesión con `periodos_activos`, muestra total acumulando de todas las tarjetas activas
 
 ## Login (login.php)
 - Logo Montserrat + barra degradé índigo→verde + card shadow

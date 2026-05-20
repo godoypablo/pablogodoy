@@ -635,6 +635,17 @@ try {
             }
             elseif ($action === 'configurar_mes') {
                 // POST: guardar configuración de tarjetas para un mes específico
+                // Si se proporciona resumen_id sin tarjetas, solo actualizar el estado pagado
+                if (!empty($input['resumen_id']) && isset($input['pagado']) && empty($input['tarjetas'])) {
+                    $resumen_id = (int)$input['resumen_id'];
+                    $pagado = (int)$input['pagado'];
+                    $sqlUpdate = "UPDATE resumenes_tarjeta SET pagado = :pag, fecha_pago = " . ($pagado ? "CURDATE()" : "NULL") . " WHERE id = :rid";
+                    $stmtUpdate = $db->prepare($sqlUpdate);
+                    $stmtUpdate->execute(['pag' => $pagado, 'rid' => $resumen_id]);
+                    sendResponse(true, null, 'Estado actualizado');
+                    break;
+                }
+
                 if (empty($input['mes']) || empty($input['anio']) || empty($input['tarjetas'])) {
                     sendResponse(false, null, 'Campos requeridos: mes, anio, tarjetas[]', 400);
                 }
@@ -669,20 +680,28 @@ try {
                         }
 
                         // INSERT or UPDATE resumen (cierre_dia y vencimiento_dia por período)
+                        $updateClause = "cierre_dia = :cdia, vencimiento_dia = :vdia";
+                        if (isset($input['pagado'])) {
+                            $updateClause .= ", pagado = :pag, fecha_pago = " . (intval($input['pagado']) ? "CURDATE()" : "NULL");
+                        }
+                        $updateClause .= ", id = LAST_INSERT_ID(id)";
+
                         $sqlUpsert = "INSERT INTO resumenes_tarjeta (tarjeta_id, mes, anio, cierre_dia, vencimiento_dia, total_consumido)
                                       VALUES (:tid, :mes, :anio, :cdia, :vdia, 0)
                                       ON DUPLICATE KEY UPDATE
-                                          cierre_dia = :cdia,
-                                          vencimiento_dia = :vdia,
-                                          id = LAST_INSERT_ID(id)";
+                                          $updateClause";
                         $stmtUpsert = $db->prepare($sqlUpsert);
-                        $stmtUpsert->execute([
+                        $params = [
                             'tid' => $tid,
                             'mes' => $mes,
                             'anio' => $anio,
                             'cdia' => $cierre_dia,
                             'vdia' => $vencimiento_dia,
-                        ]);
+                        ];
+                        if (isset($input['pagado'])) {
+                            $params['pag'] = intval($input['pagado']);
+                        }
+                        $stmtUpsert->execute($params);
                     }
 
                     $db->commit();
@@ -760,11 +779,13 @@ try {
             }
 
             $consumo_id = (int)$input['consumo_id'];
-            $nueva_fecha = isset($input['fecha']) && $input['fecha'] ? trim($input['fecha']) : null;
-            $nueva_cuota = isset($input['cuota_numero']) ? (int)$input['cuota_numero'] : null;
+            $nueva_fecha   = isset($input['fecha']) && $input['fecha'] ? trim($input['fecha']) : null;
+            $nueva_cuota   = isset($input['cuota_numero']) ? (int)$input['cuota_numero'] : null;
+            $nueva_desc    = isset($input['descripcion']) ? trim($input['descripcion']) : null;
+            $nuevo_importe = isset($input['importe']) ? (float)$input['importe'] : null;
 
-            if (!$nueva_fecha && $nueva_cuota === null) {
-                sendResponse(false, null, 'Debe especificar fecha y/o cuota_numero', 400);
+            if (!$nueva_fecha && $nueva_cuota === null && $nueva_desc === null && $nuevo_importe === null) {
+                sendResponse(false, null, 'Debe especificar al menos un campo para editar', 400);
             }
 
             $db->beginTransaction();
@@ -872,6 +893,21 @@ try {
                         $fields[] = 'cuota_numero = :cuota_numero';
                         $params['cuota_numero'] = $nueva_cuota;
                     }
+                }
+
+                if ($nueva_desc !== null && $nueva_desc !== '') {
+                    $fields[] = 'descripcion = :desc';
+                    $params['desc'] = $nueva_desc;
+                }
+
+                if ($nuevo_importe !== null && $nuevo_importe > 0) {
+                    $importe_actual = (float)$consumo['importe'];
+                    $diff = $nuevo_importe - $importe_actual;
+                    $fields[] = 'importe = :imp';
+                    $params['imp'] = $nuevo_importe;
+                    // Actualizar total_consumido del resumen
+                    $db->prepare("UPDATE resumenes_tarjeta SET total_consumido = total_consumido + :diff WHERE id = :rid")
+                        ->execute(['diff' => $diff, 'rid' => $resumen_id_viejo]);
                 }
 
                 if (!empty($fields)) {

@@ -3385,6 +3385,11 @@ table.dataTable > tbody > tr.tr-pagado .concepto-nombre {
     background: rgba(129, 140, 248, 0.1);
 }
 
+.tarj-periodo-principal {
+    background: var(--bs-tertiary-bg);
+    border-radius: 0.5rem;
+}
+
 .conf-tarjetas-lista {
     display: flex;
     flex-direction: column;

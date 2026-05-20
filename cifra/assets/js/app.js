@@ -407,6 +407,17 @@ async function cargarDatos() {
     } finally {
         ocultarLoading();
     }
+
+    // Cargar períodos activos de tarjetas en paralelo (fire-and-forget)
+    fetch(`${TARJETAS_API_URL}?action=periodos_activos`)
+        .then(r => r.json())
+        .then(res => {
+            if (res.success && res.data) {
+                _tarjData = res.data;
+                renderizarCatNav();
+            }
+        })
+        .catch(() => {});
 }
 
 // Renderizar datos en la interfaz
@@ -4268,6 +4279,20 @@ function _formatFechaConf(dateStr) {
     return `${parseInt(d)}/${parseInt(m)}/${y}`;
 }
 
+function _formatDiaConf(dateStr) {
+    if (!dateStr) return '—';
+    const [y, m, d] = dateStr.split('-');
+    return `${parseInt(d)}/${parseInt(m)}`;
+}
+
+function _formatPeriodoConf(dateStr) {
+    if (!dateStr) return '—';
+    const [y, m, d] = dateStr.split('-');
+    const mesNum = parseInt(m);
+    const nomMes = MESES_NOMBRES[mesNum - 1] || '';
+    return `${nomMes} ${y}`;
+}
+
 function _renderizarConfiguracion() {
     const body = document.getElementById('modalConfigurarTarjetasBody');
     if (!_confTarjData.length) {
@@ -4294,42 +4319,48 @@ function _renderizarConfiguracion() {
     // Tabla de períodos
     const filasPeriodos = (tarjeta.periodos || []).map(p => {
         const pagado = parseInt(p.pagado) === 1;
-        const badge = pagado ? '<span class="badge bg-success">Pagado</span>' : '';
+        const badge = pagado
+            ? '<span class="badge bg-success"><i class="bi bi-check-circle-fill me-1"></i>Pagado</span>'
+            : '<span class="badge bg-warning text-dark"><i class="bi bi-clock me-1"></i>Pendiente</span>';
         const btnEditar = !pagado
             ? `<button class="btn btn-sm btn-outline-secondary" onclick="_editarPeriodoConf(${p.id})" title="Editar"><i class="bi bi-pencil"></i></button>`
+            : '';
+        const btnRevertir = pagado
+            ? `<button class="btn btn-sm btn-outline-warning" onclick="_revertirPeriodoConf(${p.id})" title="Revertir a Pendiente"><i class="bi bi-arrow-counterclockwise"></i></button>`
             : '';
         const btnEliminar = !pagado && !p.tiene_consumos
             ? `<button class="btn btn-sm btn-outline-danger" onclick="_eliminarPeriodoConf(${p.id})" title="Eliminar"><i class="bi bi-trash"></i></button>`
             : '';
         return `
             <tr data-resumen-id="${p.id}">
-                <td>${_formatFechaConf(p.fecha_cierre)}</td>
-                <td>${_formatFechaConf(p.fecha_vencimiento)}</td>
+                <td class="fw-semibold text-muted" style="font-size:0.9rem">${_formatPeriodoConf(p.fecha_cierre)}</td>
+                <td>${_formatDiaConf(p.fecha_cierre)}</td>
+                <td>${_formatDiaConf(p.fecha_vencimiento)}</td>
                 <td>${badge}</td>
                 <td class="text-end" style="width:120px">
                     <div class="btn-group btn-group-sm" role="group">
                         ${btnEditar}
+                        ${btnRevertir}
                         ${btnEliminar}
                     </div>
                 </td>
             </tr>`;
     }).join('');
 
-    const tabla = filasPeriodos
-        ? `<table class="table table-sm table-hover mb-3">
-            <thead class="table-light">
-                <tr>
-                    <th>Cierre</th>
-                    <th>Vencimiento</th>
-                    <th>Estado</th>
-                    <th style="width:120px"></th>
-                </tr>
-            </thead>
-            <tbody>
-                ${filasPeriodos}
-            </tbody>
-        </table>`
-        : '<p class="text-muted text-center py-3">Sin períodos configurados</p>';
+    const tabla = `<table class="table table-sm table-hover mb-3">
+        <thead class="table-light">
+            <tr>
+                <th>Período</th>
+                <th>Cierre</th>
+                <th>Vencimiento</th>
+                <th>Estado</th>
+                <th style="width:120px"></th>
+            </tr>
+        </thead>
+        <tbody id="confPeriodos-${tarjeta.id}">
+            ${filasPeriodos || '<tr><td colspan="5" class="text-center text-muted py-3">Sin períodos configurados</td></tr>'}
+        </tbody>
+    </table>`;
 
     const html = `
         ${limiteEditor}
@@ -4377,18 +4408,29 @@ function _editarPeriodoConf(resumen_id) {
     const fila = document.querySelector(`tr[data-resumen-id="${resumen_id}"]`);
     if (!fila) return;
 
+    const pagado = parseInt(periodo.pagado) === 1;
     fila.innerHTML = `
-        <td>
-            <input type="date" class="form-control form-control-sm" id="editCierre-${resumen_id}" value="${periodo.fecha_cierre}">
-        </td>
-        <td>
-            <input type="date" class="form-control form-control-sm" id="editVenc-${resumen_id}" value="${periodo.fecha_vencimiento}">
-        </td>
-        <td></td>
-        <td class="text-end" style="width:120px">
-            <div class="btn-group btn-group-sm" role="group">
-                <button class="btn btn-outline-success" onclick="_guardarPeriodoConf(${tarjeta_id}, '${resumen_id}')"><i class="bi bi-check-lg"></i></button>
-                <button class="btn btn-outline-secondary" onclick="_renderizarConfiguracion()"><i class="bi bi-x-lg"></i></button>
+        <td colspan="5">
+            <div class="row g-2 align-items-end">
+                <div class="col-12 col-sm-3">
+                    <label class="form-field-label">Cierre</label>
+                    <input type="date" class="form-control form-control-sm" id="editCierre-${resumen_id}" value="${periodo.fecha_cierre}">
+                </div>
+                <div class="col-12 col-sm-3">
+                    <label class="form-field-label">Vencimiento</label>
+                    <input type="date" class="form-control form-control-sm" id="editVenc-${resumen_id}" value="${periodo.fecha_vencimiento}">
+                </div>
+                <div class="col-12 col-sm-3">
+                    <label class="form-field-label">Estado</label>
+                    <select class="form-select form-select-sm" id="editEstado-${resumen_id}">
+                        <option value="0" ${!pagado ? 'selected' : ''}>Pendiente</option>
+                        <option value="1" ${pagado ? 'selected' : ''}>Pagado</option>
+                    </select>
+                </div>
+                <div class="col-12 col-sm-3 d-flex gap-1">
+                    <button class="btn btn-sm btn-success flex-grow-1" onclick="_guardarPeriodoConf(${tarjeta_id}, '${resumen_id}')"><i class="bi bi-check-lg"></i></button>
+                    <button class="btn btn-sm btn-secondary flex-grow-1" onclick="_renderizarConfiguracion()"><i class="bi bi-x-lg"></i></button>
+                </div>
             </div>
         </td>`;
 }
@@ -4443,13 +4485,16 @@ async function _guardarPeriodoConf(tarjeta_id, resumen_id) {
     const idLimite = resumen_id ? `editLimite-${resumen_id}` : `newLimite-${tarjeta_id}`;
     const idCierre = resumen_id ? `editCierre-${resumen_id}` : `newCierre-${tarjeta_id}`;
     const idVenc   = resumen_id ? `editVenc-${resumen_id}`   : `newVenc-${tarjeta_id}`;
+    const idEstado = resumen_id ? `editEstado-${resumen_id}` : null;
+
     const limiteVal = document.getElementById(idLimite)?.value;
     const cierreVal = document.getElementById(idCierre)?.value;
     const vencVal   = document.getElementById(idVenc)?.value;
+    const estadoVal = idEstado ? parseInt(document.getElementById(idEstado)?.value) : null;
 
     if (!cierreVal) { mostrarError('Ingresá la fecha de cierre'); return; }
 
-    const limite = limiteVal ? parsearImporte(limiteVal) : ((_tarjData || []).find(t => t.id === tarjeta_id)?.limite || 0);
+    const limite = limiteVal ? parsearImporte(limiteVal) : ((_confTarjData || []).find(t => t.id === tarjeta_id)?.limite || 0);
     const [anio, mes, dia] = cierreVal.split('-').map(Number);
     const vencDia = vencVal ? parseInt(vencVal.split('-')[2]) : 15;
 
@@ -4460,6 +4505,8 @@ async function _guardarPeriodoConf(tarjeta_id, resumen_id) {
             body: JSON.stringify({
                 action: 'configurar_mes',
                 mes, anio,
+                resumen_id: resumen_id,
+                pagado: estadoVal,
                 tarjetas: [{ tarjeta_id, limite, cierre_dia: dia, vencimiento_dia: vencDia }]
             })
         });
@@ -4484,6 +4531,27 @@ async function _eliminarPeriodoConf(resumen_id) {
         const result = await resp.json();
         if (!result.success) throw new Error(result.message);
         mostrarToast('Período eliminado', 'success');
+        await _cargarConfiguracion();
+    } catch (error) {
+        mostrarError('Error: ' + error.message);
+    }
+}
+
+async function _revertirPeriodoConf(resumen_id) {
+    resumen_id = parseInt(resumen_id);
+    try {
+        const resp = await fetch(TARJETAS_API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                action: 'configurar_mes',
+                resumen_id,
+                pagado: 0
+            })
+        });
+        const result = await resp.json();
+        if (!result.success) throw new Error(result.message);
+        mostrarToast('Período revertido a Pendiente', 'success');
         await _cargarConfiguracion();
     } catch (error) {
         mostrarError('Error: ' + error.message);
@@ -4623,7 +4691,7 @@ async function _renderizarTarjetaDetalle(tarjetaId) {
                     ${puedeEditar ? `
                     <button class="btn btn-ghost-muted btn-sm tarj-btn-edit"
                             title="Editar"
-                            onclick="_editarConsumoTarjeta(${c.id}, '${c.fecha}', ${c.cuota_numero || 1}, ${c.cuotas_total || 1})">
+                            onclick="_editarConsumoTarjeta(${c.id}, '${c.fecha}', ${c.cuota_numero || 1}, ${c.cuotas_total || 1}, '${(c.descripcion || '').replace(/'/g, "\\'")}', ${c.importe})">
                         <i class="bi bi-pencil"></i>
                     </button>
                     <button class="btn btn-ghost-muted btn-sm tarj-btn-del"
@@ -4648,13 +4716,19 @@ async function _renderizarTarjetaDetalle(tarjetaId) {
                 <i class="bi bi-chevron-down me-2"></i>
                 <span class="fw-semibold">${labelCerrado} — Vence ${fechaVencFormatted}</span>
                 <span class="ms-2 text-muted">${formatearMoneda(cerrado.total)}</span>
-                <span class="ms-auto">
-                    <span class="tarj-estado-badge ${cerrado.pagado ? 'tarj-pagado' : 'tarj-pendiente'} ms-2">
+                <span class="ms-auto d-flex gap-2 align-items-center">
+                    ${!cerrado.pagado ? `
+                    <button class="btn btn-sm tarj-btn-pagar" onclick="_abrirFormPago(${cerrado.resumen_id}, ${cerrado.total})">
+                        <i class="bi bi-cash me-1"></i>Pagar
+                    </button>
+                    ` : ''}
+                    <span class="tarj-estado-badge ${cerrado.pagado ? 'tarj-pagado' : 'tarj-pendiente'}">
                         ${cerrado.pagado ? '<i class="bi bi-check-circle-fill me-1"></i>Pagado' : '<i class="bi bi-clock me-1"></i>Pendiente'}
                     </span>
                 </span>
             </button>
             <div class="collapse" id="tarjColapseCerrado">
+                ${!cerrado.pagado ? `<div id="tarjFormPago-${cerrado.resumen_id}"></div>` : ''}
                 ${limite > 0 ? `
                 <div class="progress tarj-progress mb-2">
                     <div class="progress-bar ${pctCerrado > 85 ? 'bg-danger' : 'bg-info'}" style="width:${pctCerrado.toFixed(1)}%"></div>
@@ -4669,7 +4743,7 @@ async function _renderizarTarjetaDetalle(tarjetaId) {
         </div>`;
 
         const htmlAcum = `
-        <div class="tarj-periodo-acumulando px-3 py-3 bg-light rounded mb-3">
+        <div class="tarj-periodo-acumulando tarj-periodo-principal px-3 py-3 mb-3">
             <div class="d-flex align-items-baseline gap-3 mb-3">
                 <div>
                     <div class="text-muted fs-7">A pagar en el próximo corte</div>
@@ -4777,8 +4851,10 @@ async function agregarConsumoTarjeta(tarjetaId) {
     const catId       = document.getElementById('tarjNuevaCategoria').value || null;
     const cuotasTotal = parseInt(document.getElementById('tarjNuevaCuotas').value) || 1;
     const cuotaNumero = cuotasTotal > 1
-        ? parseInt(document.getElementById('tarjCuotaActual').value) || 1
+        ? (parseInt(document.getElementById('tarjCuotaActual')?.value) || 1)
         : 1;
+
+    console.log('Agregando consumo:', {fecha, desc, importe, cuotasTotal, cuotaNumero});
 
     if (!fecha)        { mostrarError('Ingresá una fecha.'); return; }
     if (!desc)         { mostrarError('Ingresá una descripción.'); return; }
@@ -4958,17 +5034,32 @@ async function eliminarConsumoTarjeta(consumoId, tarjetaId, cuotasTotal) {
     }
 }
 
-function _editarConsumoTarjeta(consumoId, fechaActual, cuotaActual, cuotasTotal) {
+function _editarConsumoTarjeta(consumoId, fechaActual, cuotaActual, cuotasTotal, descActual, importeActual) {
     const fila = document.querySelector(`.tarj-consumo-fila[data-id="${consumoId}"]`);
     if (!fila) return;
 
+    const importeFormateado = (importeActual || 0).toString().replace('.', ',');
     const formHtml = `
-    <div class="tarj-edicion-form d-flex gap-2 align-items-center py-2">
-        <input type="date" class="form-control form-control-sm" id="editFecha" value="${fechaActual}" style="flex: 1; max-width: 140px;">
+    <div class="tarj-edicion-form d-flex gap-2 align-items-end py-2 flex-wrap">
+        <div style="min-width:7rem">
+            <label class="form-field-label">Fecha</label>
+            <input type="date" class="form-control form-control-sm" id="editFecha" value="${fechaActual}">
+        </div>
+        <div style="min-width:10rem">
+            <label class="form-field-label">Descripción</label>
+            <input type="text" id="editDesc" value="${(descActual || '').replace(/"/g, '&quot;')}" class="form-control form-control-sm">
+        </div>
+        <div style="width:7rem">
+            <label class="form-field-label">Importe</label>
+            <input type="text" inputmode="decimal" id="editImporte" value="${importeFormateado}" class="form-control form-control-sm text-end">
+        </div>
         ${cuotasTotal > 1 ? `
-        <input type="number" class="form-control form-control-sm text-center" id="editCuota" min="1" max="${cuotasTotal}" value="${cuotaActual}" style="width: 60px;">
+        <div style="width:5rem">
+            <label class="form-field-label">Cuota #</label>
+            <input type="number" class="form-control form-control-sm text-center" id="editCuota" min="1" max="${cuotasTotal}" value="${cuotaActual}">
+        </div>
         ` : ''}
-        <button class="btn btn-sm btn-success" onclick="_guardarEdicionConsumo(${consumoId}, '${fechaActual}', ${cuotaActual}, ${cuotasTotal})">
+        <button class="btn btn-sm btn-success" onclick="_guardarEdicionConsumo(${consumoId})">
             <i class="bi bi-check"></i>
         </button>
         <button class="btn btn-sm btn-secondary" onclick="_cancelarEdicionConsumo(${consumoId})">
@@ -4980,24 +5071,28 @@ function _editarConsumoTarjeta(consumoId, fechaActual, cuotaActual, cuotasTotal)
     document.getElementById('editFecha').focus();
 }
 
-async function _guardarEdicionConsumo(consumoId, fechaAnterior, cuotaAnterior, cuotasTotal) {
+async function _guardarEdicionConsumo(consumoId) {
     const fecha = document.getElementById('editFecha').value.trim();
-    const cuota = cuotasTotal > 1 ? parseInt(document.getElementById('editCuota').value) || cuotaAnterior : null;
+    const desc = document.getElementById('editDesc').value.trim();
+    const importe = parsearImporte(document.getElementById('editImporte').value || '0');
+    const cuotaEl = document.getElementById('editCuota');
+    const cuota = cuotaEl ? parseInt(cuotaEl.value) : null;
 
     if (!fecha) {
         mostrarError('Ingresá una fecha');
         return;
     }
 
+    const body = { consumo_id: consumoId, fecha };
+    if (desc) body.descripcion = desc;
+    if (importe > 0) body.importe = importe;
+    if (cuota !== null) body.cuota_numero = cuota;
+
     try {
         const resp = await fetch(TARJETAS_API_URL, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                consumo_id: consumoId,
-                fecha,
-                ...(cuota !== null && { cuota_numero: cuota })
-            })
+            body: JSON.stringify(body)
         });
         const result = await resp.json();
         if (!result.success) throw new Error(result.message);
@@ -5055,6 +5150,77 @@ async function _verHistorialTarjeta(tarjetaId) {
 
     } catch (error) {
         body.innerHTML = `<div class="alert alert-danger m-3">Error: ${error.message}</div>`;
+    }
+}
+
+function _abrirFormPago(resumenId, total) {
+    const form = document.getElementById(`tarjFormPago-${resumenId}`);
+    if (!form) return;
+
+    const cuentasHtml = app.cuentas
+        .filter(c => (c.tipo || 'cuenta_corriente') !== 'tarjeta')
+        .map(c => `<option value="${c.id}">${c.nombre}</option>`)
+        .join('');
+
+    const totalFormateado = formatearMoneda(total);
+    form.innerHTML = `
+    <div class="bg-light p-2 rounded mb-2" style="border-left: 3px solid var(--bs-primary)">
+        <div class="row g-2 align-items-end">
+            <div class="col-12 col-sm-5">
+                <label class="form-field-label">Cuenta de pago</label>
+                <select id="pagoCuentaId-${resumenId}" class="form-select form-select-sm">
+                    <option value="">— Seleccionar —</option>
+                    ${cuentasHtml}
+                </select>
+            </div>
+            <div class="col-6 col-sm-4">
+                <label class="form-field-label">Importe</label>
+                <input type="text" inputmode="decimal" id="pagoImporte-${resumenId}"
+                       value="${totalFormateado}" class="form-control form-control-sm text-end">
+            </div>
+            <div class="col-6 col-sm-3 d-flex gap-1">
+                <button class="btn btn-sm btn-success flex-grow-1" onclick="_confirmarPago(${resumenId})">
+                    <i class="bi bi-check-lg"></i>
+                </button>
+                <button class="btn btn-sm btn-secondary flex-grow-1" onclick="_cancelarFormPago(${resumenId})">
+                    <i class="bi bi-x-lg"></i>
+                </button>
+            </div>
+        </div>
+    </div>`;
+    document.getElementById(`pagoCuentaId-${resumenId}`).focus();
+}
+
+function _cancelarFormPago(resumenId) {
+    const form = document.getElementById(`tarjFormPago-${resumenId}`);
+    if (form) form.innerHTML = '';
+}
+
+async function _confirmarPago(resumenId) {
+    const cuentaId = parseInt(document.getElementById(`pagoCuentaId-${resumenId}`).value);
+    const importe = parsearImporte(document.getElementById(`pagoImporte-${resumenId}`).value);
+
+    if (!cuentaId) { mostrarError('Seleccionar una cuenta'); return; }
+    if (importe <= 0) { mostrarError('Importe debe ser mayor a 0'); return; }
+
+    try {
+        const resp = await fetch(TARJETAS_API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                action: 'pago',
+                resumen_id: resumenId,
+                cuenta_id: cuentaId,
+                importe
+            })
+        });
+        const result = await resp.json();
+        if (!result.success) throw new Error(result.message);
+
+        mostrarToast('Período pagado', 'success');
+        await _cargarTarjetas();
+    } catch (error) {
+        mostrarError('Error: ' + error.message);
     }
 }
 
