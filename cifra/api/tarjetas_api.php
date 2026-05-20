@@ -243,38 +243,68 @@ try {
 
                 $cierre_dia = (int)$tarjeta['cierre_dia'];
                 $vencimiento_dia = (int)$tarjeta['vencimiento_dia'];
-                $periodos = _calcularPeriodos($cierre_dia, $vencimiento_dia);
-                $fecha_vencimiento = $periodos['fecha_vencimiento'];
 
-                // Obtener TODOS los consumos hasta la próxima fecha de vencimiento
-                // Ordenados por fecha DESC (más recientes primero)
-                $sqlTodosConsumos = "SELECT ct.*, cat.nombre AS categoria_nombre, cat.color AS categoria_color
-                                     FROM consumos_tarjeta ct
-                                     LEFT JOIN categorias cat ON cat.id = ct.categoria_id
-                                     WHERE ct.tarjeta_id = :tid
-                                     ORDER BY ct.fecha DESC, ct.id DESC";
-                $stmtTodosConsumos = $db->prepare($sqlTodosConsumos);
-                $stmtTodosConsumos->execute(['tid' => $tarjeta_id]);
-                $todosConsumos = $stmtTodosConsumos->fetchAll();
+                // Obtener el último período pagado
+                $sqlUltimoPagado = "SELECT mes, anio FROM resumenes_tarjeta
+                                    WHERE tarjeta_id = :tid AND pagado = 1
+                                    ORDER BY anio DESC, mes DESC LIMIT 1";
+                $stmtUltimoPagado = $db->prepare($sqlUltimoPagado);
+                $stmtUltimoPagado->execute(['tid' => $tarjeta_id]);
+                $ultimoPagado = $stmtUltimoPagado->fetch();
+
+                // Calcular próximo período (después del último pagado)
+                if ($ultimoPagado) {
+                    $mes_prox = (int)$ultimoPagado['mes'] + 1;
+                    $anio_prox = (int)$ultimoPagado['anio'];
+                    if ($mes_prox > 12) {
+                        $mes_prox = 1;
+                        $anio_prox++;
+                    }
+                } else {
+                    // Si no hay pagado, próximo es el mes actual
+                    $mes_prox = date('n');
+                    $anio_prox = date('Y');
+                }
+
+                // Obtener cierre_dia del próximo período
+                $sqlCierreProx = "SELECT cierre_dia FROM resumenes_tarjeta
+                                  WHERE tarjeta_id = :tid AND mes = :mes AND anio = :anio";
+                $stmtCierreProx = $db->prepare($sqlCierreProx);
+                $stmtCierreProx->execute(['tid' => $tarjeta_id, 'mes' => $mes_prox, 'anio' => $anio_prox]);
+                $resumenProx = $stmtCierreProx->fetch();
+                $cierre_prox = $resumenProx ? (int)$resumenProx['cierre_dia'] : $cierre_dia;
+
+                // Calcular fecha de cierre del próximo período
+                $fechaCierreProx = new DateTime("$anio_prox-" . str_pad($mes_prox, 2, '0', STR_PAD_LEFT) . "-" . str_pad($cierre_prox, 2, '0', STR_PAD_LEFT));
+
+                // Obtener consumos con fecha anterior a la fecha de cierre del próximo período
+                $sqlConsumos = "SELECT ct.*, cat.nombre AS categoria_nombre, cat.color AS categoria_color
+                               FROM consumos_tarjeta ct
+                               LEFT JOIN categorias cat ON cat.id = ct.categoria_id
+                               WHERE ct.tarjeta_id = :tid AND ct.fecha < :fecha_cierre
+                               ORDER BY ct.fecha DESC, ct.id DESC";
+                $stmtConsumos = $db->prepare($sqlConsumos);
+                $stmtConsumos->execute(['tid' => $tarjeta_id, 'fecha_cierre' => $fechaCierreProx->format('Y-m-d')]);
+                $consumos = $stmtConsumos->fetchAll();
 
                 // Convertir importes a float
-                foreach ($todosConsumos as &$c) {
+                foreach ($consumos as &$c) {
                     $c['importe'] = (float)$c['importe'];
                 }
                 unset($c);
 
-                // Calcular total de consumos no pagados
-                $sqlResumenesNoPagados = "SELECT SUM(total_consumido) as total FROM resumenes_tarjeta
-                                          WHERE tarjeta_id = :tid AND pagado = 0";
-                $stmtResumenesNoPagados = $db->prepare($sqlResumenesNoPagados);
-                $stmtResumenesNoPagados->execute(['tid' => $tarjeta_id]);
-                $resumenTotal = $stmtResumenesNoPagados->fetch();
-                $totalAcumulado = (float)($resumenTotal ? $resumenTotal['total'] : 0);
+                // Calcular total de consumos
+                $totalAcumulado = array_sum(array_column($consumos, 'importe'));
 
                 sendResponse(true, [
-                    'consumos_todos' => $todosConsumos,
+                    'consumos' => $consumos,
                     'total_acumulado' => $totalAcumulado,
-                    'fecha_vencimiento' => $fecha_vencimiento
+                    'proximo_vencimiento' => [
+                        'mes' => $mes_prox,
+                        'anio' => $anio_prox,
+                        'cierre_dia' => $cierre_prox,
+                        'fecha_cierre' => $fechaCierreProx->format('Y-m-d')
+                    ]
                 ]);
             }
             elseif ($action === 'consumos_por_tarjeta') {

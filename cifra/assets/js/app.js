@@ -4667,9 +4667,9 @@ async function _renderizarTarjetaDetalle(tarjetaId, mes, anio) {
         if (!result.success) throw new Error(result.message);
 
         const data = result.data;
-        const consumos = data.consumos_todos || [];
+        const consumos = data.consumos || [];
         const totalAcumulado = data.total_acumulado || 0;
-        const fechaVencimiento = data.fecha_vencimiento;
+        const proxVenc = data.proximo_vencimiento || {};
         const limite = _tarjData.find(t => t.id == tarjetaId)?.limite || 0;
 
         // Renderizar lista de consumos
@@ -4705,15 +4705,16 @@ async function _renderizarTarjetaDetalle(tarjetaId, mes, anio) {
         };
 
         const pct = limite > 0 ? Math.min(100, (totalAcumulado / limite) * 100) : 0;
-        const fechaVencFormatted = fechaVencimiento ? fechaVencimiento.split('-').reverse().join('/') : '—';
+        const mesProx = proxVenc.mes ? MESES_NOMBRES[proxVenc.mes - 1] : '—';
+        const fechaCierreFormatted = proxVenc.fecha_cierre ? proxVenc.fecha_cierre.split('-').reverse().join('/') : '—';
 
         const htmlContenido = `
         <div class="tarj-periodo-acumulando tarj-periodo-principal px-3 py-3 mb-3">
             <div class="d-flex align-items-baseline gap-3 mb-3">
                 <div>
-                    <div class="text-muted fs-7">Total acumulado (próxima fecha de vencimiento)</div>
+                    <div class="text-muted fs-7">Total acumulado (vence antes ${fechaCierreFormatted})</div>
                     <div class="tarj-total-acum fs-5 fw-bold">${formatearMoneda(totalAcumulado)}</div>
-                    <small class="text-muted">Vence: ${fechaVencFormatted}</small>
+                    <small class="text-muted">Próximo período: ${mesProx} ${proxVenc.anio || '—'}, Cierre: ${proxVenc.cierre_dia || '—'}</small>
                 </div>
                 ${limite > 0 ? `
                 <div class="ms-auto text-end">
