@@ -450,38 +450,57 @@ try {
                     $consumos_ids = [];
                     $resumenes_procesados = [];
 
+                    // Pre-crear resumenes para todos los meses necesarios
+                    for ($i = 1; $i <= $cuotas_total; $i++) {
+                        $fechaTemp = clone $fechaBase;
+                        $fechaTemp->modify('+' . ($i - 1) . ' months');
+                        $diaTemp = (int)$fechaTemp->format('j');
+                        $mesTemp = (int)$fechaTemp->format('n');
+                        $anioTemp = (int)$fechaTemp->format('Y');
+
+                        // Ajustar mes si es posterior al cierre
+                        if ($diaTemp > $cierre_dia) {
+                            $fechaTemp->modify('+1 month');
+                            $mesTemp = (int)$fechaTemp->format('n');
+                            $anioTemp = (int)$fechaTemp->format('Y');
+                        }
+
+                        // Crear resumen si no existe (asegurar que tenga cierre_dia correcto)
+                        $sqlCheckRes = "SELECT id FROM resumenes_tarjeta WHERE tarjeta_id = :tid AND mes = :mes AND anio = :anio";
+                        $stmtCheckRes = $db->prepare($sqlCheckRes);
+                        $stmtCheckRes->execute(['tid' => $tarjeta_id, 'mes' => $mesTemp, 'anio' => $anioTemp]);
+                        if (!$stmtCheckRes->fetch()) {
+                            $sqlCreateRes = "INSERT INTO resumenes_tarjeta (tarjeta_id, mes, anio, cierre_dia, vencimiento_dia, total_consumido)
+                                            VALUES (:tid, :mes, :anio, :cdia, 15, 0)";
+                            $stmtCreateRes = $db->prepare($sqlCreateRes);
+                            $stmtCreateRes->execute(['tid' => $tarjeta_id, 'mes' => $mesTemp, 'anio' => $anioTemp, 'cdia' => $cierre_dia]);
+                        }
+                    }
+
                     // Generar todas las cuotas
                     for ($i = 1; $i <= $cuotas_total; $i++) {
                         // Calcular fecha de esta cuota (desde la base)
                         $fechaCuota = clone $fechaBase;
                         $fechaCuota->modify('+' . ($i - 1) . ' months');
 
-                        // Calcular mes/año y obtener cierre_dia de ese período
+                        // Calcular mes/año
                         $dia = (int)$fechaCuota->format('j');
                         $mes = (int)$fechaCuota->format('n');
                         $anio = (int)$fechaCuota->format('Y');
 
-                        // Obtener cierre_dia del resumen de este mes
-                        $sqlCierreMes = "SELECT cierre_dia FROM resumenes_tarjeta WHERE tarjeta_id = :tid AND mes = :mes AND anio = :anio";
-                        $stmtCierreMes = $db->prepare($sqlCierreMes);
-                        $stmtCierreMes->execute(['tid' => $tarjeta_id, 'mes' => $mes, 'anio' => $anio]);
-                        $resumenMes = $stmtCierreMes->fetch();
-                        $cierre_mes = $resumenMes ? (int)$resumenMes['cierre_dia'] : $cierre_dia;
-
-                        // Si el día es posterior al cierre, va al resumen del mes siguiente
-                        if ($dia > $cierre_mes) {
+                        // Ajustar mes si es posterior al cierre (usando cierre_dia de la tarjeta)
+                        if ($dia > $cierre_dia) {
                             $fechaCuota->modify('+1 month');
                             $mes = (int)$fechaCuota->format('n');
                             $anio = (int)$fechaCuota->format('Y');
                         }
 
-                        // Upsert resumen
-                        $sqlResumen = "INSERT INTO resumenes_tarjeta (tarjeta_id, mes, anio, total_consumido)
-                                       VALUES (:tid, :mes, :anio, 0)
-                                       ON DUPLICATE KEY UPDATE id=LAST_INSERT_ID(id)";
+                        // Obtener resumen (garantizado que existe por pre-creación)
+                        $sqlResumen = "SELECT id FROM resumenes_tarjeta WHERE tarjeta_id = :tid AND mes = :mes AND anio = :anio";
                         $stmtRes = $db->prepare($sqlResumen);
                         $stmtRes->execute(['tid' => $tarjeta_id, 'mes' => $mes, 'anio' => $anio]);
-                        $resumen_id = $db->lastInsertId();
+                        $resumenData = $stmtRes->fetch();
+                        $resumen_id = $resumenData['id'];
 
                         // Recordar resumenes para no actualizar duplicados
                         $resumenes_procesados[$resumen_id] = true;
