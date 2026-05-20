@@ -277,15 +277,13 @@ try {
                 // Calcular fecha de cierre del próximo período
                 $fechaCierreProx = new DateTime("$anio_prox-" . str_pad($mes_prox, 2, '0', STR_PAD_LEFT) . "-" . str_pad($cierre_prox, 2, '0', STR_PAD_LEFT));
 
-                // Obtener consumos del próximo período y períodos anteriores no pagados
+                // Obtener consumos SOLO del próximo período
                 $sqlConsumos = "SELECT ct.*, cat.nombre AS categoria_nombre, cat.color AS categoria_color
                                FROM consumos_tarjeta ct
                                LEFT JOIN categorias cat ON cat.id = ct.categoria_id
                                WHERE ct.tarjeta_id = :tid
-                               AND (
-                                   (ct.mes = :mes_prox AND ct.anio = :anio_prox)
-                                   OR (ct.anio < :anio_prox OR (ct.anio = :anio_prox AND ct.mes < :mes_prox))
-                               )
+                               AND ct.mes = :mes_prox
+                               AND ct.anio = :anio_prox
                                ORDER BY ct.fecha DESC, ct.id DESC";
                 $stmtConsumos = $db->prepare($sqlConsumos);
                 $stmtConsumos->execute([
