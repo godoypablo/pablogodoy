@@ -4657,7 +4657,7 @@ async function _seleccionarTarjeta(id) {
     await _renderizarTarjetaDetalle(id);
 }
 
-async function _renderizarTarjetaDetalle(tarjetaId) {
+async function _renderizarTarjetaDetalle(tarjetaId, mes, anio) {
     const body = document.getElementById('modalTarjetasBody');
     body.innerHTML = '<div class="text-center py-4"><span class="spinner-border spinner-border-sm"></span></div>';
 
@@ -4667,13 +4667,15 @@ async function _renderizarTarjetaDetalle(tarjetaId) {
         if (!result.success) throw new Error(result.message);
 
         const data = result.data;
-        const cerrado = data.periodo_cerrado;
-        const acumulando = data.periodo_acumulando;
+        const consumos = data.consumos_todos || [];
+        const totalAcumulado = data.total_acumulado || 0;
+        const fechaVencimiento = data.fecha_vencimiento;
         const limite = _tarjData.find(t => t.id == tarjetaId)?.limite || 0;
 
-        const renderizarConsumos = (consumos, puedeEditar) => {
-            return consumos.length
-                ? consumos.map(c => `
+        // Renderizar lista de consumos
+        const renderizarConsumosList = (items) => {
+            return items.length
+                ? items.map(c => `
                 <div class="tarj-consumo-fila" data-id="${c.id}">
                     <span class="tarj-consumo-fecha">${formatearFechaCorta(c.fecha)}</span>
                     <span class="tarj-consumo-desc">
@@ -4688,7 +4690,6 @@ async function _renderizarTarjetaDetalle(tarjetaId) {
                         }
                     </span>
                     <span class="tarj-consumo-importe">${formatearMoneda(c.importe)}</span>
-                    ${puedeEditar ? `
                     <button class="btn btn-ghost-muted btn-sm tarj-btn-edit"
                             title="Editar"
                             onclick="_editarConsumoTarjeta(${c.id}, '${c.fecha}', ${c.cuota_numero || 1}, ${c.cuotas_total || 1}, '${(c.descripcion || '').replace(/'/g, "\\'")}', ${c.importe})">
@@ -4698,69 +4699,33 @@ async function _renderizarTarjetaDetalle(tarjetaId) {
                             title="Eliminar"
                             onclick="eliminarConsumoTarjeta(${c.id}, ${tarjetaId}, ${c.cuotas_total || 1})">
                         <i class="bi bi-trash3"></i>
-                    </button>` : ''}
+                    </button>
                 </div>`).join('')
                 : `<p class="text-center text-muted py-3 px-3">Sin consumos.</p>`;
         };
 
-        const pctCerrado = limite > 0 ? Math.min(100, (cerrado.total / limite) * 100) : 0;
-        const pctAcum = limite > 0 ? Math.min(100, (acumulando.total / limite) * 100) : 0;
+        const pct = limite > 0 ? Math.min(100, (totalAcumulado / limite) * 100) : 0;
+        const fechaVencFormatted = fechaVencimiento ? fechaVencimiento.split('-').reverse().join('/') : '—';
 
-        const labelCerrado = _labelPeriodo(cerrado.fecha_inicio, cerrado.fecha_fin);
-        const labelAcum = _labelPeriodo(acumulando.fecha_inicio, acumulando.fecha_fin);
-        const fechaVencFormatted = cerrado.fecha_vencimiento.split('-').reverse().join('/');
-
-        const htmlCerrado = `
-        <div class="tarj-periodo-cerrado border-top mt-3 pt-3">
-            <button class="btn btn-sm w-100 text-start btn-ghost-muted mb-2" data-bs-toggle="collapse" data-bs-target="#tarjColapseCerrado">
-                <i class="bi bi-chevron-down me-2"></i>
-                <span class="fw-semibold">${labelCerrado} — Vence ${fechaVencFormatted}</span>
-                <span class="ms-2 text-muted">${formatearMoneda(cerrado.total)}</span>
-                <span class="ms-auto d-flex gap-2 align-items-center">
-                    ${!cerrado.pagado ? `
-                    <button class="btn btn-sm tarj-btn-pagar" onclick="_abrirFormPago(${cerrado.resumen_id}, ${cerrado.total})">
-                        <i class="bi bi-cash me-1"></i>Pagar
-                    </button>
-                    ` : ''}
-                    <span class="tarj-estado-badge ${cerrado.pagado ? 'tarj-pagado' : 'tarj-pendiente'}">
-                        ${cerrado.pagado ? '<i class="bi bi-check-circle-fill me-1"></i>Pagado' : '<i class="bi bi-clock me-1"></i>Pendiente'}
-                    </span>
-                </span>
-            </button>
-            <div class="collapse" id="tarjColapseCerrado">
-                ${!cerrado.pagado ? `<div id="tarjFormPago-${cerrado.resumen_id}"></div>` : ''}
-                ${limite > 0 ? `
-                <div class="progress tarj-progress mb-2">
-                    <div class="progress-bar ${pctCerrado > 85 ? 'bg-danger' : 'bg-info'}" style="width:${pctCerrado.toFixed(1)}%"></div>
-                </div>
-                <small class="text-muted">${pctCerrado.toFixed(0)}% del límite</small>
-                ` : ''}
-                <div class="tarj-consumos-lista mt-2">${renderizarConsumos(cerrado.consumos, !cerrado.pagado)}</div>
-                <button class="btn btn-ghost-muted btn-sm mt-2" title="Ver historial" onclick="_verHistorialTarjeta(${tarjetaId})">
-                    <i class="bi bi-clock-history me-1"></i>Ver historial
-                </button>
-            </div>
-        </div>`;
-
-        const htmlAcum = `
+        const htmlContenido = `
         <div class="tarj-periodo-acumulando tarj-periodo-principal px-3 py-3 mb-3">
             <div class="d-flex align-items-baseline gap-3 mb-3">
                 <div>
-                    <div class="text-muted fs-7">A pagar en el próximo corte</div>
-                    <div class="tarj-total-acum fs-5 fw-bold">${formatearMoneda(acumulando.total)}</div>
-                    <small class="text-muted">${labelAcum}</small>
+                    <div class="text-muted fs-7">Total acumulado (próxima fecha de vencimiento)</div>
+                    <div class="tarj-total-acum fs-5 fw-bold">${formatearMoneda(totalAcumulado)}</div>
+                    <small class="text-muted">Vence: ${fechaVencFormatted}</small>
                 </div>
                 ${limite > 0 ? `
                 <div class="ms-auto text-end">
                     <div class="text-muted fs-7">Disponible</div>
-                    <div class="fs-5 fw-bold" style="color:#10b981">${formatearMoneda(limite - acumulando.total)}</div>
-                    <small class="text-muted">${pctAcum.toFixed(0)}% usado</small>
+                    <div class="fs-5 fw-bold" style="color:#10b981">${formatearMoneda(limite - totalAcumulado)}</div>
+                    <small class="text-muted">${pct.toFixed(0)}% usado</small>
                 </div>
                 ` : ''}
             </div>
             ${limite > 0 ? `
             <div class="progress tarj-progress mb-2">
-                <div class="progress-bar ${pctAcum > 85 ? 'bg-danger' : 'bg-success'}" style="width:${pctAcum.toFixed(1)}%"></div>
+                <div class="progress-bar ${pct > 85 ? 'bg-danger' : 'bg-success'}" style="width:${pct.toFixed(1)}%"></div>
             </div>
             ` : ''}
             <div class="tarj-form-nuevo mb-3">
@@ -4806,10 +4771,10 @@ async function _renderizarTarjetaDetalle(tarjetaId) {
                 </div>
                 <div id="tarjPreviewCuota" class="tarj-preview-cuota d-none"></div>
             </div>
-            <div class="tarj-consumos-lista">${renderizarConsumos(acumulando.consumos, true)}</div>
+            <div class="tarj-consumos-lista">${renderizarConsumosList(consumos)}</div>
         </div>`;
 
-        body.innerHTML = htmlAcum + htmlCerrado;
+        body.innerHTML = htmlContenido;
 
     } catch (error) {
         body.innerHTML = `<div class="alert alert-danger m-3">Error: ${error.message}</div>`;

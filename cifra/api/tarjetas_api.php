@@ -244,56 +244,37 @@ try {
                 $cierre_dia = (int)$tarjeta['cierre_dia'];
                 $vencimiento_dia = (int)$tarjeta['vencimiento_dia'];
                 $periodos = _calcularPeriodos($cierre_dia, $vencimiento_dia);
-
-                $mes_cerrado = $periodos['cerrado']['mes'];
-                $anio_cerrado = $periodos['cerrado']['anio'];
-                $mes_acum = $periodos['acumulando']['mes'];
-                $anio_acum = $periodos['acumulando']['anio'];
                 $fecha_vencimiento = $periodos['fecha_vencimiento'];
 
-                $sqlConsumosCerrado = "SELECT ct.*, cat.nombre AS categoria_nombre, cat.color AS categoria_color
-                                       FROM consumos_tarjeta ct
-                                       LEFT JOIN categorias cat ON cat.id = ct.categoria_id
-                                       WHERE ct.tarjeta_id = :tid AND ct.mes = :mes AND ct.anio = :anio
-                                       ORDER BY ct.fecha DESC, ct.id DESC";
-                $stmtCerrado = $db->prepare($sqlConsumosCerrado);
-                $stmtCerrado->execute(['tid' => $tarjeta_id, 'mes' => $mes_cerrado, 'anio' => $anio_cerrado]);
-                $consumosCerrado = $stmtCerrado->fetchAll();
+                // Obtener TODOS los consumos hasta la próxima fecha de vencimiento
+                // Ordenados por fecha DESC (más recientes primero)
+                $sqlTodosConsumos = "SELECT ct.*, cat.nombre AS categoria_nombre, cat.color AS categoria_color
+                                     FROM consumos_tarjeta ct
+                                     LEFT JOIN categorias cat ON cat.id = ct.categoria_id
+                                     WHERE ct.tarjeta_id = :tid
+                                     ORDER BY ct.fecha DESC, ct.id DESC";
+                $stmtTodosConsumos = $db->prepare($sqlTodosConsumos);
+                $stmtTodosConsumos->execute(['tid' => $tarjeta_id]);
+                $todosConsumos = $stmtTodosConsumos->fetchAll();
 
-                $sqlConsumosAcum = "SELECT ct.*, cat.nombre AS categoria_nombre, cat.color AS categoria_color
-                                    FROM consumos_tarjeta ct
-                                    LEFT JOIN categorias cat ON cat.id = ct.categoria_id
-                                    WHERE ct.tarjeta_id = :tid AND ct.mes = :mes AND ct.anio = :anio
-                                    ORDER BY ct.fecha DESC, ct.id DESC";
-                $stmtAcum = $db->prepare($sqlConsumosAcum);
-                $stmtAcum->execute(['tid' => $tarjeta_id, 'mes' => $mes_acum, 'anio' => $anio_acum]);
-                $consumosAcum = $stmtAcum->fetchAll();
-
-                $sqlResumenCerrado = "SELECT total_consumido, pagado FROM resumenes_tarjeta
-                                      WHERE tarjeta_id = :tid AND mes = :mes AND anio = :anio";
-                $stmtResumenCerrado = $db->prepare($sqlResumenCerrado);
-                $stmtResumenCerrado->execute(['tid' => $tarjeta_id, 'mes' => $mes_cerrado, 'anio' => $anio_cerrado]);
-                $resumenCerrado = $stmtResumenCerrado->fetch();
-
-                foreach ($consumosCerrado as &$c) $c['importe'] = (float)$c['importe'];
-                foreach ($consumosAcum as &$c) $c['importe'] = (float)$c['importe'];
+                // Convertir importes a float
+                foreach ($todosConsumos as &$c) {
+                    $c['importe'] = (float)$c['importe'];
+                }
                 unset($c);
 
+                // Calcular total de consumos no pagados
+                $sqlResumenesNoPagados = "SELECT SUM(total_consumido) as total FROM resumenes_tarjeta
+                                          WHERE tarjeta_id = :tid AND pagado = 0";
+                $stmtResumenesNoPagados = $db->prepare($sqlResumenesNoPagados);
+                $stmtResumenesNoPagados->execute(['tid' => $tarjeta_id]);
+                $resumenTotal = $stmtResumenesNoPagados->fetch();
+                $totalAcumulado = (float)($resumenTotal ? $resumenTotal['total'] : 0);
+
                 sendResponse(true, [
-                    'periodo_cerrado' => [
-                        'mes' => $mes_cerrado,
-                        'anio' => $anio_cerrado,
-                        'total' => (float)($resumenCerrado ? $resumenCerrado['total_consumido'] : 0),
-                        'pagado' => (int)($resumenCerrado ? $resumenCerrado['pagado'] : 0),
-                        'fecha_vencimiento' => $fecha_vencimiento,
-                        'consumos' => $consumosCerrado
-                    ],
-                    'periodo_acumulando' => [
-                        'mes' => $mes_acum,
-                        'anio' => $anio_acum,
-                        'total' => array_sum(array_column($consumosAcum, 'importe')),
-                        'consumos' => $consumosAcum
-                    ]
+                    'consumos_todos' => $todosConsumos,
+                    'total_acumulado' => $totalAcumulado,
+                    'fecha_vencimiento' => $fecha_vencimiento
                 ]);
             }
             elseif ($action === 'consumos_por_tarjeta') {
