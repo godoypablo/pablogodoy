@@ -296,6 +296,12 @@ try {
                 // Calcular total de consumos
                 $totalAcumulado = array_sum(array_column($consumos, 'importe'));
 
+                // DEBUG: contar consumos sin filtro
+                $sqlDebug = "SELECT COUNT(*) as cant FROM consumos_tarjeta WHERE tarjeta_id = :tid";
+                $stmtDebug = $db->prepare($sqlDebug);
+                $stmtDebug->execute(['tid' => $tarjeta_id]);
+                $debugCount = $stmtDebug->fetch();
+
                 sendResponse(true, [
                     'consumos' => $consumos,
                     'total_acumulado' => $totalAcumulado,
@@ -304,6 +310,12 @@ try {
                         'anio' => $anio_prox,
                         'cierre_dia' => $cierre_prox,
                         'fecha_cierre' => $fechaCierreProx->format('Y-m-d')
+                    ],
+                    '_debug' => [
+                        'ultimo_pagado' => $ultimoPagado,
+                        'consumos_filtrados' => count($consumos),
+                        'consumos_totales' => (int)$debugCount['cant'],
+                        'fecha_cierre_calculada' => $fechaCierreProx->format('Y-m-d H:i:s')
                     ]
                 ]);
             }
