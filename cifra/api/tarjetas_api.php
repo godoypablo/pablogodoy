@@ -511,8 +511,15 @@ try {
                         $mes = (int)$fechaCuota->format('n');
                         $anio = (int)$fechaCuota->format('Y');
 
-                        // Ajustar mes si es posterior al cierre (usando cierre_dia de la tarjeta)
-                        if ($dia > $cierre_dia) {
+                        // Obtener cierre_dia del resumen de ESTE mes
+                        $sqlCierreEsteMes = "SELECT cierre_dia FROM resumenes_tarjeta WHERE tarjeta_id = :tid AND mes = :mes AND anio = :anio";
+                        $stmtCierreEsteMes = $db->prepare($sqlCierreEsteMes);
+                        $stmtCierreEsteMes->execute(['tid' => $tarjeta_id, 'mes' => $mes, 'anio' => $anio]);
+                        $resumenEsteMes = $stmtCierreEsteMes->fetch();
+                        $cierre_mes = $resumenEsteMes ? (int)$resumenEsteMes['cierre_dia'] : $cierre_dia;
+
+                        // Ajustar mes si es posterior al cierre de este mes
+                        if ($dia > $cierre_mes) {
                             $fechaCuota->modify('+1 month');
                             $mes = (int)$fechaCuota->format('n');
                             $anio = (int)$fechaCuota->format('Y');
