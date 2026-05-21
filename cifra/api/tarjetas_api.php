@@ -385,6 +385,42 @@ try {
                     sendResponse(false, null, 'Error: ' . $e->getMessage(), 400);
                 }
 
+            case 'DELETE':
+                // Eliminar movimiento (consumo)
+                if (!isset($_GET['movimiento_id'])) {
+                    sendResponse(false, null, 'movimiento_id requerido', 400);
+                }
+
+                $movimiento_id = (int)$_GET['movimiento_id'];
+
+                // Obtener movimiento actual
+                $stmt = $db->prepare("SELECT * FROM movimientos_tarjeta WHERE id = ? AND tarjeta_id = ?");
+                $stmt->execute([$movimiento_id, $tarjeta_id]);
+                $movimiento = $stmt->fetch();
+
+                if (!$movimiento) {
+                    sendResponse(false, null, 'Movimiento no encontrado', 404);
+                }
+
+                try {
+                    $db->beginTransaction();
+
+                    // Eliminar todas las cuotas del movimiento
+                    $db->prepare("DELETE FROM cuotas_movimiento WHERE movimiento_id = ?")
+                        ->execute([$movimiento_id]);
+
+                    // Eliminar movimiento
+                    $db->prepare("DELETE FROM movimientos_tarjeta WHERE id = ?")
+                        ->execute([$movimiento_id]);
+
+                    $db->commit();
+                    sendResponse(true, null, 'Movimiento eliminado', 200);
+
+                } catch (Exception $e) {
+                    $db->rollBack();
+                    sendResponse(false, null, 'Error: ' . $e->getMessage(), 400);
+                }
+
             default:
                 sendResponse(false, null, 'Método no permitido', 405);
         }

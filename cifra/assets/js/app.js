@@ -4292,9 +4292,14 @@ function renderizarMovimientosDetalle(movimientos, tarjetaId) {
                 </div>
                 <div class="text-end">
                     <div class="fw-bold">${formatearMoneda(m.monto_total)}</div>
-                    <button class="btn btn-sm btn-link p-0" onclick="_editarConsumoTarjeta(${m.id}, '${m.fecha_compra}', ${m.cuota_pagada_proximo_resumen || 1}, ${m.cuotas_totales}, '${(m.descripcion || '').replace(/'/g, "\\'")}', ${m.monto_total})">
-                        <i class="bi bi-pencil-sm"></i>
-                    </button>
+                    <div class="btn-group btn-group-sm" role="group">
+                        <button class="btn btn-link p-0" onclick="_editarConsumoTarjeta(${m.id}, '${m.fecha_compra}', ${m.cuota_pagada_proximo_resumen || 1}, ${m.cuotas_totales}, '${(m.descripcion || '').replace(/'/g, "\\'")}', ${m.monto_total})" title="Editar">
+                            <i class="bi bi-pencil-sm"></i>
+                        </button>
+                        <button class="btn btn-link p-0 text-danger" onclick="_eliminarConsumoTarjeta(${m.id})" title="Eliminar">
+                            <i class="bi bi-trash-sm"></i>
+                        </button>
+                    </div>
                 </div>
             </div>
             ${m.comercio ? `<small class="text-muted d-block">${m.comercio}</small>` : ''}
@@ -4532,6 +4537,36 @@ function _editarConsumoTarjeta(consumoId, fechaActual, cuotaActual, cuotasTotal,
     // Mostrar modal
     const modal = new bootstrap.Modal(document.getElementById('modalEditConsumo'), { keyboard: false });
     modal.show();
+}
+
+// Eliminar consumo
+async function _eliminarConsumoTarjeta(consumoId) {
+    if (!confirm('¿Eliminar este consumo? Se eliminarán todas sus cuotas.')) {
+        return;
+    }
+
+    try {
+        const resp = await fetch(`${TARJETAS_API}?action=movimientos&movimiento_id=${consumoId}`, {
+            method: 'DELETE'
+        });
+
+        const result = await resp.json();
+        if (!result.success) throw new Error(result.message);
+
+        mostrarToast('Consumo eliminado', 'success');
+
+        // Recargar detalle de la tarjeta y actualizar chip
+        if (tarjetaSeleccionada) {
+            abrirDetalleTarjeta(tarjetaSeleccionada);
+            const respT = await fetch(`${TARJETAS_API}`);
+            const resT = await respT.json();
+            if (resT.success) tarjetasActuales = resT.data || [];
+            renderizarChipTarjetas();
+        }
+
+    } catch (error) {
+        mostrarError('Error: ' + error.message);
+    }
 }
 
 // Guardar edición de consumo
