@@ -4158,6 +4158,9 @@ async function cargarTarjetas() {
         // Actualizar selector en modal movimiento
         actualizarSelectTarjetasMovimiento();
 
+        // Actualizar chip de tarjetas en la pantalla principal
+        renderizarChipTarjetas();
+
     } catch (error) {
         body.innerHTML = `<div class="alert alert-danger m-3">${error.message}</div>`;
     }

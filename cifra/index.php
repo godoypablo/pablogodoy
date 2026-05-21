@@ -86,18 +86,6 @@ $labelFiltro = $meses[(int)date('n') - 1] . ' ' . date('Y');
                             </a>
                         </li>
                         <li>
-                            <a class="dropdown-item d-flex align-items-center gap-2" href="#" onclick="abrirConfigurartarjetas();return false;">
-                                <i class="bi bi-gear menu-icon"></i>
-                                Configurar tarjetas
-                            </a>
-                        </li>
-                        <li>
-                            <a class="dropdown-item d-flex align-items-center gap-2" href="#" onclick="abrirModalTarjetas();return false;">
-                                <i class="bi bi-credit-card menu-icon"></i>
-                                Tarjetas
-                            </a>
-                        </li>
-                        <li>
                             <a class="dropdown-item d-flex align-items-center gap-2" href="#" onclick="abrirModalVencimientos();return false;">
                                 <i class="bi bi-clock-history menu-icon"></i>
                                 Vencimientos
@@ -117,17 +105,18 @@ $labelFiltro = $meses[(int)date('n') - 1] . ' ' . date('Y');
                                 Movimientos
                             </a>
                         </li>
-                        <li>
-                            <a class="dropdown-item d-flex align-items-center gap-2" href="#" onclick="abrirModalMovimientosTarjetas();return false;">
-                                <i class="bi bi-credit-card menu-icon"></i>
-                                Movimientos Tarjetas
-                            </a>
-                        </li>
                         <li><hr class="dropdown-divider"></li>
                         <li>
                             <a class="dropdown-item d-flex align-items-center gap-2" href="#" onclick="abrirModalConceptos();return false;">
                                 <i class="bi bi-list-ul menu-icon"></i>
                                 Conceptos
+                            </a>
+                        </li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
+                            <a class="dropdown-item d-flex align-items-center gap-2" href="#" onclick="abrirModalTarjetas();return false;">
+                                <i class="bi bi-credit-card menu-icon"></i>
+                                Tarjetas de Crédito
                             </a>
                         </li>
                         <li><hr class="dropdown-divider"></li>
@@ -184,6 +173,10 @@ $labelFiltro = $meses[(int)date('n') - 1] . ' ' . date('Y');
                         <div class="topbar-stat" onclick="abrirModalResumen()" title="Gastos que aún no han sido pagados">
                             <span class="topbar-stat-label">Pendiente</span>
                             <span class="topbar-stat-valor" id="gastosPorPagarHeader">—</span>
+                        </div>
+                        <div class="topbar-stat d-none" id="statProximoVenc" onclick="abrirModalTarjetas()" title="Próximo vencimiento de tarjeta">
+                            <span class="topbar-stat-label">Próx. Venc.</span>
+                            <span class="topbar-stat-valor" id="proximoVencHeader">—</span>
                         </div>
                     </div>
                 </div>
@@ -410,87 +403,6 @@ $labelFiltro = $meses[(int)date('n') - 1] . ' ' . date('Y');
                     <div class="text-center py-4">
                         <div class="spinner-border text-primary"></div>
                     </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal Movimientos Tarjetas -->
-    <div class="modal fade" id="modalMovimientosTarjetas" tabindex="-1" aria-labelledby="modalMovimientosTarjetasLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg modal-dialog-scrollable">
-            <div class="modal-content">
-                <div class="modal-header flex-column align-items-stretch gap-2 pb-2">
-                    <div class="d-flex justify-content-between align-items-center w-100">
-                        <h5 class="modal-title" id="modalMovimientosTarjetasLabel">
-                            <i class="bi bi-credit-card me-2"></i>Movimientos Tarjetas · <span id="movTarjMesAnio"></span>
-                        </h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                    </div>
-                    <!-- Tabs por tarjeta -->
-                    <div id="movTarjTabs" class="tarj-tabs-scroll d-flex gap-2 overflow-auto pb-1"></div>
-                    <!-- Buscador -->
-                    <div class="busqueda-inner">
-                        <i class="bi bi-search busqueda-icon"></i>
-                        <input type="search" id="inputBusquedaMovTarj" class="busqueda-input"
-                               placeholder="Buscar descripción…" autocomplete="off">
-                        <button class="busqueda-clear d-none" id="btnLimpiarMovTarj" onclick="limpiarBusquedaMovTarj()" title="Limpiar">
-                            <i class="bi bi-x-lg"></i>
-                        </button>
-                    </div>
-                </div>
-                <div class="modal-body p-0" id="modalMovimientosTarjetasBody">
-                    <div class="text-center py-4">
-                        <div class="spinner-border text-primary"></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal Tarjetas -->
-    <div class="modal fade" id="modalTarjetas" tabindex="-1" aria-labelledby="modalTarjetasLabel" aria-hidden="true">
-        <div class="modal-dialog modal-xl modal-dialog-scrollable">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <div class="d-flex flex-column flex-sm-row align-items-start align-items-sm-center gap-2 w-100 pe-3">
-                        <h5 class="modal-title mb-0" id="modalTarjetasLabel">
-                            <i class="bi bi-credit-card me-2" style="color:#6366f1"></i>
-                            Tarjetas <span class="text-muted fw-normal fs-6 ms-1" id="tarjMesAnio"></span>
-                        </h5>
-                        <div class="ms-sm-auto d-flex gap-2 flex-wrap" id="tarjChipsHeader"></div>
-                    </div>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="tarj-selector-wrap border-bottom px-3 py-2" id="tarjSelectorWrap"></div>
-                <div class="modal-body p-0" id="modalTarjetasBody"></div>
-                <div class="modal-footer">
-                    <button class="btn btn-sm tarj-btn-nueva" style="background:linear-gradient(135deg,#6366f1 0%,#4f46e5 100%);color:#fff;border:none" onclick="abrirFormNuevaTarjeta()">
-                        <i class="bi bi-plus-lg me-1"></i>Nueva tarjeta
-                    </button>
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal Configurar Tarjetas -->
-    <div class="modal fade" id="modalConfigurarTarjetas" tabindex="-1" aria-labelledby="modalConfigurarTarjetasLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg modal-dialog-scrollable">
-            <div class="modal-content">
-                <div class="modal-header flex-column align-items-stretch gap-2 pb-2">
-                    <div class="d-flex justify-content-between align-items-center w-100">
-                        <h5 class="modal-title" id="modalConfigurarTarjetasLabel">
-                            <i class="bi bi-gear me-2" style="color:#6366f1"></i>
-                            Configurar tarjetas
-                        </h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                    </div>
-                    <!-- Tabs por tarjeta -->
-                    <div id="confTarjetasTabs" class="d-flex gap-2 pb-1"></div>
-                </div>
-                <div class="modal-body p-3" id="modalConfigurarTarjetasBody"></div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
                 </div>
             </div>
         </div>
@@ -775,6 +687,231 @@ $labelFiltro = $meses[(int)date('n') - 1] . ' ' . date('Y');
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
                     <button type="button" class="btn btn-danger" onclick="guardarGastoRapido()">
                         <i class="bi bi-plus-lg me-1"></i>Agregar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========== MODALES TARJETAS DE CRÉDITO ========== -->
+
+    <!-- Modal ABM Tarjetas -->
+    <div class="modal fade" id="modalTarjetas" tabindex="-1" aria-labelledby="modalTarjetasLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalTarjetasLabel">
+                        <i class="bi bi-credit-card me-2" style="color:#6366f1"></i>Tarjetas de Crédito
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-0" id="modalTarjetasBody">
+                    <div class="text-center py-5">
+                        <div class="spinner-border text-primary"></div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cerrar</button>
+                    <button type="button" class="btn btn-sm btn-primary" onclick="abrirFormularioTarjeta()">
+                        <i class="bi bi-plus-lg me-1"></i>Nueva tarjeta
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Formulario Tarjeta (Alta/Edición) -->
+    <div class="modal fade" id="modalFormTarjeta" tabindex="-1" aria-labelledby="modalFormTarjetaLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalFormTarjetaLabel">
+                        <i class="bi bi-plus-circle me-2"></i>Nueva Tarjeta
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="formTarjeta">
+                        <div class="mb-3">
+                            <label class="form-label form-field-label">Banco</label>
+                            <input type="text" id="ftBanco" class="form-control" placeholder="Ej: Santander" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label form-field-label">Nombre Tarjeta</label>
+                            <input type="text" id="ftNombre" class="form-control" placeholder="Ej: Visa Santander" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label form-field-label">Marca</label>
+                            <select id="ftMarca" class="form-select" required>
+                                <option value="">— Seleccionar —</option>
+                                <option value="Visa">Visa</option>
+                                <option value="Mastercard">Mastercard</option>
+                                <option value="Amex">American Express</option>
+                                <option value="Cabal">Cabal</option>
+                            </select>
+                        </div>
+                        <div class="row g-2 mb-3">
+                            <div class="col-6">
+                                <label class="form-label form-field-label">Últimos 4 dígitos</label>
+                                <input type="text" id="ftUltimos" class="form-control" maxlength="4" placeholder="1234">
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label form-field-label">Límite ARS</label>
+                                <input type="number" id="ftLimite" class="form-control text-end" placeholder="500000" step="0.01">
+                            </div>
+                        </div>
+                        <div class="row g-2 mb-3">
+                            <div class="col-6">
+                                <label class="form-label form-field-label">Día de Cierre</label>
+                                <input type="number" id="ftCierre" class="form-control text-center" min="1" max="31" placeholder="25" required>
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label form-field-label">Día de Vencimiento</label>
+                                <input type="number" id="ftVencimiento" class="form-control text-center" min="1" max="31" placeholder="3" required>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label form-field-label">Titular</label>
+                            <input type="text" id="ftTitular" class="form-control" placeholder="Ej: Juan Pérez">
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" onclick="guardarTarjeta()">
+                        <i class="bi bi-check-lg me-1"></i>Guardar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Agregar Movimiento -->
+    <div class="modal fade" id="modalMovimientoTarjeta" tabindex="-1" aria-labelledby="modalMovimientoLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalMovimientoLabel">
+                        <i class="bi bi-plus-circle me-2"></i>Registrar Compra
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="formMovimiento">
+                        <div class="mb-3">
+                            <label class="form-label form-field-label">Tarjeta *</label>
+                            <select id="mvTarjeta" class="form-select" required>
+                                <option value="">— Seleccionar —</option>
+                            </select>
+                        </div>
+                        <div class="row g-2 mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label form-field-label">Fecha de Compra *</label>
+                                <input type="date" id="mvFecha" class="form-control" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label form-field-label">Comercio</label>
+                                <input type="text" id="mvComercio" class="form-control" placeholder="Ej: Jumbo">
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label form-field-label">Descripción *</label>
+                            <input type="text" id="mvDescripcion" class="form-control" placeholder="Ej: Compras de supermercado" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label form-field-label">Categoría</label>
+                            <input type="text" id="mvCategoria" class="form-control" placeholder="Ej: Alimentación">
+                        </div>
+                        <div class="row g-2 mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label form-field-label">Monto Total ARS *</label>
+                                <input type="text" id="mvMonto" inputmode="decimal" class="form-control text-end" placeholder="207999,96 o 207999.96" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label form-field-label">Cuotas *</label>
+                                <input type="number" id="mvCuotas" class="form-control text-center" min="1" max="99" value="1" required>
+                            </div>
+                        </div>
+                        <div class="mb-3 p-3 rounded" style="background:rgba(99,102,241,0.05);border:1px solid rgba(99,102,241,0.2)">
+                            <label class="form-label form-field-label mb-2">¿Qué cuota vas a pagar en el próximo resumen? *</label>
+                            <select id="mvCuotaPagar" class="form-select" required>
+                                <option value="">— Seleccionar —</option>
+                                <option value="1" selected>Cuota 1 (primera)</option>
+                            </select>
+                            <small class="text-muted d-block mt-2">
+                                <i class="bi bi-info-circle me-1"></i>
+                                Las otras cuotas se generarán automáticamente en los próximos meses
+                            </small>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label form-field-label">Observaciones</label>
+                            <textarea id="mvObservaciones" class="form-control" rows="2" placeholder="Notas adicionales"></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" onclick="guardarMovimiento()">
+                        <i class="bi bi-check-lg me-1"></i>Registrar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Simulador de Compra -->
+    <div class="modal fade" id="modalSimulador" tabindex="-1" aria-labelledby="modalSimuladorLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalSimuladorLabel">
+                        <i class="bi bi-calculator me-2" style="color:#6366f1"></i>Simulador de Compra
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="formSimulador">
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-6">
+                                <label class="form-label form-field-label">Tarjeta *</label>
+                                <select id="simTarjeta" class="form-select" onchange="actualizarSimulacion()">
+                                    <option value="">— Seleccionar —</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label form-field-label">Fecha de Compra *</label>
+                                <input type="date" id="simFecha" class="form-control" onchange="actualizarSimulacion()">
+                            </div>
+                        </div>
+
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-6">
+                                <label class="form-label form-field-label">Monto ARS *</label>
+                                <input type="number" id="simMonto" class="form-control text-end" placeholder="120000" step="0.01" oninput="actualizarSimulacion()">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label form-field-label">Cuotas *</label>
+                                <input type="number" id="simCuotas" class="form-control text-center" min="1" max="99" value="1" onchange="actualizarSimulacion()">
+                            </div>
+                        </div>
+
+                        <div class="mb-4 p-3 rounded" style="background:rgba(99,102,241,0.05);border:1px solid rgba(99,102,241,0.2)">
+                            <label class="form-label form-field-label mb-3">¿Qué cuota pagás en el próximo resumen?</label>
+                            <select id="simCuotaPagar" class="form-select" onchange="actualizarSimulacion()">
+                                <option value="1" selected>Cuota 1 (primera)</option>
+                            </select>
+                        </div>
+                    </form>
+
+                    <hr>
+
+                    <!-- Resultado Simulación -->
+                    <div id="resultadoSimulacion"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                    <button type="button" class="btn btn-primary" onclick="confirmarCompraSimulada()">
+                        <i class="bi bi-check-lg me-1"></i>Registrar Esta Compra
                     </button>
                 </div>
             </div>

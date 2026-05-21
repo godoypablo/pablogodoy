@@ -608,6 +608,25 @@ try {
     }
 
     // ============================================================
+    // PRÓXIMO RESUMEN (action=proximo_resumen)
+    // ============================================================
+
+    if ($action === 'proximo_resumen') {
+        if (!isset($_GET['tarjeta_id'])) {
+            sendResponse(false, null, 'tarjeta_id requerido', 400);
+        }
+
+        if ($method !== 'GET') {
+            sendResponse(false, null, 'Solo GET permitido', 405);
+        }
+
+        $tarjeta_id = (int)$_GET['tarjeta_id'];
+        $resultado = TarjetasFinanciero::obtenerProximoResumen($tarjeta_id);
+
+        sendResponse(true, $resultado);
+    }
+
+    // ============================================================
     // DEBUG (action=debug)
     // ============================================================
 

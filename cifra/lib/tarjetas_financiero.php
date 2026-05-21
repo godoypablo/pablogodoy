@@ -203,9 +203,10 @@ class TarjetasFinanciero {
                 $dia_venc = min($fecha_vencimiento_dia, $dias_en_mes_venc);
                 $fecha_vencimiento = "$anio_venc-" . str_pad($mes_venc, 2, '0', STR_PAD_LEFT) . "-$dia_venc";
 
-                // Determinar estado
-                $estado = ($numero_cuota == $cuota_pagada_proximo_resumen) ? 'pagada' : 'pendiente';
-                $fecha_pago = ($numero_cuota == $cuota_pagada_proximo_resumen) ? date('Y-m-d') : null;
+                // Todas las cuotas comienzan como pendientes
+                // Solo se marcan como 'pagada' cuando el usuario paga el resumen completo
+                $estado = 'pendiente';
+                $fecha_pago = null;
 
                 $periodo = substr($fecha_cierre, 0, 7); // YYYY-MM
 
@@ -232,6 +233,44 @@ class TarjetasFinanciero {
         } catch (Exception $e) {
             throw $e;
         }
+    }
+
+    // ============================================================
+    // FUNCIÓN CORE #2B: Próximo Resumen
+    // ============================================================
+
+    /**
+     * obtenerProximoResumen()
+     *
+     * Retorna información del próximo resumen a vencer
+     * Basado en la cuota con fecha de vencimiento más cercana
+     */
+    public static function obtenerProximoResumen($tarjeta_id) {
+        $db = self::getDb();
+
+        $sql = "SELECT
+                    MIN(cm.fecha_vencimiento) as fecha_vencimiento,
+                    SUM(cm.monto) as total_pendiente,
+                    COUNT(*) as cuotas_count,
+                    SUM(CASE WHEN cm.estado = 'pagada' THEN 1 ELSE 0 END) as cuotas_pagadas
+                FROM cuotas_movimiento cm
+                INNER JOIN movimientos_tarjeta mt ON cm.movimiento_id = mt.id
+                WHERE mt.tarjeta_id = ? AND cm.estado = 'pendiente'";
+
+        $stmt = $db->prepare($sql);
+        $stmt->execute([$tarjeta_id]);
+        $resultado = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$resultado || !$resultado['fecha_vencimiento']) {
+            return null;
+        }
+
+        return [
+            'fecha_vencimiento' => $resultado['fecha_vencimiento'],
+            'total_pendiente' => (float)$resultado['total_pendiente'],
+            'cuotas_count' => (int)$resultado['cuotas_count'],
+            'cuotas_pagadas' => (int)$resultado['cuotas_pagadas']
+        ];
     }
 
     // ============================================================
