@@ -26,6 +26,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') { http_response_code(200); exit; }
 ini_set('display_errors', 0);
 ini_set('log_errors', 1);
 
+// Log manual a archivo
+$debug_file = __DIR__ . '/../debug.log';
+function debug_log($msg) {
+    global $debug_file;
+    file_put_contents($debug_file, date('Y-m-d H:i:s') . ' | ' . $msg . PHP_EOL, FILE_APPEND);
+}
+
 require_once '../config/database.php';
 require_once '../config/auth_check.php';
 require_once '../lib/tarjetas_financiero.php';
@@ -280,6 +287,7 @@ try {
 
                 } catch (Exception $e) {
                     $db->rollBack();
+                    debug_log('POST movimientos ERROR: ' . $e->getMessage() . ' | File: ' . $e->getFile() . ' | Line: ' . $e->getLine());
                     error_log('Error en POST movimientos: ' . $e->getMessage() . ' | Trace: ' . $e->getTraceAsString());
                     sendResponse(false, null, 'Error: ' . $e->getMessage(), 400);
                 }
@@ -653,5 +661,6 @@ try {
     sendResponse(false, null, 'Acción no reconocida', 400);
 
 } catch (Exception $e) {
+    debug_log('GLOBAL ERROR: ' . $e->getMessage() . ' | File: ' . $e->getFile() . ' | Line: ' . $e->getLine() . ' | Trace: ' . $e->getTraceAsString());
     sendResponse(false, null, 'Error: ' . $e->getMessage(), 500);
 }
