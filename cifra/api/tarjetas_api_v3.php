@@ -218,7 +218,7 @@ try {
                 throw new Exception("Tarjeta no encontrada");
             }
 
-            // Generar cierres para los próximos 12 meses desde la fecha de compra
+            // Generar suficientes cierres para las cuotas solicitadas
             $cierre_dia = (int)$tarjeta['fecha_cierre_dia'];
             $vencimiento_dia = (int)$tarjeta['fecha_vencimiento_dia'];
 
@@ -226,7 +226,10 @@ try {
             $anio = (int)$fecha_inicio->format('Y');
             $mes = (int)$fecha_inicio->format('m');
 
-            for ($i = 0; $i < 12; $i++) {
+            // Generar al menos $cuotas_totales cierres, o 12 si es menos
+            $meses_a_generar = max($cuotas_totales, 12);
+
+            for ($i = 0; $i < $meses_a_generar; $i++) {
                 $m = $mes + $i;
                 $a = $anio;
 
@@ -554,7 +557,8 @@ try {
             $mes_actual = (int)$fecha_hoy->format('m');
 
             $generados = 0;
-            for ($i = 0; $i < 12; $i++) {
+            // Generar 24 meses de cierres (soporta hasta 24 cuotas)
+            for ($i = 0; $i < 24; $i++) {
                 $mes = $mes_actual + $i;
                 $anio = $anio_actual;
 
