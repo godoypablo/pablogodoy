@@ -252,14 +252,18 @@ try {
                     $movimiento_id = $db->lastInsertId();
 
                     // Generar cuotas
-                    TarjetasFinanciero::generarCuotasMovimiento(
-                        $movimiento_id,
-                        $input['cuotas_totales'],
-                        $cuota_pagada_proximo,
-                        $tarjeta_id,
-                        $input['fecha_compra'],
-                        $monto_cuota
-                    );
+                    try {
+                        TarjetasFinanciero::generarCuotasMovimiento(
+                            $movimiento_id,
+                            $input['cuotas_totales'],
+                            $cuota_pagada_proximo,
+                            $tarjeta_id,
+                            $input['fecha_compra'],
+                            $monto_cuota
+                        );
+                    } catch (Exception $e) {
+                        throw new Exception('Error al generar cuotas: ' . $e->getMessage());
+                    }
 
                     $db->commit();
 
@@ -267,6 +271,7 @@ try {
 
                 } catch (Exception $e) {
                     $db->rollBack();
+                    error_log('Error en POST movimientos: ' . $e->getMessage() . ' | Trace: ' . $e->getTraceAsString());
                     sendResponse(false, null, 'Error: ' . $e->getMessage(), 400);
                 }
 
