@@ -221,10 +221,15 @@ try {
                 sendResponse(true, $movimientos);
 
             case 'POST':
-                $input = json_decode(file_get_contents('php://input'), true);
+                $json_raw = file_get_contents('php://input');
+                $input = json_decode($json_raw, true);
+
+                if ($input === null) {
+                    sendResponse(false, null, 'JSON inválido: ' . json_last_error_msg(), 400);
+                }
 
                 if (!isset($input['fecha_compra']) || !isset($input['monto_total']) || !isset($input['cuotas_totales'])) {
-                    sendResponse(false, null, 'Campos obligatorios faltantes', 400);
+                    sendResponse(false, null, 'Campos obligatorios faltantes. Recibido: ' . json_encode($input), 400);
                 }
 
                 if ($input['monto_total'] <= 0) {
@@ -286,10 +291,15 @@ try {
                     sendResponse(true, ['id' => $movimiento_id], 'Movimiento creado', 201);
 
                 } catch (Exception $e) {
-                    $db->rollBack();
-                    debug_log('POST movimientos ERROR: ' . $e->getMessage() . ' | File: ' . $e->getFile() . ' | Line: ' . $e->getLine());
-                    error_log('Error en POST movimientos: ' . $e->getMessage() . ' | Trace: ' . $e->getTraceAsString());
-                    sendResponse(false, null, 'Error: ' . $e->getMessage(), 400);
+                    try {
+                        $db->rollBack();
+                    } catch (Exception $rollbackEx) {}
+
+                    sendResponse(false, [
+                        'error' => $e->getMessage(),
+                        'file' => $e->getFile(),
+                        'line' => $e->getLine()
+                    ], 'Error al guardar movimiento: ' . $e->getMessage(), 400);
                 }
 
             case 'PATCH':
