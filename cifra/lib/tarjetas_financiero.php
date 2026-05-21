@@ -159,9 +159,7 @@ class TarjetasFinanciero {
         $anio_inicial = (int)substr($periodo_info['periodo'], 0, 4);
 
         try {
-            $db->beginTransaction();
-
-            // Generar cuotas
+            // Generar cuotas (la transacción es manejada por el llamador)
             for ($numero_cuota = 1; $numero_cuota <= $cuotas_totales; $numero_cuota++) {
 
                 // Calcular en qué mes cae esta cuota
@@ -229,11 +227,9 @@ class TarjetasFinanciero {
                 ]);
             }
 
-            $db->commit();
             return true;
 
         } catch (Exception $e) {
-            $db->rollBack();
             throw $e;
         }
     }
