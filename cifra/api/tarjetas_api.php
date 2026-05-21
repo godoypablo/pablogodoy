@@ -589,6 +589,67 @@ try {
         sendResponse(true, $disponible);
     }
 
+    // ============================================================
+    // DEBUG (action=debug)
+    // ============================================================
+
+    if ($action === 'debug') {
+        try {
+            $db = Database::getInstance()->getConnection();
+            TarjetasFinanciero::setDatabase($db);
+
+            // Test 1: Obtener tarjeta
+            $stmt = $db->prepare("SELECT * FROM tarjetas_credito WHERE id = 2");
+            $stmt->execute();
+            $tarjeta = $stmt->fetch();
+
+            if (!$tarjeta) {
+                sendResponse(false, null, 'Tarjeta 2 no existe', 400);
+            }
+
+            // Test 2: Insertar movimiento de prueba
+            $stmt = $db->prepare(
+                "INSERT INTO movimientos_tarjeta
+                (tarjeta_id, fecha_compra, descripcion, monto_total, cuotas_totales, monto_cuota, cuota_pagada_proximo_resumen)
+                VALUES (?, ?, ?, ?, ?, ?, ?)"
+            );
+            $stmt->execute([
+                2,
+                '2026-05-20',
+                'DEBUG TEST',
+                100.00,
+                1,
+                100.00,
+                1
+            ]);
+            $movimiento_id = $db->lastInsertId();
+
+            // Test 3: Llamar a generarCuotasMovimiento
+            TarjetasFinanciero::generarCuotasMovimiento(
+                $movimiento_id,
+                1,
+                1,
+                2,
+                '2026-05-20',
+                100.00
+            );
+
+            sendResponse(true, [
+                'movimiento_id' => $movimiento_id,
+                'tarjeta' => $tarjeta,
+                'message' => 'Debug test pasó correctamente'
+            ]);
+
+        } catch (Exception $e) {
+            sendResponse(false, [
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString()
+            ], 'Error en debug: ' . $e->getMessage(), 500);
+        }
+    }
+
     sendResponse(false, null, 'Acción no reconocida', 400);
 
 } catch (Exception $e) {
