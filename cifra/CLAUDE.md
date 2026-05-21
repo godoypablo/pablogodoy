@@ -11,12 +11,7 @@ registros_mensuales: concepto_id, importe, mes, anio, fecha, pagado, fecha_venci
 categorias:          nombre, color(hex), icono(BS), orden, activo
 cuentas:             nombre, banco, tipo(cuenta_corriente|caja_ahorro|billetera), color(hex), saldo_actual, fecha_saldo, activo
 movimientos_cuenta:  tipo(ingreso|pago_gasto|transferencia|extraccion), cuenta_origen_id, cuenta_destino_id, importe, fecha, descripcion, registro_id?
-tarjetas:            nombre, banco, limite DECIMAL, cierre_dia TINYINT, vencimiento_dia TINYINT, color CHAR(7), activo
-resumenes_tarjeta:   tarjeta_id, mes, anio, total_consumido DECIMAL, pagado, fecha_pago, cuenta_pago_id, movimiento_id, cierre_dia, vencimiento_dia — UNIQUE(tarjeta_id,mes,anio)
-consumos_tarjeta:    tarjeta_id, resumen_id, descripcion, importe, fecha, mes, anio, categoria_id, cuotas_total?, cuota_numero?, consumo_padre_id?
 ```
-
-**Cambio may-2026:** `limite` movido a tabla `tarjetas` (genérico para todos los períodos). `cierre_dia` y `vencimiento_dia` en `resumenes_tarjeta` (por período, pueden variar mes a mes).
 
 ## Cuentas del usuario
 1=Entre Ríos (cuenta_corriente) | 2=Santander (caja_ahorro) | 3=Personal Pay (billetera) | 4=Efectivo (billetera, #22c55e)
@@ -28,7 +23,6 @@ conceptos_api.php   GET | POST | PUT {cuenta_id_default} | DELETE
 categorias_api.php  GET | POST | PUT | DELETE
 cuentas_api.php     GET ?mes&anio → cuentas+total_pagado_mes | POST | PUT {id,saldo_actual}
 movimientos_api.php GET ?mes&anio&limit | POST transferencia | POST extraccion
-tarjetas_api.php    GET ?action=lista&mes&anio | GET ?action=todos_periodos | GET ?action=periodos_activos | GET ?action=consumos_periodos&tarjeta_id | GET ?action=consumos_por_tarjeta&mes&anio | GET ?action=resumenes&tarjeta_id | GET ?action=consumos&tarjeta_id&mes&anio | POST action=consumo | POST action=pago | POST action=nueva_tarjeta | POST action=configurar_mes | PUT {id,...} | PATCH {consumo_id, fecha?, cuota_numero?} | DELETE {consumo_id, eliminar_todas?} | DELETE {action:periodo, resumen_id}
 ```
 
 ## Circuito saldo (gastos_api.php) — COMPLETO Y VERIFICADO
@@ -125,34 +119,6 @@ Resumen/Cuentas → modales | Vencimientos → modal+badges | Ingresos → modal
 - Buscador interno (`#inputBusquedaMov`) filtra en cliente por texto libre
 - Resumen chips en header: total cobros/pagos/transferencias/extracciones del mes
 - `_cargarMovimientos()` / `_renderizarMovimientos(q)` / `limpiarBusquedaMov()` en app.js
-
-## Tarjetas de crédito — dos modales separados
-
-### Configurar tarjetas (#modalConfigurarTarjetas)
-- Menú: Hamburguesa → **"Configurar tarjetas"** (nuevo)
-- Por mes/año: lista cada tarjeta activa con inputs para:
-  - **Límite** (editable, parsea como moneda)
-  - **Cierre día** (1-31, ej: Santander = 7 en mayo, 11 en junio)
-  - **Vencimiento día** (1-31, ej: 15 o 19)
-- Guardar → POST action=configurar_mes → crea/actualiza resumen de cada tarjeta con cierre_dia y vencimiento_dia
-- **Diferencia clave:** cierre_dia y vencimiento_dia se guardan en `resumenes_tarjeta` (por período), no en `tarjetas` (tabla estática)
-
-### Ver consumos (#modalTarjetas)
-- Menú: Hamburguesa → **"Tarjetas"**
-- **Prioridad visual:** período acumulando (no pagado) en primer lugar con fondo `.tarj-periodo-principal` (respeta dark mode) | período cerrado colapsable al final
-- Header sticky: chips con nombre tarjeta + porcentaje uso + resumen total usado/disponible
-- Tabs scrolleables `.tarj-tabs-scroll`: una tab por tarjeta activa con dot de color + nombre + % usado
-- **Período acumulando:** "A pagar en el próximo corte" + total + disponible + % usado | formulario nuevo consumo | lista consumos
-- **Período cerrado:** colapsable | si Pendiente: botón "Pagar" con form inline (select cuenta + importe + confirmar) | si Pagado: badge verde | historial con botón ver detalles
-- **Formulario nuevo consumo:** fecha | descripción | importe | categoría | **cuotas (1-18)** | **cuota # (si >1)** | preview dinámico | +
-- **Edición de consumos:** click lápiz → form inline con fecha + descripción + importe + cuota # (si aplica) → confirmar/cancelar
-- **Cuotas:** campo opcional. Si >1: muestra "N cuotas de $X — genera de Mes A a Mes B" (preview dinámico con mes actual como referencia)
-- **Consumos con cuotas:** badge X/N en lista (ej: "2/6"), DELETE pide confirmación si múltiples hermanos
-- **Consumo padre:** `consumo_padre_id=NULL` es cuota 1, hermanos tienen `consumo_padre_id=id_cuota1`; calcula mes de inicio retrocediendo según `cuota_numero`
-- Mes/año de consumo: según `cierre_dia` del resumen del mes (si día > cierre_dia, resumen va al mes siguiente)
-- **Pago de período:** botón "Pagar" en período cerrado Pendiente → seleccionar cuenta + ingresar importe → POST action=pago (transaccional, descuenta saldo cuenta)
-- Validación DELETE: 409 si resumen pagado, permite eliminar cuota individual O todas las hermanas con `eliminar_todas=true`
-- **Chip "Tarjetas"** en catNav: se pre-carga al iniciar sesión con `periodos_activos`, muestra total acumulando de todas las tarjetas activas
 
 ## Login (login.php)
 - Logo Montserrat + barra degradé índigo→verde + card shadow
