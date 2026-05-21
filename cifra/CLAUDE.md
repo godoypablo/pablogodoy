@@ -120,6 +120,56 @@ Resumen/Cuentas → modales | Vencimientos → modal+badges | Ingresos → modal
 - Resumen chips en header: total cobros/pagos/transferencias/extracciones del mes
 - `_cargarMovimientos()` / `_renderizarMovimientos(q)` / `limpiarBusquedaMov()` en app.js
 
+## Tarjetas de Crédito (tarjetas_api_v3.php, tarjetas_financiero_v3.php)
+
+**Modelo simplificado:** tarjetas → movimientos → cuotas (sin períodos ni resúmenes)
+
+**Tablas:**
+```
+tarjetas_credito:      id, banco, nombre_tarjeta, marca, ultimos_4, limite_credito, 
+                       fecha_cierre_dia, fecha_vencimiento_dia, activa
+movimientos_tarjeta:   id, tarjeta_id, fecha_compra, descripcion, comercio, categoria, 
+                       monto_total, cuotas_totales, estado, fecha_cancelacion
+cuotas_movimiento:     id, movimiento_id, numero_cuota, fecha_vencimiento, monto, 
+                       pagada, fecha_pago
+cierres_tarjeta:       id, tarjeta_id, anio, mes, fecha_cierre, fecha_vencimiento
+                       (NUEVA: almacena fechas específicas por mes)
+```
+
+**API Endpoints:**
+- `GET /api/tarjetas_api_v3.php` — lista tarjetas con deuda + disponible
+- `POST /api/tarjetas_api_v3.php` — crear tarjeta
+- `POST ?action=movimiento` — crear movimiento (auto-genera cuotas)
+- `GET ?action=movimientos&tarjeta_id=X` — listar movimientos activos
+- `GET ?action=vencimientos_consolidados&tarjeta_id=X` — agrupa cuotas por fecha (→ Dashboard)
+- `GET ?action=disponible&tarjeta_id=X` — límite − deuda_comprometida
+- `PATCH ?action=marcar_pagada&cuota_id=X` — marca cuota pagada
+- `DELETE ?action=movimiento&id=X` — anula movimiento (soft-delete con fecha_cancelacion)
+- `GET ?action=cierres&tarjeta_id=X` — obtener cierres/vencimientos por mes
+- `PUT ?action=cierres&tarjeta_id=X` — actualizar cierre específico
+
+**Cálculo de primer vencimiento (`calcularPrimerVencimiento`):**
+1. Determina si compra entra en cierre actual o próximo:
+   - Si `dia_compra <= fecha_cierre_dia` → vence mes siguiente
+   - Si `dia_compra > fecha_cierre_dia` → vence dos meses después
+2. Busca en `cierres_tarjeta` la fecha exacta de vencimiento para ese mes/año
+3. Si no existe → genera automáticamente usando `fecha_vencimiento_dia` como fallback
+4. Guarda el generado en `cierres_tarjeta` para futuras consultas (evita recalcular)
+
+**UI Modal Tarjeta:**
+- Pestaña "Próximos Pagos": vencimientos consolidados con acordeón por mes
+  - Primer mes expandido, resto colapsados
+  - Cada cuota con checkbox para marcar pagada (desaparece con animación)
+- Pestaña "Compras": movimientos registrados + botón "Agregar Compra"
+- Header: info tarjeta (límite, disponible, comprometido, uso%) + botón 📅 "Editar Cierres"
+- Modal "Editar Cierres": tabla con inputs de fecha para cada mes (editable sin reload)
+
+**Importante:**
+- `fecha_cierre_dia` y `fecha_vencimiento_dia` en tarjetas_credito son valores **base** (fallback)
+- Las fechas **específicas y variables** se guardan en `cierres_tarjeta` (mes a mes)
+- Al crear movimiento, se consulta `cierres_tarjeta`; si no existe, se genera auto usando base
+- El usuario puede editar cierres desde UI cuando tenga información real
+
 ## Login (login.php)
 - Logo Montserrat + barra degradé índigo→verde + card shadow
 - Toggle ojo para contraseña: `#btnTogglePass` → alterna type password/text + icono bi-eye/bi-eye-slash

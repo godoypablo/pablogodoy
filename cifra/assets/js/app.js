@@ -328,10 +328,24 @@ function parsearImporte(texto) {
         .replace(/[U$\s]/g, '')     // eliminar U$D, $, espacios
         .trim();
 
-    // Coma es siempre el separador decimal; punto se trata como miles
-    limpio = limpio.replace(/\./g, '').replace(',', '.');
+    // Coma es separador decimal, punto es miles
+    // Buscar cuál es el separador: el último punto/coma
+    const lastComma = limpio.lastIndexOf(',');
+    const lastDot = limpio.lastIndexOf('.');
 
-    return parseFloat(limpio) || 0;
+    let resultado;
+    if (lastComma > lastDot) {
+        // La coma es el separador decimal
+        resultado = limpio.replace(/\./g, '').replace(',', '.');
+    } else if (lastDot > lastComma) {
+        // El punto es el separador decimal (user already used . as decimal)
+        resultado = limpio.replace(/,/g, '');
+    } else {
+        // Sin separadores o solo coma
+        resultado = limpio.replace(/\./g, '').replace(',', '.');
+    }
+
+    return parseFloat(resultado) || 0;
 }
 
 // Inicializar selectores de mes y año
@@ -2249,7 +2263,11 @@ function renderizarGerencial() {
         const [y,m,dd] = c.fecha_vencimiento.split('-');
         const f = new Date(+y, m-1, +dd);
         return f >= hoy && f <= en7d;
-    }).sort((a, b) => new Date(a.fecha_vencimiento) - new Date(b.fecha_vencimiento));
+    }).sort((a, b) => {
+        const [y1,m1,d1] = a.fecha_vencimiento.split('-');
+        const [y2,m2,d2] = b.fecha_vencimiento.split('-');
+        return new Date(+y1, m1-1, +d1) - new Date(+y2, m2-1, +d2);
+    });
 
     // Categorías (solo gastos)
     const catMap = {};
@@ -4049,7 +4067,15 @@ function _renderizarTablaAnual(data) {
 // TARJETAS DE CRÉDITO
 // ============================================================
 
-const TARJETAS_API = 'api/tarjetas_api.php';
+const TARJETAS_API = 'api/tarjetas_api_v3.php';
+
+// Helper para fetch a API con credenciales
+function fetchAPI(url, options = {}) {
+    return fetch(url, {
+        credentials: 'include',
+        ...options
+    });
+}
 let tarjetasActuales = [];
 let tarjetaSeleccionada = null;
 
@@ -4065,7 +4091,7 @@ async function cargarTarjetas() {
     const body = document.getElementById('modalTarjetasBody');
 
     try {
-        const resp = await fetch(TARJETAS_API);
+        const resp = await fetchAPI(TARJETAS_API);
         const result = await resp.json();
 
         if (!result.success) throw new Error(result.message || 'Error al cargar tarjetas');
@@ -4139,76 +4165,132 @@ async function cargarTarjetas() {
 
 // Abrir detalle de tarjeta
 async function abrirDetalleTarjeta(tarjetaId) {
-    tarjetaId = String(tarjetaId); // Normalizar a string
+    tarjetaId = String(tarjetaId);
     tarjetaSeleccionada = parseInt(tarjetaId);
     const body = document.getElementById('modalTarjetasBody');
 
     try {
         body.innerHTML = '<div class="text-center py-5"><div class="spinner-border text-primary"></div></div>';
 
-        const respProyeccion = await fetch(`${TARJETAS_API}?action=proyeccion&tarjeta_id=${tarjetaId}&meses=12`);
-        const resultProyeccion = await respProyeccion.json();
+        // Cargar datos en paralelo
+        const [respVencimientos, respMovimientos, respDisponible] = await Promise.all([
+            fetchAPI(`${TARJETAS_API}?action=vencimientos_consolidados&tarjeta_id=${tarjetaId}`),
+            fetchAPI(`${TARJETAS_API}?action=movimientos&tarjeta_id=${tarjetaId}`),
+            fetchAPI(`${TARJETAS_API}?action=disponible&tarjeta_id=${tarjetaId}`)
+        ]);
 
-        const respMovimientos = await fetch(`${TARJETAS_API}?action=movimientos&tarjeta_id=${tarjetaId}`);
+        const resultVencimientos = await respVencimientos.json();
         const resultMovimientos = await respMovimientos.json();
+        const resultDisponible = await respDisponible.json();
 
-        if (!resultProyeccion.success) throw new Error(resultProyeccion.message);
+        if (!resultVencimientos.success) throw new Error(resultVencimientos.message);
 
         const tarjeta = tarjetasActuales.find(t => String(t.id) === tarjetaId);
-
         if (!tarjeta) {
-            console.error(`Tarjeta no encontrada. ID buscado: ${tarjetaId}, IDs disponibles:`, tarjetasActuales.map(t => t.id));
-            throw new Error(`Tarjeta ID ${tarjetaId} no encontrada. Intenta recargar el modal.`);
+            throw new Error(`Tarjeta no encontrada: ${tarjetaId}`);
         }
 
-        const proyeccion = resultProyeccion.data || [];
+        const vencimientos = resultVencimientos.data || [];
         const movimientos = resultMovimientos.success ? resultMovimientos.data : [];
+        const disponible_info = resultDisponible.success ? resultDisponible.data : null;
+
+        const proximo = vencimientos.length > 0 ? vencimientos[0] : null;
 
         let html = `
-            <div class="p-3">
+            <div class="p-3 tarj-modal">
                 <div class="mb-3">
                     <button class="btn btn-sm btn-outline-secondary" onclick="cargarTarjetas()">
                         <i class="bi bi-chevron-left me-1"></i>Volver
                     </button>
                 </div>
 
-                <div class="card mb-3" style="border-left:4px solid #6366f1">
+                <div class="card mb-4" style="border-top:3px solid var(--color-primary)">
                     <div class="card-body">
-                        <h5>${tarjeta.nombre_tarjeta}</h5>
-                        <p class="text-muted mb-2">${tarjeta.banco}</p>
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <div>
+                                <h5 class="mb-1">${tarjeta.nombre_tarjeta}</h5>
+                                <p class="text-muted mb-0">
+                                    <small>${tarjeta.banco}</small>
+                                    ${tarjeta.ultimos_4 ? `<span class="text-muted ms-2">•</span> <small class="ms-2">•••• ${tarjeta.ultimos_4}</small>` : ''}
+                                </p>
+                            </div>
+                            <div class="btn-group btn-group-sm" role="group">
+                                <button class="btn btn-outline-secondary" onclick="abrirCierresModal(${tarjetaId})" title="Editar cierres y vencimientos">
+                                    <i class="bi bi-calendar2"></i>
+                                </button>
+                                <button class="btn btn-outline-secondary" onclick="editarTarjeta(${tarjetaId})" title="Editar tarjeta">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+                            </div>
+                        </div>
                         <div class="row g-3">
                             <div class="col-6">
-                                <small class="text-muted">Deuda Comprometida</small>
-                                <div class="fw-bold fs-6">${formatearMoneda(tarjeta.deuda_comprometida)}</div>
+                                <small class="text-muted d-block mb-1">Límite de Crédito</small>
+                                <div class="fw-bold fs-6">${formatearMoneda(disponible_info?.limite || 0)}</div>
                             </div>
                             <div class="col-6">
-                                <small class="text-muted">Disponible</small>
-                                <div class="fw-bold fs-6">${formatearMoneda(tarjeta.disponible)}</div>
+                                <small class="text-muted d-block mb-1">Disponible</small>
+                                <div class="fw-bold fs-6" style="color: ${(disponible_info?.disponible || 0) < 0 ? '#dc3545' : '#10b981'}">
+                                    ${formatearMoneda(disponible_info?.disponible || 0)}
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <small class="text-muted d-block mb-1">Comprometido</small>
+                                <div class="fw-bold fs-6">${formatearMoneda(disponible_info?.deuda_comprometida || 0)}</div>
+                            </div>
+                            <div class="col-6">
+                                <small class="text-muted d-block mb-1">Uso</small>
+                                <div class="fw-bold fs-6">
+                                    ${((disponible_info?.deuda_comprometida || 0) / (disponible_info?.limite || 1) * 100).toFixed(0)}%
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <div class="mb-3">
-                    <h6 class="mb-2">Proyección Próximos Meses</h6>
-                    ${renderizarProyeccion(proyeccion)}
+                ${proximo ? `
+                <div class="alert alert-primary mb-4">
+                    <div class="d-flex justify-content-between align-items-baseline mb-2">
+                        <small class="text-muted d-block">📅 Próximo vencimiento</small>
+                        <strong>${parsearFechaISO(proximo.fecha_vencimiento).toLocaleDateString('es-AR', {day:'2-digit', month:'short', year:'numeric'})}</strong>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-baseline">
+                        <small class="text-muted d-block">💰 Total a pagar</small>
+                        <strong class="fs-6">${formatearMoneda(proximo.total)}</strong>
+                    </div>
                 </div>
+                ` : '<div class="alert alert-info mb-4">Sin cuotas pendientes</div>'}
 
-                <div class="mb-3">
-                    <h6 class="mb-2">Consumos Registrados</h6>
-                    ${renderizarMovimientosDetalle(movimientos, tarjetaId)}
-                </div>
+                <!-- Pestañas -->
+                <ul class="nav nav-tabs mb-3" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="tab-pagos" data-bs-toggle="tab" data-bs-target="#content-pagos" type="button" role="tab" aria-controls="content-pagos" aria-selected="true">
+                            <i class="bi bi-calendar-event me-2"></i>Próximos Pagos
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="tab-compras" data-bs-toggle="tab" data-bs-target="#content-compras" type="button" role="tab" aria-controls="content-compras" aria-selected="false">
+                            <i class="bi bi-bag me-2"></i>Compras
+                        </button>
+                    </li>
+                </ul>
 
-                <div class="d-flex gap-2">
-                    <button class="btn btn-sm btn-outline-primary flex-grow-1" onclick="abrirFormularioMovimiento(${tarjetaId})">
-                        <i class="bi bi-plus-lg me-1"></i>Agregar Compra
-                    </button>
-                    <button class="btn btn-sm btn-outline-info" onclick="abrirSimulador()" title="Simular una compra antes de registrarla">
-                        <i class="bi bi-calculator"></i>
-                    </button>
-                    <button class="btn btn-sm btn-outline-secondary" onclick="editarTarjeta(${tarjetaId})">
-                        <i class="bi bi-pencil"></i>
-                    </button>
+                <!-- Contenido pestañas -->
+                <div class="tab-content mb-4">
+                    <!-- Pestaña: Próximos Pagos -->
+                    <div class="tab-pane fade show active" id="content-pagos" role="tabpanel" aria-labelledby="tab-pagos">
+                        ${renderizarVencimientosConsolidados(vencimientos)}
+                    </div>
+
+                    <!-- Pestaña: Compras -->
+                    <div class="tab-pane fade" id="content-compras" role="tabpanel" aria-labelledby="tab-compras">
+                        <div class="mb-3">
+                            <button class="btn btn-primary btn-sm mb-3" onclick="abrirFormularioMovimiento(${tarjetaId})">
+                                <i class="bi bi-plus-lg me-1"></i>Agregar Compra
+                            </button>
+                        </div>
+                        ${renderizarMovimientosSimple(movimientos)}
+                    </div>
                 </div>
             </div>`;
 
@@ -4219,53 +4301,245 @@ async function abrirDetalleTarjeta(tarjetaId) {
     }
 }
 
+// Parsear fecha YYYY-MM-DD sin ambigüedad de zona horaria
+function parsearFechaISO(dateString) {
+    const [year, month, day] = dateString.split('-').map(Number);
+    return new Date(year, month - 1, day);
+}
+
+// Renderizar vencimientos consolidados por fecha con acordeón por mes
+function renderizarVencimientosConsolidados(vencimientos) {
+    if (!vencimientos || vencimientos.length === 0) {
+        return '<div class="alert alert-info alert-sm">Sin cuotas pendientes</div>';
+    }
+
+    // Agrupar por mes (YYYY-MM)
+    const porMes = {};
+    vencimientos.forEach(venc => {
+        const fecha = venc.fecha_vencimiento.substring(0, 7); // YYYY-MM
+        if (!porMes[fecha]) {
+            porMes[fecha] = { total: 0, vencimientos: [] };
+        }
+        porMes[fecha].total += venc.total;
+        porMes[fecha].vencimientos.push(venc);
+    });
+
+    const meses = Object.keys(porMes).sort();
+    let html = '';
+
+    meses.forEach((mes, idx) => {
+        const mesData = porMes[mes];
+        const [anio, month] = mes.split('-');
+        const mesNombre = new Date(anio, parseInt(month) - 1).toLocaleDateString('es-AR', {month:'long', year:'numeric'});
+        const abierto = idx === 0 ? '' : ' d-none'; // Primer mes expandido
+
+        html += `
+            <div class="tarj-mes-grupo">
+                <div class="tarj-mes-header" onclick="toggleMesTarjetas(this)">
+                    <span>${mesNombre.charAt(0).toUpperCase() + mesNombre.slice(1)} · ${formatearMoneda(mesData.total)}</span>
+                    <i class="bi bi-chevron-${idx === 0 ? 'down' : 'right'}"></i>
+                </div>
+                <div class="tarj-mes-body${abierto}">`;
+
+        mesData.vencimientos.forEach(venc => {
+            const fecha = parsearFechaISO(venc.fecha_vencimiento);
+            const fechaStr = fecha.toLocaleDateString('es-AR', {day:'2-digit', month:'long'});
+
+            html += `
+                    <div class="tarj-vencimiento-grupo">
+                        <div class="tarj-vencimiento-header">
+                            <span class="fecha">📅 ${fechaStr}</span>
+                            <span class="total">${formatearMoneda(venc.total)}</span>
+                        </div>
+                        <div class="tarj-cuotas-lista">`;
+
+            venc.cuotas.forEach(cuota => {
+                html += `
+                            <div class="tarj-cuota-item">
+                                <input type="checkbox" class="form-check-input tarj-cuota-check"
+                                       data-cuota-id="${cuota.cuota_id}" onchange="marcarCuotaPagada(${cuota.cuota_id}, this)">
+                                <div class="tarj-cuota-info">
+                                    <div class="tarj-cuota-descripcion">${cuota.descripcion}</div>
+                                    <div class="tarj-cuota-numero">Cuota ${cuota.numero_cuota}/${cuota.cuotas_totales}</div>
+                                </div>
+                                <div class="tarj-cuota-monto">${formatearMoneda(cuota.monto)}</div>
+                            </div>`;
+            });
+
+            html += `
+                        </div>
+                    </div>`;
+        });
+
+        html += `
+                </div>
+            </div>`;
+    });
+
+    return html;
+}
+
+// Toggle acordeón de meses
+function toggleMesTarjetas(header) {
+    const body = header.nextElementSibling;
+    const icon = header.querySelector('i');
+    const abierto = !body.classList.contains('d-none');
+    body.classList.toggle('d-none', abierto);
+    icon.className = abierto ? 'bi bi-chevron-right' : 'bi bi-chevron-down';
+}
+
+// Marcar cuota como pagada
+async function marcarCuotaPagada(cuotaId, checkbox) {
+    checkbox.disabled = true;
+    try {
+        const resp = await fetchAPI(`${TARJETAS_API}?action=marcar_pagada&cuota_id=${cuotaId}`, { method: 'PATCH' });
+        const result = await resp.json();
+
+        if (result.success) {
+            // Animar fade-out
+            const fila = checkbox.closest('.tarj-cuota-item');
+            fila.style.opacity = '0';
+            fila.style.transition = 'opacity 0.3s ease-out';
+
+            setTimeout(() => {
+                fila.remove();
+                // Actualizar totales si quedan cuotas
+                _actualizarTotalesVencimientoDespuesPago(cuotaId);
+                mostrarToast('Cuota marcada como pagada', 'success');
+            }, 300);
+        } else {
+            checkbox.disabled = false;
+            checkbox.checked = false;
+            mostrarError('Error: ' + result.message);
+        }
+    } catch (error) {
+        checkbox.disabled = false;
+        checkbox.checked = false;
+        mostrarError('Error: ' + error.message);
+    }
+}
+
+// Actualizar totales después de pagar una cuota
+function _actualizarTotalesVencimientoDespuesPago(cuotaId) {
+    // Recalcular total del vencimiento
+    const cuotaItem = document.querySelector(`[data-cuota-id="${cuotaId}"]`)?.closest('.tarj-cuota-item');
+    if (!cuotaItem) {
+        // Si no hay más cuotas en ese vencimiento, recalcular totales de tarjeta
+        if (tarjetaSeleccionada) {
+            abrirDetalleTarjeta(tarjetaSeleccionada);
+        }
+    }
+}
+
+// Renderizar movimientos en formato simple (lista)
+function renderizarMovimientosSimple(movimientos) {
+    if (!movimientos || movimientos.length === 0) {
+        return '<div class="alert alert-info alert-sm">Sin movimientos registrados</div>';
+    }
+
+    return movimientos.map(m => {
+        const descEscaped = (m.descripcion || '').replace(/"/g, '&quot;');
+        const comercioEscaped = (m.comercio || '').replace(/"/g, '&quot;');
+        const categoriaEscaped = (m.categoria || '').replace(/"/g, '&quot;');
+        const detalles = [];
+
+        detalles.push(`📅 ${formatearFechaCorta(m.fecha_compra)}`);
+        detalles.push(`${m.cuotas_totales} cuota${m.cuotas_totales > 1 ? 's' : ''}`);
+        if (m.comercio) detalles.push(`${m.comercio}`);
+
+        return `
+            <div class="tarj-movimiento-fila">
+                <div class="tarj-movimiento-info">
+                    <div class="tarj-movimiento-titulo">${m.descripcion || '(sin descripción)'}</div>
+                    <div class="tarj-movimiento-detalles">
+                        ${detalles.map(d => `<span>${d}</span>`).join('')}
+                    </div>
+                </div>
+                <div class="tarj-movimiento-monto">${formatearMoneda(m.monto_total)}</div>
+                <div class="tarj-movimiento-acciones">
+                    <button class="btn btn-sm btn-outline-primary" onclick="editarMovimientoTarjeta(${m.id}, '${descEscaped}', '${comercioEscaped}', '${categoriaEscaped}')" title="Editar">
+                        <i class="bi bi-pencil-fill"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-danger" onclick="anularMovimientoTarjeta(${m.id})" title="Anular">
+                        <i class="bi bi-trash-fill"></i>
+                    </button>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
 // Renderizar proyección mensual
 function renderizarProyeccion(proyeccion) {
-    if (proyeccion.length === 0) {
+    // Filtrar períodos con total_pendiente = 0 y calcular estados correctos
+    const hoy = new Date();
+    hoy.setHours(0, 0, 0, 0);
+
+    const periodosConDeuda = proyeccion
+        .filter(p => p.total_pendiente > 0)
+        .map(p => {
+            // Calcular estado financiero basado en fecha_vencimiento vs hoy
+            const fechaVenc = parsearFechaISO(p.fecha_vencimiento);
+            fechaVenc.setHours(0, 0, 0, 0);
+            const diasAlVencimiento = Math.ceil((fechaVenc - hoy) / (1000 * 60 * 60 * 24));
+
+            let estado = 'pendiente';
+            if (p.pagado) {
+                estado = 'pagado';
+            } else if (diasAlVencimiento < 0) {
+                estado = 'vencido';
+            } else if (diasAlVencimiento === 0) {
+                estado = 'hoy';
+            } else if (diasAlVencimiento <= 7) {
+                estado = 'proximo';
+            }
+
+            return { ...p, estado_financiero: estado };
+        });
+
+    if (periodosConDeuda.length === 0) {
         return '<div class="alert alert-info">Sin cuotas pendientes</div>';
     }
 
-    return proyeccion.map(p => {
+    return periodosConDeuda.map(p => {
         const iconos = {
-            'abierto': 'bi-hourglass-split',
-            'cerrado': 'bi-check-circle-fill',
+            'pagado': 'bi-check-circle-fill',
             'vencido': 'bi-exclamation-triangle-fill',
             'hoy': 'bi-lightning-fill',
-            'proximamente': 'bi-alarm',
-            'parcial': 'bi-dash-circle'
+            'proximo': 'bi-alarm',
+            'pendiente': 'bi-hourglass-split'
         };
 
         const colores = {
-            'abierto': '#0dcaf0',
-            'cerrado': '#198754',
+            'pagado': '#198754',
             'vencido': '#dc3545',
             'hoy': '#ffc107',
-            'proximamente': '#fd7e14',
-            'parcial': '#0d6efd'
+            'proximo': '#fd7e14',
+            'pendiente': '#0dcaf0'
         };
 
-        const botones = p.estado_resumen === 'cerrado' && !p.pagado
+        const botones = !p.pagado && p.total_pendiente > 0
             ? `<button class="btn btn-sm btn-success ms-2" onclick="_abrirFormPago(${p.id}, ${p.total_pendiente})">
                    <i class="bi bi-cash me-1"></i>Pagar
                </button>`
             : '';
 
         return `
-            <div class="d-flex align-items-center gap-2 p-2 mb-2 tarj-periodo-principal" style="border-left:3px solid ${colores[p.estado_resumen]}">
+            <div class="d-flex align-items-center gap-2 p-2 mb-2 tarj-periodo-principal" style="border-left:3px solid ${colores[p.estado_financiero]}">
                 <div>
-                    <i class="bi ${iconos[p.estado_resumen]}" style="color:${colores[p.estado_resumen]}"></i>
+                    <i class="bi ${iconos[p.estado_financiero]}" style="color:${colores[p.estado_financiero]}"></i>
                 </div>
                 <div class="flex-grow-1">
                     <div class="fw-bold">${p.periodo}</div>
                     <small class="text-muted">
-                        Vence: ${new Date(p.fecha_vencimiento).toLocaleDateString('es-AR', {day:'2-digit', month:'short'})}
+                        Vence: ${parsearFechaISO(p.fecha_vencimiento).toLocaleDateString('es-AR', {day:'2-digit', month:'short'})}
                         · ${p.cuotas_pagadas}/${p.cuotas_totales} cuotas
                     </small>
                 </div>
                 <div class="text-end d-flex align-items-center gap-2">
                     <div>
                         <div class="fw-bold">${formatearMoneda(p.total_pendiente)}</div>
-                        <small class="text-muted d-block">${p.pagado ? 'PAGADO' : p.estado_resumen.toUpperCase()}</small>
+                        <small class="text-muted d-block">${p.estado_financiero.toUpperCase()}</small>
                     </div>
                     ${botones}
                 </div>
@@ -4411,51 +4685,146 @@ async function guardarMovimiento() {
     const descripcion = document.getElementById('mvDescripcion').value.trim();
     const comercio = document.getElementById('mvComercio').value.trim();
     const categoria = document.getElementById('mvCategoria').value.trim();
-    const monto = parseFloat(document.getElementById('mvMonto').value);
+    const monto = parsearImporte(document.getElementById('mvMonto').value);
     const cuotas = parseInt(document.getElementById('mvCuotas').value);
-    const cuotaPagar = parseInt(document.getElementById('mvCuotaPagar').value);
-    const observaciones = document.getElementById('mvObservaciones').value.trim();
 
     if (!tarjetaId || !fecha || !descripcion || !monto || monto <= 0 || !cuotas) {
         mostrarError('Complete los campos obligatorios correctamente');
         return;
     }
 
-    if (cuotaPagar < 1 || cuotaPagar > cuotas) {
-        mostrarError('Cuota a pagar inválida');
-        return;
-    }
-
     try {
-        const resp = await fetch(`${TARJETAS_API}?action=movimientos&tarjeta_id=${tarjetaId}`, {
+        const resp = await fetchAPI(`${TARJETAS_API}?action=movimiento`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
+                tarjeta_id: tarjetaId,
                 fecha_compra: fecha,
                 descripcion,
-                comercio: comercio || null,
-                categoria: categoria || null,
+                comercio: comercio || '',
+                categoria: categoria || '',
                 monto_total: monto,
-                moneda: 'ARS',
-                cuotas_totales: cuotas,
-                cuota_pagada_proximo_resumen: cuotaPagar,
-                observaciones: observaciones || null
+                cuotas_totales: cuotas
             })
         });
 
         const result = await resp.json();
         if (!result.success) throw new Error(result.message);
 
-        mostrarToast('Compra registrada', 'success');
+        mostrarToast(`Compra registrada - ${result.data.cuotas_generadas} cuotas generadas`, 'success');
         bootstrap.Modal.getInstance(document.getElementById('modalMovimientoTarjeta')).hide();
 
-        // Recargar tarjetas y chip
-        const respT = await fetch(`${TARJETAS_API}`);
+        // Recargar tarjetas y volver a detalle
+        const respT = await fetchAPI(`${TARJETAS_API}`);
         const resT = await respT.json();
         if (resT.success) tarjetasActuales = resT.data || [];
         renderizarChipTarjetas();
 
         abrirDetalleTarjeta(tarjetaId);
+
+    } catch (error) {
+        mostrarError('Error: ' + error.message);
+    }
+}
+
+// Editar movimiento (descripción, comercio, categoría)
+function editarMovimientoTarjeta(movimientoId, descActual, comercioActual, categoriaActual) {
+    const html = `
+        <div class="modal fade" id="modalEditarMovimiento" tabindex="-1">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Editar Movimiento</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label">Descripción</label>
+                            <input type="text" id="editDesc" class="form-control" value="${descActual}">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Comercio</label>
+                            <input type="text" id="editComercio" class="form-control" value="${comercioActual}">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Categoría</label>
+                            <input type="text" id="editCategoria" class="form-control" value="${categoriaActual}">
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="button" class="btn btn-primary" onclick="guardarEdicionMovimiento(${movimientoId})">Guardar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+
+    // Crear modal
+    let modalDiv = document.getElementById('modalEditarMovimiento');
+    if (modalDiv) modalDiv.remove();
+
+    document.body.insertAdjacentHTML('beforeend', html);
+    const modal = new bootstrap.Modal(document.getElementById('modalEditarMovimiento'), { keyboard: false });
+    modal.show();
+}
+
+// Guardar edición de movimiento
+async function guardarEdicionMovimiento(movimientoId) {
+    const descripcion = document.getElementById('editDesc').value.trim();
+    const comercio = document.getElementById('editComercio').value.trim();
+    const categoria = document.getElementById('editCategoria').value.trim();
+
+    if (!descripcion) {
+        mostrarError('La descripción es obligatoria');
+        return;
+    }
+
+    try {
+        const resp = await fetchAPI(`${TARJETAS_API}?action=movimiento&id=${movimientoId}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                descripcion,
+                comercio,
+                categoria
+            })
+        });
+
+        const result = await resp.json();
+        if (!result.success) throw new Error(result.message);
+
+        mostrarToast('Movimiento actualizado', 'success');
+        bootstrap.Modal.getInstance(document.getElementById('modalEditarMovimiento')).hide();
+
+        // Recargar detalle
+        if (tarjetaSeleccionada) {
+            abrirDetalleTarjeta(tarjetaSeleccionada);
+        }
+
+    } catch (error) {
+        mostrarError('Error: ' + error.message);
+    }
+}
+
+// Anular movimiento (marca como cancelado, no borra)
+async function anularMovimientoTarjeta(movimientoId) {
+    if (!confirm('¿Anular este movimiento? Las cuotas se ocultarán del cálculo de deuda.')) return;
+
+    try {
+        const resp = await fetchAPI(`${TARJETAS_API}?action=movimiento&id=${movimientoId}`, {
+            method: 'DELETE'
+        });
+
+        const result = await resp.json();
+        if (!result.success) throw new Error(result.message);
+
+        mostrarToast('Movimiento anulado', 'success');
+
+        // Recargar detalle
+        if (tarjetaSeleccionada) {
+            abrirDetalleTarjeta(tarjetaSeleccionada);
+        }
 
     } catch (error) {
         mostrarError('Error: ' + error.message);
@@ -4472,6 +4841,119 @@ function actualizarSelectTarjetasMovimiento() {
     });
 
     select.innerHTML = html;
+}
+
+// Abrir modal para editar cierres y vencimientos
+async function abrirCierresModal(tarjetaId) {
+    try {
+        const resp = await fetchAPI(`${TARJETAS_API}?action=cierres&tarjeta_id=${tarjetaId}`);
+        const result = await resp.json();
+
+        if (!result.success) throw new Error(result.message);
+
+        const cierres = result.data || [];
+        const tarjeta = tarjetasActuales.find(t => t.id === tarjetaId);
+
+        let html = `
+            <div class="modal fade" id="modalCierres" tabindex="-1">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">Cierres y Vencimientos - ${tarjeta?.nombre_tarjeta}</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="table-responsive">
+                                <table class="table table-sm table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Mes/Año</th>
+                                            <th>Fecha de Cierre</th>
+                                            <th>Fecha de Vencimiento</th>
+                                            <th></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="tablaCierres">`;
+
+        cierres.forEach(cierre => {
+            const mesNombre = new Date(cierre.anio, cierre.mes - 1).toLocaleDateString('es-AR', {month:'long', year:'numeric'});
+            html += `
+                                        <tr>
+                                            <td>${mesNombre.charAt(0).toUpperCase() + mesNombre.slice(1)}</td>
+                                            <td>
+                                                <input type="date" class="form-control form-control-sm cierre-${cierre.id}"
+                                                       value="${cierre.fecha_cierre}">
+                                            </td>
+                                            <td>
+                                                <input type="date" class="form-control form-control-sm vencimiento-${cierre.id}"
+                                                       value="${cierre.fecha_vencimiento}">
+                                            </td>
+                                            <td>
+                                                <button class="btn btn-sm btn-outline-primary"
+                                                        onclick="guardarCierre(${tarjetaId}, ${cierre.id}, ${cierre.anio}, ${cierre.mes})"
+                                                        title="Guardar cambios">
+                                                    <i class="bi bi-check"></i>
+                                                </button>
+                                            </td>
+                                        </tr>`;
+        });
+
+        html += `
+                                    </tbody>
+                                </table>
+                            </div>
+                            <p class="text-muted small mt-3">
+                                💡 Edita las fechas según los días reales de cierre y vencimiento de cada mes.
+                            </p>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                        </div>
+                    </div>
+                </div>
+            </div>`;
+
+        let modalDiv = document.getElementById('modalCierres');
+        if (modalDiv) modalDiv.remove();
+
+        document.body.insertAdjacentHTML('beforeend', html);
+        const modal = new bootstrap.Modal(document.getElementById('modalCierres'), { keyboard: false });
+        modal.show();
+
+    } catch (error) {
+        mostrarError('Error: ' + error.message);
+    }
+}
+
+// Guardar cambios en un cierre
+async function guardarCierre(tarjetaId, cierreId, anio, mes) {
+    const fechaCierre = document.querySelector(`.cierre-${cierreId}`).value;
+    const fechaVencimiento = document.querySelector(`.vencimiento-${cierreId}`).value;
+
+    if (!fechaCierre || !fechaVencimiento) {
+        mostrarError('Las fechas no pueden estar vacías');
+        return;
+    }
+
+    try {
+        const resp = await fetchAPI(`${TARJETAS_API}?action=cierres&tarjeta_id=${tarjetaId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                anio: anio,
+                mes: mes,
+                fecha_cierre: fechaCierre,
+                fecha_vencimiento: fechaVencimiento
+            })
+        });
+
+        const result = await resp.json();
+        if (!result.success) throw new Error(result.message);
+
+        mostrarToast('Cierre actualizado', 'success');
+    } catch (error) {
+        mostrarError('Error: ' + error.message);
+    }
 }
 
 // Editar tarjeta (placeholder)
@@ -4873,8 +5355,8 @@ function mostrarAlertasTarjetas(alertas) {
  * Muestra deuda total comprometida
  */
 function renderizarChipTarjetas() {
-    const catNav = document.getElementById('catNav');
-    if (!catNav) return;
+    const catNavScroll = document.querySelector('.cat-nav-scroll');
+    if (!catNavScroll) return;
 
     // Calcular deuda total
     let deudaTotal = 0;
@@ -4882,26 +5364,23 @@ function renderizarChipTarjetas() {
         deudaTotal += parseFloat(t.deuda_comprometida || 0);
     });
 
-    if (deudaTotal === 0) {
-        // Remover chip si no hay deuda
-        const chip = document.getElementById('chipTarjetas');
-        if (chip) chip.remove();
-        return;
-    }
-
+    // Remover chip existente
     let chip = document.getElementById('chipTarjetas');
-    if (!chip) {
-        chip = document.createElement('button');
-        chip.id = 'chipTarjetas';
-        chip.className = 'chip';
-        chip.onclick = () => abrirModalTarjetas();
-        catNav.insertBefore(chip, catNav.firstChild);
-    }
+    if (chip) chip.remove();
 
+    if (deudaTotal === 0) return;
+
+    // Crear chip con el mismo formato que los chips de categoría
+    chip = document.createElement('button');
+    chip.id = 'chipTarjetas';
+    chip.className = 'cat-chip';
+    chip.style.setProperty('--chip-color', '#10b981');
+    chip.onclick = () => abrirModalTarjetas();
     chip.innerHTML = `
-        <i class="bi bi-credit-card" style="color:#6366f1"></i>
-        <span>Tarjetas</span>
-        <span class="chip-total">${formatearMoneda(deudaTotal)}</span>`;
+        <i class="bi bi-credit-card cat-chip-icon"></i>
+        <span class="cat-chip-nombre">Tarjetas</span>
+        <span class="cat-chip-total">${formatearMoneda(deudaTotal)}</span>`;
+    catNavScroll.appendChild(chip);
 }
 
 /**
