@@ -218,13 +218,13 @@ try {
                 throw new Exception("Tarjeta no encontrada");
             }
 
-            // Generar cierres para los próximos 12 meses desde hoy
+            // Generar cierres para los próximos 12 meses desde la fecha de compra
             $cierre_dia = (int)$tarjeta['fecha_cierre_dia'];
             $vencimiento_dia = (int)$tarjeta['fecha_vencimiento_dia'];
 
-            $hoy = new DateTime();
-            $anio = (int)$hoy->format('Y');
-            $mes = (int)$hoy->format('m');
+            $fecha_inicio = new DateTime($fecha_compra);
+            $anio = (int)$fecha_inicio->format('Y');
+            $mes = (int)$fecha_inicio->format('m');
 
             for ($i = 0; $i < 12; $i++) {
                 $m = $mes + $i;
