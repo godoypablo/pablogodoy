@@ -4155,6 +4155,12 @@ async function abrirDetalleTarjeta(tarjetaId) {
         if (!resultProyeccion.success) throw new Error(resultProyeccion.message);
 
         const tarjeta = tarjetasActuales.find(t => t.id === tarjetaId);
+
+        if (!tarjeta) {
+            console.error(`Tarjeta no encontrada. ID buscado: ${tarjetaId}, IDs disponibles:`, tarjetasActuales.map(t => t.id));
+            throw new Error(`Tarjeta ID ${tarjetaId} no encontrada. Intenta recargar el modal.`);
+        }
+
         const proyeccion = resultProyeccion.data || [];
         const movimientos = resultMovimientos.success ? resultMovimientos.data : [];
 
