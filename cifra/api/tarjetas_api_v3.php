@@ -128,21 +128,32 @@ try {
                 $updates = [];
                 $params = [];
 
-                if (isset($data['nombre_tarjeta'])) {
-                    $updates[] = 'nombre_tarjeta = ?';
-                    $params[] = $data['nombre_tarjeta'];
-                }
-                if (isset($data['limite_credito'])) {
-                    $updates[] = 'limite_credito = ?';
-                    $params[] = (float)$data['limite_credito'];
-                }
-                if (isset($data['fecha_cierre_dia'])) {
-                    $updates[] = 'fecha_cierre_dia = ?';
-                    $params[] = (int)$data['fecha_cierre_dia'];
-                }
-                if (isset($data['fecha_vencimiento_dia'])) {
-                    $updates[] = 'fecha_vencimiento_dia = ?';
-                    $params[] = (int)$data['fecha_vencimiento_dia'];
+                // Campos editables
+                $campos = [
+                    'banco' => 'string',
+                    'nombre_tarjeta' => 'string',
+                    'marca' => 'string',
+                    'ultimos_4' => 'string',
+                    'titular' => 'string',
+                    'limite_credito' => 'float',
+                    'fecha_cierre_dia' => 'int',
+                    'fecha_vencimiento_dia' => 'int',
+                    'activa' => 'bool'
+                ];
+
+                foreach ($campos as $campo => $tipo) {
+                    if (isset($data[$campo])) {
+                        $updates[] = "$campo = ?";
+                        if ($tipo === 'float') {
+                            $params[] = (float)$data[$campo];
+                        } elseif ($tipo === 'int') {
+                            $params[] = (int)$data[$campo];
+                        } elseif ($tipo === 'bool') {
+                            $params[] = (int)(bool)$data[$campo];
+                        } else {
+                            $params[] = trim($data[$campo]);
+                        }
+                    }
                 }
 
                 if (empty($updates)) {

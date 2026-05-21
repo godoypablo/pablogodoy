@@ -4997,13 +4997,117 @@ async function guardarCierre(tarjetaId, cierreId, anio, mes) {
     }
 }
 
-// Editar tarjeta (placeholder)
+// Editar tarjeta
 function editarTarjeta(tarjetaId) {
-    const tarjeta = tarjetasActuales.find(t => t.id === tarjetaId);
+    tarjetaId = parseInt(tarjetaId, 10);
+    const tarjeta = tarjetasActuales.find(t => parseInt(t.id, 10) === tarjetaId);
     if (!tarjeta) return;
 
-    // Implementar si es necesario
-    mostrarToast('Edición no implementada aún', 'info');
+    const html = `
+        <div class="modal fade" id="modalEditarTarjeta" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Editar Tarjeta</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="formEditarTarjeta">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label for="edBanco" class="form-label">Banco</label>
+                                    <input type="text" class="form-control" id="edBanco" value="${tarjeta.banco || ''}">
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="edNombre" class="form-label">Nombre de Tarjeta</label>
+                                    <input type="text" class="form-control" id="edNombre" value="${tarjeta.nombre_tarjeta || ''}">
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="edMarca" class="form-label">Marca</label>
+                                    <input type="text" class="form-control" id="edMarca" value="${tarjeta.marca || ''}">
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="edUltimos" class="form-label">Últimos 4 Dígitos</label>
+                                    <input type="text" class="form-control" id="edUltimos" placeholder="1234" value="${tarjeta.ultimos_4 || ''}" maxlength="4">
+                                </div>
+                                <div class="col-12">
+                                    <label for="edTitular" class="form-label">Titular</label>
+                                    <input type="text" class="form-control" id="edTitular" value="${tarjeta.titular || ''}">
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="edLimite" class="form-label">Límite de Crédito</label>
+                                    <input type="number" class="form-control" id="edLimite" step="0.01" value="${tarjeta.limite_credito || 0}">
+                                </div>
+                                <div class="col-md-3">
+                                    <label for="edCierreDia" class="form-label">Día de Cierre</label>
+                                    <input type="number" class="form-control" id="edCierreDia" min="1" max="31" value="${tarjeta.fecha_cierre_dia || 25}">
+                                </div>
+                                <div class="col-md-3">
+                                    <label for="edVencimientoDia" class="form-label">Día de Vencimiento</label>
+                                    <input type="number" class="form-control" id="edVencimientoDia" min="1" max="31" value="${tarjeta.fecha_vencimiento_dia || 3}">
+                                </div>
+                                <div class="col-12">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="edActiva" ${tarjeta.activa ? 'checked' : ''}>
+                                        <label class="form-check-label" for="edActiva">
+                                            Tarjeta Activa
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="button" class="btn btn-primary" onclick="guardarEdicionTarjeta(${tarjetaId})">
+                            <i class="bi bi-check me-2"></i>Guardar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>`;
+
+    let modalDiv = document.getElementById('modalEditarTarjeta');
+    if (modalDiv) modalDiv.remove();
+
+    document.body.insertAdjacentHTML('beforeend', html);
+    const modal = new bootstrap.Modal(document.getElementById('modalEditarTarjeta'), { keyboard: false });
+    modal.show();
+}
+
+// Guardar edición de tarjeta
+async function guardarEdicionTarjeta(tarjetaId) {
+    try {
+        const payload = {
+            banco: document.getElementById('edBanco').value,
+            nombre_tarjeta: document.getElementById('edNombre').value,
+            marca: document.getElementById('edMarca').value,
+            ultimos_4: document.getElementById('edUltimos').value,
+            titular: document.getElementById('edTitular').value,
+            limite_credito: parseFloat(document.getElementById('edLimite').value) || 0,
+            fecha_cierre_dia: parseInt(document.getElementById('edCierreDia').value) || 25,
+            fecha_vencimiento_dia: parseInt(document.getElementById('edVencimientoDia').value) || 3,
+            activa: document.getElementById('edActiva').checked ? 1 : 0
+        };
+
+        const resp = await fetchAPI(`${TARJETAS_API}?id=${tarjetaId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        const result = await resp.json();
+        if (!result.success) throw new Error(result.message);
+
+        mostrarToast('Tarjeta actualizada', 'success');
+        bootstrap.Modal.getInstance(document.getElementById('modalEditarTarjeta')).hide();
+
+        // Recargar tarjetas
+        cargarTarjetas();
+
+    } catch (error) {
+        mostrarError('Error: ' + error.message);
+    }
 }
 
 // Editar consumo (movimiento)
