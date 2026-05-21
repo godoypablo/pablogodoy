@@ -5371,8 +5371,6 @@ function renderizarChipTarjetas() {
     let chip = document.getElementById('chipTarjetas');
     if (chip) chip.remove();
 
-    if (deudaTotal === 0) return;
-
     // Crear chip con el mismo formato que los chips de categoría
     chip = document.createElement('button');
     chip.id = 'chipTarjetas';

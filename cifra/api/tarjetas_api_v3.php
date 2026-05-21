@@ -207,17 +207,13 @@ try {
 
             $movimiento_id = $db->lastInsertId();
 
-            // 2. Calcular primer vencimiento
-            $primer_vencimiento = TarjetasFinanciero::calcularPrimerVencimiento($tarjeta_id, $fecha_compra);
-
-            // 3. Generar cuotas automáticamente
-            TarjetasFinanciero::generarCuotas($movimiento_id, $cuotas_totales, $monto_total, $primer_vencimiento);
+            // 2. Generar cuotas automáticamente (usa cierres_tarjeta)
+            TarjetasFinanciero::generarCuotas($movimiento_id, $tarjeta_id, $fecha_compra, $cuotas_totales, $monto_total);
 
             $db->commit();
 
             sendResponse(true, [
                 'movimiento_id' => $movimiento_id,
-                'primer_vencimiento' => $primer_vencimiento,
                 'cuotas_generadas' => $cuotas_totales
             ], 'Movimiento creado');
 

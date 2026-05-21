@@ -49,18 +49,19 @@ CREATE TABLE IF NOT EXISTS movimientos_tarjeta (
 CREATE TABLE IF NOT EXISTS cuotas_movimiento (
     id                  INT AUTO_INCREMENT PRIMARY KEY,
     movimiento_id       INT NOT NULL,
+    cierre_id           INT NULL COMMENT 'FK a cierres_tarjeta.id - cierre real asociado',
     numero_cuota        TINYINT NOT NULL COMMENT '1, 2, 3...',
-    periodo             CHAR(7) NOT NULL COMMENT 'YYYY-MM del resumen',
-    fecha_cierre        DATE NOT NULL,
     fecha_vencimiento   DATE NOT NULL,
     monto               DECIMAL(14,2) NOT NULL,
-    estado              ENUM('pendiente','pagada','vencida') DEFAULT 'pendiente',
+    pagada              TINYINT(1) DEFAULT 0,
     fecha_pago          DATE DEFAULT NULL,
     fecha_creacion      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    fecha_modificacion  TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (movimiento_id) REFERENCES movimientos_tarjeta(id) ON DELETE CASCADE,
+    FOREIGN KEY (cierre_id) REFERENCES cierres_tarjeta(id) ON DELETE SET NULL,
     INDEX idx_movimiento (movimiento_id),
-    INDEX idx_periodo (periodo),
-    INDEX idx_estado (estado),
+    INDEX idx_cierre_id (cierre_id),
+    INDEX idx_pagada_vencimiento (pagada, fecha_vencimiento),
     UNIQUE KEY uk_movimiento_cuota (movimiento_id, numero_cuota)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
