@@ -4849,13 +4849,14 @@ function actualizarSelectTarjetasMovimiento() {
 // Abrir modal para editar cierres y vencimientos
 async function abrirCierresModal(tarjetaId) {
     try {
+        tarjetaId = parseInt(tarjetaId, 10);
         const resp = await fetchAPI(`${TARJETAS_API}?action=cierres&tarjeta_id=${tarjetaId}`);
         const result = await resp.json();
 
         if (!result.success) throw new Error(result.message);
 
         const cierres = result.data || [];
-        const tarjeta = tarjetasActuales.find(t => t.id === tarjetaId);
+        const tarjeta = tarjetasActuales.find(t => parseInt(t.id, 10) === tarjetaId);
 
         let html = `
             <div class="modal fade" id="modalCierres" tabindex="-1">
@@ -4865,7 +4866,21 @@ async function abrirCierresModal(tarjetaId) {
                             <h5 class="modal-title">Cierres y Vencimientos - ${tarjeta?.nombre_tarjeta}</h5>
                             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                         </div>
-                        <div class="modal-body">
+                        <div class="modal-body">`;
+
+        if (cierres.length === 0) {
+            html += `
+                            <div class="alert alert-info">
+                                <i class="bi bi-info-circle me-2"></i>
+                                <strong>No hay cierres configurados.</strong><br>
+                                Genera cierres automáticos basados en los días de cierre y vencimiento de la tarjeta.
+                            </div>
+                            <button class="btn btn-primary w-100" onclick="generarCierresAuto(${tarjetaId})">
+                                <i class="bi bi-plus-circle me-2"></i>
+                                Generar Cierres para los Próximos 12 Meses
+                            </button>`;
+        } else {
+            html += `
                             <div class="table-responsive">
                                 <table class="table table-sm table-hover">
                                     <thead>
@@ -4878,7 +4893,7 @@ async function abrirCierresModal(tarjetaId) {
                                     </thead>
                                     <tbody id="tablaCierres">`;
 
-        cierres.forEach(cierre => {
+            cierres.forEach(cierre => {
             const mesNombre = new Date(cierre.anio, cierre.mes - 1).toLocaleDateString('es-AR', {month:'long', year:'numeric'});
             html += `
                                         <tr>
@@ -4899,15 +4914,18 @@ async function abrirCierresModal(tarjetaId) {
                                                 </button>
                                             </td>
                                         </tr>`;
-        });
+            });
 
-        html += `
+            html += `
                                     </tbody>
                                 </table>
                             </div>
                             <p class="text-muted small mt-3">
                                 💡 Edita las fechas según los días reales de cierre y vencimiento de cada mes.
-                            </p>
+                            </p>`;
+        }
+
+        html += `
                         </div>
                         <div class="modal-footer">
                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
@@ -4922,6 +4940,26 @@ async function abrirCierresModal(tarjetaId) {
         document.body.insertAdjacentHTML('beforeend', html);
         const modal = new bootstrap.Modal(document.getElementById('modalCierres'), { keyboard: false });
         modal.show();
+
+    } catch (error) {
+        mostrarError('Error: ' + error.message);
+    }
+}
+
+// Generar cierres automáticamente para los próximos 12 meses
+async function generarCierresAuto(tarjetaId) {
+    try {
+        const resp = await fetchAPI(`${TARJETAS_API}?action=generar_cierres&tarjeta_id=${tarjetaId}`, {
+            method: 'POST'
+        });
+
+        const result = await resp.json();
+        if (!result.success) throw new Error(result.message);
+
+        mostrarToast(result.message, 'success');
+
+        // Reabrir modal para mostrar los cierres generados
+        setTimeout(() => abrirCierresModal(tarjetaId), 500);
 
     } catch (error) {
         mostrarError('Error: ' + error.message);

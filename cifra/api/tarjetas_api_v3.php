@@ -454,6 +454,90 @@ try {
         sendResponse(true, null, 'Cierre actualizado');
     }
 
+    // ============================================================
+    // GENERAR CIERRES AUTOMÁTICOS
+    // ============================================================
+
+    if ($action === 'generar_cierres' && $method === 'POST') {
+        if (!isset($_GET['tarjeta_id'])) {
+            sendResponse(false, null, 'tarjeta_id requerido', 400);
+        }
+
+        $tarjeta_id = (int)$_GET['tarjeta_id'];
+
+        try {
+            // Obtener datos base de la tarjeta
+            $stmt = $db->prepare(
+                "SELECT fecha_cierre_dia, fecha_vencimiento_dia FROM tarjetas_credito WHERE id = ?"
+            );
+            $stmt->execute([$tarjeta_id]);
+            $tarjeta = $stmt->fetch();
+
+            if (!$tarjeta) {
+                sendResponse(false, null, 'Tarjeta no encontrada', 404);
+            }
+
+            $cierre_dia = (int)$tarjeta['fecha_cierre_dia'];
+            $vencimiento_dia = (int)$tarjeta['fecha_vencimiento_dia'];
+
+            // Generar cierres para los próximos 12 meses
+            $fecha_hoy = new DateTime();
+            $anio_actual = (int)$fecha_hoy->format('Y');
+            $mes_actual = (int)$fecha_hoy->format('m');
+
+            $generados = 0;
+            for ($i = 0; $i < 12; $i++) {
+                $mes = $mes_actual + $i;
+                $anio = $anio_actual;
+
+                while ($mes > 12) {
+                    $mes -= 12;
+                    $anio++;
+                }
+
+                // Calcular fecha de cierre
+                $dias_en_mes = cal_days_in_month(CAL_GREGORIAN, $mes, $anio);
+                $dia_cierre = min($cierre_dia, $dias_en_mes);
+                $fecha_cierre = new DateTime("$anio-" . str_pad($mes, 2, '0', STR_PAD_LEFT) . "-$dia_cierre");
+
+                // Calcular fecha de vencimiento (mismo mes, mes siguiente)
+                $mes_venc = $mes + 1;
+                $anio_venc = $anio;
+                if ($mes_venc > 12) {
+                    $mes_venc -= 12;
+                    $anio_venc++;
+                }
+
+                $dias_en_mes_venc = cal_days_in_month(CAL_GREGORIAN, $mes_venc, $anio_venc);
+                $dia_venc = min($vencimiento_dia, $dias_en_mes_venc);
+                $fecha_vencimiento = new DateTime("$anio_venc-" . str_pad($mes_venc, 2, '0', STR_PAD_LEFT) . "-$dia_venc");
+
+                // Insertar o actualizar
+                $stmt = $db->prepare(
+                    "INSERT INTO cierres_tarjeta (tarjeta_id, anio, mes, fecha_cierre, fecha_vencimiento)
+                     VALUES (?, ?, ?, ?, ?)
+                     ON DUPLICATE KEY UPDATE
+                     fecha_cierre = VALUES(fecha_cierre),
+                     fecha_vencimiento = VALUES(fecha_vencimiento)"
+                );
+                $stmt->execute([
+                    $tarjeta_id,
+                    $anio,
+                    $mes,
+                    $fecha_cierre->format('Y-m-d'),
+                    $fecha_vencimiento->format('Y-m-d')
+                ]);
+
+                $generados++;
+            }
+
+            sendResponse(true, ['generados' => $generados], "Se generaron $generados cierres automáticamente");
+
+        } catch (Exception $e) {
+            sendResponse(false, null, 'Error: ' . $e->getMessage(), 500);
+        }
+    }
+
     // Si llega aquí, acción no reconocida
     sendResponse(false, null, 'Acción no reconocida', 404);
 
