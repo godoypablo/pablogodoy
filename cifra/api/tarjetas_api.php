@@ -22,6 +22,10 @@ header('Access-Control-Allow-Headers: Content-Type');
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') { http_response_code(200); exit; }
 
+// Activar error reporting
+ini_set('display_errors', 0);
+ini_set('log_errors', 1);
+
 require_once '../config/database.php';
 require_once '../config/auth_check.php';
 require_once '../lib/tarjetas_financiero.php';
@@ -41,6 +45,11 @@ function sendResponse($success, $data = null, $message = '', $code = 200) {
 
 try {
     $db = Database::getInstance()->getConnection();
+
+    if (!class_exists('TarjetasFinanciero')) {
+        throw new Exception('Clase TarjetasFinanciero no encontrada. Verificar que tarjetas_financiero.php esté cargado correctamente.');
+    }
+
     TarjetasFinanciero::setDatabase($db);
 
     $method = $_SERVER['REQUEST_METHOD'];
