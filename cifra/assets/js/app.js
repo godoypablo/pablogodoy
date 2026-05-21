@@ -5499,31 +5499,63 @@ function mostrarAlertasTarjetas(alertas) {
  * Renderizar chip "Tarjetas" en catNav
  * Muestra deuda total comprometida
  */
-function renderizarChipTarjetas() {
+async function renderizarChipTarjetas() {
     const catNavScroll = document.querySelector('.cat-nav-scroll');
     if (!catNavScroll) return;
 
-    // Calcular deuda total
-    let deudaTotal = 0;
-    tarjetasActuales.forEach(t => {
-        deudaTotal += parseFloat(t.deuda_comprometida || 0);
-    });
+    try {
+        // Calcular vencimientos del próximo mes
+        let proximoMesTotal = 0;
 
-    // Remover chip existente
-    let chip = document.getElementById('chipTarjetas');
-    if (chip) chip.remove();
+        for (const tarjeta of tarjetasActuales) {
+            const resp = await fetchAPI(`${TARJETAS_API}?action=vencimientos_consolidados&tarjeta_id=${tarjeta.id}`);
+            const result = await resp.json();
 
-    // Crear chip con el mismo formato que los chips de categoría
-    chip = document.createElement('button');
-    chip.id = 'chipTarjetas';
-    chip.className = 'cat-chip';
-    chip.style.setProperty('--chip-color', '#10b981');
-    chip.onclick = () => abrirModalTarjetas();
-    chip.innerHTML = `
-        <i class="bi bi-credit-card cat-chip-icon"></i>
-        <span class="cat-chip-nombre">Tarjetas</span>
-        <span class="cat-chip-total">${formatearMoneda(deudaTotal)}</span>`;
-    catNavScroll.appendChild(chip);
+            if (result.success && result.data && result.data.length > 0) {
+                // Obtener próximo mes
+                const proximoVenc = result.data[0]; // Ya está ordenado por fecha
+                const fechaProximo = proximoVenc.fecha_vencimiento.substring(0, 7); // YYYY-MM
+                const mesActual = app.mesActual.toString().padStart(2, '0');
+                const anioActual = app.anioActual.toString();
+
+                // Determinar próximo mes
+                let proxMes = parseInt(mesActual) + 1;
+                let proxAnio = anioActual;
+                if (proxMes > 12) {
+                    proxMes = 1;
+                    proxAnio++;
+                }
+                const proximoMesEsperado = `${proxAnio}-${proxMes.toString().padStart(2, '0')}`;
+
+                // Sumar vencimientos del próximo mes
+                result.data.forEach(venc => {
+                    const fechaVenc = venc.fecha_vencimiento.substring(0, 7);
+                    if (fechaVenc === proximoMesEsperado) {
+                        proximoMesTotal += parseFloat(venc.total || 0);
+                    }
+                });
+            }
+        }
+
+        // Remover chip existente
+        let chip = document.getElementById('chipTarjetas');
+        if (chip) chip.remove();
+
+        // Crear chip con el mismo formato que los chips de categoría
+        chip = document.createElement('button');
+        chip.id = 'chipTarjetas';
+        chip.className = 'cat-chip';
+        chip.style.setProperty('--chip-color', '#10b981');
+        chip.onclick = () => abrirModalTarjetas();
+        chip.innerHTML = `
+            <i class="bi bi-credit-card cat-chip-icon"></i>
+            <span class="cat-chip-nombre">Tarjetas</span>
+            <span class="cat-chip-total">${formatearMoneda(proximoMesTotal)}</span>`;
+        catNavScroll.appendChild(chip);
+
+    } catch (error) {
+        console.error('Error renderizando chip tarjetas:', error);
+    }
 }
 
 /**
