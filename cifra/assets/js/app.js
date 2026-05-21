@@ -4139,8 +4139,8 @@ async function cargarTarjetas() {
 
 // Abrir detalle de tarjeta
 async function abrirDetalleTarjeta(tarjetaId) {
-    tarjetaId = parseInt(tarjetaId);
-    tarjetaSeleccionada = tarjetaId;
+    tarjetaId = String(tarjetaId); // Normalizar a string
+    tarjetaSeleccionada = parseInt(tarjetaId);
     const body = document.getElementById('modalTarjetasBody');
 
     try {
@@ -4154,7 +4154,7 @@ async function abrirDetalleTarjeta(tarjetaId) {
 
         if (!resultProyeccion.success) throw new Error(resultProyeccion.message);
 
-        const tarjeta = tarjetasActuales.find(t => t.id === tarjetaId);
+        const tarjeta = tarjetasActuales.find(t => String(t.id) === tarjetaId);
 
         if (!tarjeta) {
             console.error(`Tarjeta no encontrada. ID buscado: ${tarjetaId}, IDs disponibles:`, tarjetasActuales.map(t => t.id));
