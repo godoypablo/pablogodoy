@@ -207,62 +207,58 @@ try {
         try {
             $db->beginTransaction();
 
-            // 0. Verificar y generar cierres automáticamente si es necesario
-            $stmtCierres = $db->prepare(
-                "SELECT COUNT(*) as total FROM cierres_tarjeta
-                 WHERE tarjeta_id = ? AND fecha_cierre >= ?"
+            // 0. Asegurar que haya cierres configurados
+            $stmtTarjeta = $db->prepare(
+                "SELECT fecha_cierre_dia, fecha_vencimiento_dia FROM tarjetas_credito WHERE id = ?"
             );
-            $stmtCierres->execute([$tarjeta_id, $fecha_compra]);
-            $cierresCount = $stmtCierres->fetch()['total'];
+            $stmtTarjeta->execute([$tarjeta_id]);
+            $tarjeta = $stmtTarjeta->fetch();
 
-            if ($cierresCount < $cuotas_totales) {
-                // Generar cierres automáticamente
-                $stmtTarjeta = $db->prepare(
-                    "SELECT fecha_cierre_dia, fecha_vencimiento_dia FROM tarjetas_credito WHERE id = ?"
-                );
-                $stmtTarjeta->execute([$tarjeta_id]);
-                $tarjeta = $stmtTarjeta->fetch();
+            if (!$tarjeta) {
+                throw new Exception("Tarjeta no encontrada");
+            }
 
-                if ($tarjeta) {
-                    $cierre_dia = (int)$tarjeta['fecha_cierre_dia'];
-                    $vencimiento_dia = (int)$tarjeta['fecha_vencimiento_dia'];
+            // Generar cierres para los próximos 12 meses desde hoy
+            $cierre_dia = (int)$tarjeta['fecha_cierre_dia'];
+            $vencimiento_dia = (int)$tarjeta['fecha_vencimiento_dia'];
 
-                    // Generar para los próximos 12 meses desde la fecha de compra
-                    $fecha_obj = new DateTime($fecha_compra);
-                    $anio = (int)$fecha_obj->format('Y');
-                    $mes = (int)$fecha_obj->format('m');
+            $hoy = new DateTime();
+            $anio = (int)$hoy->format('Y');
+            $mes = (int)$hoy->format('m');
 
-                    for ($i = 0; $i < 12; $i++) {
-                        $m = $mes + $i;
-                        $a = $anio;
+            for ($i = 0; $i < 12; $i++) {
+                $m = $mes + $i;
+                $a = $anio;
 
-                        while ($m > 12) {
-                            $m -= 12;
-                            $a++;
-                        }
-
-                        $dias_mes = cal_days_in_month(CAL_GREGORIAN, $m, $a);
-                        $dia_c = min($cierre_dia, $dias_mes);
-                        $fecha_cierre = "$a-" . str_pad($m, 2, '0', STR_PAD_LEFT) . "-$dia_c";
-
-                        $m_venc = $m + 1;
-                        $a_venc = $a;
-                        if ($m_venc > 12) {
-                            $m_venc -= 12;
-                            $a_venc++;
-                        }
-
-                        $dias_mes_venc = cal_days_in_month(CAL_GREGORIAN, $m_venc, $a_venc);
-                        $dia_v = min($vencimiento_dia, $dias_mes_venc);
-                        $fecha_venc = "$a_venc-" . str_pad($m_venc, 2, '0', STR_PAD_LEFT) . "-$dia_v";
-
-                        $stmtInsert = $db->prepare(
-                            "INSERT IGNORE INTO cierres_tarjeta (tarjeta_id, anio, mes, fecha_cierre, fecha_vencimiento)
-                             VALUES (?, ?, ?, ?, ?)"
-                        );
-                        $stmtInsert->execute([$tarjeta_id, $a, $m, $fecha_cierre, $fecha_venc]);
-                    }
+                while ($m > 12) {
+                    $m -= 12;
+                    $a++;
                 }
+
+                $dias_mes = cal_days_in_month(CAL_GREGORIAN, $m, $a);
+                $dia_c = min($cierre_dia, $dias_mes);
+                $fecha_cierre = "$a-" . str_pad($m, 2, '0', STR_PAD_LEFT) . "-" . str_pad($dia_c, 2, '0', STR_PAD_LEFT);
+
+                $m_venc = $m + 1;
+                $a_venc = $a;
+                if ($m_venc > 12) {
+                    $m_venc -= 12;
+                    $a_venc++;
+                }
+
+                $dias_mes_venc = cal_days_in_month(CAL_GREGORIAN, $m_venc, $a_venc);
+                $dia_v = min($vencimiento_dia, $dias_mes_venc);
+                $fecha_venc = "$a_venc-" . str_pad($m_venc, 2, '0', STR_PAD_LEFT) . "-" . str_pad($dia_v, 2, '0', STR_PAD_LEFT);
+
+                // Usar ON DUPLICATE KEY para actualizar si existe
+                $stmtInsert = $db->prepare(
+                    "INSERT INTO cierres_tarjeta (tarjeta_id, anio, mes, fecha_cierre, fecha_vencimiento)
+                     VALUES (?, ?, ?, ?, ?)
+                     ON DUPLICATE KEY UPDATE
+                     fecha_cierre = VALUES(fecha_cierre),
+                     fecha_vencimiento = VALUES(fecha_vencimiento)"
+                );
+                $stmtInsert->execute([$tarjeta_id, $a, $m, $fecha_cierre, $fecha_venc]);
             }
 
             // 1. Insertar movimiento
