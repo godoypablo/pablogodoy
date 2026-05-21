@@ -239,10 +239,19 @@ try {
                 $dia_c = min($cierre_dia, $dias_mes);
                 $fecha_cierre = "$a-" . str_pad($m, 2, '0', STR_PAD_LEFT) . "-" . str_pad($dia_c, 2, '0', STR_PAD_LEFT);
 
-                // Vencimiento es del MISMO mes que el cierre, no el siguiente
-                $dias_mes_venc = cal_days_in_month(CAL_GREGORIAN, $m, $a);
+                // Vencimiento: si vencimiento_dia < cierre_dia, es MES SIGUIENTE; sino MISMO mes
+                $m_venc = $m;
+                $a_venc = $a;
+                if ($vencimiento_dia < $cierre_dia) {
+                    $m_venc++;
+                    if ($m_venc > 12) {
+                        $m_venc = 1;
+                        $a_venc++;
+                    }
+                }
+                $dias_mes_venc = cal_days_in_month(CAL_GREGORIAN, $m_venc, $a_venc);
                 $dia_v = min($vencimiento_dia, $dias_mes_venc);
-                $fecha_venc = "$a-" . str_pad($m, 2, '0', STR_PAD_LEFT) . "-" . str_pad($dia_v, 2, '0', STR_PAD_LEFT);
+                $fecha_venc = "$a_venc-" . str_pad($m_venc, 2, '0', STR_PAD_LEFT) . "-" . str_pad($dia_v, 2, '0', STR_PAD_LEFT);
 
                 // Usar ON DUPLICATE KEY para actualizar si existe
                 $stmtInsert = $db->prepare(
@@ -559,10 +568,20 @@ try {
                 $dia_cierre = min($cierre_dia, $dias_en_mes);
                 $fecha_cierre = new DateTime("$anio-" . str_pad($mes, 2, '0', STR_PAD_LEFT) . "-$dia_cierre");
 
-                // Calcular fecha de vencimiento (MISMO mes que el cierre)
-                $dias_en_mes_venc = cal_days_in_month(CAL_GREGORIAN, $mes, $anio);
+                // Calcular fecha de vencimiento
+                // Si vencimiento_dia < cierre_dia, es MES SIGUIENTE; sino MISMO mes
+                $mes_venc = $mes;
+                $anio_venc = $anio;
+                if ($vencimiento_dia < $cierre_dia) {
+                    $mes_venc++;
+                    if ($mes_venc > 12) {
+                        $mes_venc = 1;
+                        $anio_venc++;
+                    }
+                }
+                $dias_en_mes_venc = cal_days_in_month(CAL_GREGORIAN, $mes_venc, $anio_venc);
                 $dia_venc = min($vencimiento_dia, $dias_en_mes_venc);
-                $fecha_vencimiento = new DateTime("$anio-" . str_pad($mes, 2, '0', STR_PAD_LEFT) . "-$dia_venc");
+                $fecha_vencimiento = new DateTime("$anio_venc-" . str_pad($mes_venc, 2, '0', STR_PAD_LEFT) . "-$dia_venc");
 
                 // Insertar o actualizar
                 $stmt = $db->prepare(
