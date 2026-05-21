@@ -4107,8 +4107,63 @@ async function cargarTarjetas() {
             return;
         }
 
+        // Calcular vencimientos del próximo mes para mostrar en resumen
+        let proximoMesTotal = 0;
+        let proximoMesNombre = '';
+
+        for (const tarjeta of tarjetasActuales) {
+            try {
+                const resp = await fetchAPI(`${TARJETAS_API}?action=vencimientos_consolidados&tarjeta_id=${tarjeta.id}`);
+                const result = await resp.json();
+
+                if (result.success && result.data && result.data.length > 0) {
+                    const mesActual = app.mesActual.toString().padStart(2, '0');
+                    const anioActual = app.anioActual.toString();
+
+                    // Determinar próximo mes
+                    let proxMes = parseInt(mesActual) + 1;
+                    let proxAnio = anioActual;
+                    if (proxMes > 12) {
+                        proxMes = 1;
+                        proxAnio++;
+                    }
+                    const proximoMesEsperado = `${proxAnio}-${proxMes.toString().padStart(2, '0')}`;
+
+                    // Sumar vencimientos del próximo mes
+                    result.data.forEach(venc => {
+                        const fechaVenc = venc.fecha_vencimiento.substring(0, 7);
+                        if (fechaVenc === proximoMesEsperado) {
+                            proximoMesTotal += parseFloat(venc.total || 0);
+                            if (!proximoMesNombre) {
+                                const fecha = new Date(venc.fecha_vencimiento);
+                                proximoMesNombre = fecha.toLocaleDateString('es-AR', {month:'long', year:'numeric'});
+                            }
+                        }
+                    });
+                }
+            } catch (e) {
+                console.error('Error obteniendo vencimientos:', e);
+            }
+        }
+
         // Renderizar tarjetas como cards
-        let html = '<div class="container-fluid p-3"><div class="row g-3">';
+        let html = `
+            <div class="container-fluid p-3">
+                ${proximoMesTotal > 0 ? `
+                <div class="alert alert-info mb-4">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <small class="text-muted d-block">📅 Próximo período a vencer</small>
+                            <strong class="text-capitalize">${proximoMesNombre}</strong>
+                        </div>
+                        <div class="text-end">
+                            <small class="text-muted d-block">Total a pagar</small>
+                            <strong class="fs-5">${formatearMoneda(proximoMesTotal)}</strong>
+                        </div>
+                    </div>
+                </div>
+                ` : ''}
+                <div class="row g-3">`;
 
         tarjetasActuales.forEach(t => {
             const porcentajeUso = t.limite_credito > 0 ? Math.round((t.deuda_comprometida / t.limite_credito) * 100) : 0;
