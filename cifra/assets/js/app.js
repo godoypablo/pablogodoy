@@ -4139,6 +4139,7 @@ async function cargarTarjetas() {
 
 // Abrir detalle de tarjeta
 async function abrirDetalleTarjeta(tarjetaId) {
+    tarjetaId = parseInt(tarjetaId);
     tarjetaSeleccionada = tarjetaId;
     const body = document.getElementById('modalTarjetasBody');
 
