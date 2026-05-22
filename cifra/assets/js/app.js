@@ -4204,7 +4204,7 @@ async function cargarTarjetas() {
 
         // Renderizar tarjetas como cards
         let html = `
-            <div class="container-fluid p-3">
+            <div class="container-fluid p-2">
                 ${proximoMesTotal > 0 ? `
                 <div class="alert alert-info mb-4">
                     <div class="d-flex justify-content-between align-items-center">
@@ -4220,12 +4220,12 @@ async function cargarTarjetas() {
                 </div>
                 ` : ''}
                 ${mesesGrafico.length > 0 ? `
-                <div class="mb-4">
-                    <h6 class="text-muted mb-3">Proyección de pagos (próximos 12 meses)</h6>
-                    <canvas id="chartProyeccionTarjetas" height="120"></canvas>
+                <div class="mb-2">
+                    <h6 class="text-muted mb-2" style="font-size:0.85rem">Proyección de pagos</h6>
+                    <canvas id="chartProyeccionTarjetas" style="max-height:140px"></canvas>
                 </div>
                 ` : ''}
-                <div class="row g-3">`;
+                <div class="row g-2">`;
 
         tarjetasActuales.forEach(t => {
             const porcentajeUso = t.limite_credito > 0 ? Math.round((t.deuda_comprometida / t.limite_credito) * 100) : 0;
@@ -4307,7 +4307,7 @@ async function cargarTarjetas() {
 
                     const valores = mesesGrafico.map(mes => proyeccionMensual[mes] || 0);
 
-                    // Crear chart.js
+                    // Crear chart.js (compacto para mobile)
                     chartProyeccionTarjetas = new Chart(canvasEl, {
                         type: 'bar',
                         data: {
@@ -4317,29 +4317,40 @@ async function cargarTarjetas() {
                                 data: valores,
                                 backgroundColor: '#6366f1cc',
                                 borderColor: '#6366f1',
-                                borderWidth: 1,
-                                borderRadius: 4
+                                borderWidth: 0,
+                                borderRadius: 3
                             }]
                         },
                         options: {
                             responsive: true,
                             maintainAspectRatio: true,
+                            devicePixelRatio: 1,
                             plugins: {
                                 legend: { display: false },
                                 tooltip: {
+                                    padding: 6,
+                                    titleFont: { size: 11 },
+                                    bodyFont: { size: 11 },
                                     callbacks: {
                                         label: ctx => formatearMoneda(ctx.parsed.y)
                                     }
                                 }
                             },
                             scales: {
+                                x: {
+                                    ticks: { font: { size: 10 } },
+                                    grid: { display: false }
+                                },
                                 y: {
                                     beginAtZero: true,
                                     ticks: {
+                                        font: { size: 10 },
                                         callback: v => '$' + (v >= 1000 ? (v / 1000).toFixed(0) + 'k' : v.toFixed(0))
-                                    }
+                                    },
+                                    grid: { drawBorder: false, color: 'rgba(0,0,0,0.05)' }
                                 }
-                            }
+                            },
+                            layout: { padding: { left: 0, right: 0, top: 0, bottom: 0 } }
                         }
                     });
                 }
