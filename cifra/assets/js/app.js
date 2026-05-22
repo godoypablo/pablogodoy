@@ -4165,9 +4165,53 @@ async function cargarTarjetas() {
                 ` : ''}
                 <div class="row g-3">`;
 
+        // Obtener vencimientos de cada tarjeta
+        const vencimientosPorTarjeta = {};
+        for (const t of tarjetasActuales) {
+            try {
+                const resp = await fetchAPI(`${TARJETAS_API}?action=vencimientos_consolidados&tarjeta_id=${t.id}`);
+                const result = await resp.json();
+
+                let totalProximo = 0;
+                if (result.success && result.data && result.data.length > 0) {
+                    const mesActual = app.mesActual.toString().padStart(2, '0');
+                    const anioActual = app.anioActual.toString();
+
+                    let proxMes = parseInt(mesActual) + 1;
+                    let proxAnio = anioActual;
+                    if (proxMes > 12) {
+                        proxMes = 1;
+                        proxAnio++;
+                    }
+                    const proximoMesEsperado = `${proxAnio}-${proxMes.toString().padStart(2, '0')}`;
+
+                    result.data.forEach(venc => {
+                        const fechaVenc = venc.fecha_vencimiento.substring(0, 7);
+                        if (fechaVenc === proximoMesEsperado) {
+                            totalProximo += parseFloat(venc.total || 0);
+                        }
+                    });
+                }
+                vencimientosPorTarjeta[t.id] = totalProximo;
+            } catch (e) {
+                vencimientosPorTarjeta[t.id] = 0;
+            }
+        }
+
         tarjetasActuales.forEach(t => {
             const porcentajeUso = t.limite_credito > 0 ? Math.round((t.deuda_comprometida / t.limite_credito) * 100) : 0;
             const colorUso = porcentajeUso > 80 ? 'danger' : porcentajeUso > 50 ? 'warning' : 'success';
+            const totalProximo = vencimientosPorTarjeta[t.id] || 0;
+            const mesActual = app.mesActual.toString().padStart(2, '0');
+            const anioActual = app.anioActual.toString();
+            let proxMes = parseInt(mesActual) + 1;
+            let proxAnio = anioActual;
+            if (proxMes > 12) {
+                proxMes = 1;
+                proxAnio++;
+            }
+            const meses = ['', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+            const proximoMesNombre = `${meses[proxMes]} ${proxAnio}`;
 
             html += `
                 <div class="col-12 col-md-6">
@@ -4184,8 +4228,12 @@ async function cargarTarjetas() {
                                 </span>
                             </div>
                             <hr class="my-2">
+                            <div class="mb-3 p-2 bg-light rounded">
+                                <small class="text-muted d-block">💳 Total Pagos en ${proximoMesNombre}</small>
+                                <div class="fw-bold fs-6 text-success">${formatearMoneda(totalProximo)}</div>
+                            </div>
                             <div class="mb-2">
-                                <small class="text-muted">Deuda comprometida</small>
+                                <small class="text-muted">Deuda comprometida total</small>
                                 <div class="fw-bold">${formatearMoneda(t.deuda_comprometida)}</div>
                             </div>
                             <div class="mb-2">
