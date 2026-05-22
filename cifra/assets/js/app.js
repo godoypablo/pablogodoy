@@ -79,6 +79,9 @@ const app = {
     tipoCambioUSD: null,  // cotización dólar oficial (cacheada por día)
 };
 
+// Instancia global del chart de proyección de tarjetas
+let chartProyeccionTarjetas = null;
+
 // Cerrar color pickers al hacer clic fuera
 document.addEventListener('click', () => {
     document.querySelectorAll('.cifra-cp-swatches').forEach(s => s.classList.add('d-none'));
@@ -4146,27 +4149,12 @@ async function cargarTarjetas() {
             }
         }
 
-        // Renderizar tarjetas como cards
-        let html = `
-            <div class="container-fluid p-3">
-                ${proximoMesTotal > 0 ? `
-                <div class="alert alert-info mb-4">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <small class="text-muted d-block">📅 Próximo período a vencer</small>
-                            <strong style="text-transform: capitalize;">${proximoMesNombre.charAt(0).toUpperCase() + proximoMesNombre.slice(1)}</strong>
-                        </div>
-                        <div class="text-end">
-                            <small class="text-muted d-block">Total a pagar</small>
-                            <strong class="fs-5">${formatearMoneda(proximoMesTotal)}</strong>
-                        </div>
-                    </div>
-                </div>
-                ` : ''}
-                <div class="row g-3">`;
-
-        // Obtener vencimientos de cada tarjeta
+        // Inicializar proyección antes de recolectar vencimientos
         const vencimientosPorTarjeta = {};
+        const proyeccionMensual = {}; // { 'YYYY-MM': total }
+        const mesesProyeccion = []; // para mantener orden cronológico
+        let mesesGrafico = []; // será llenado después de recolectar
+
         for (const t of tarjetasActuales) {
             try {
                 const resp = await fetchAPI(`${TARJETAS_API}?action=vencimientos_consolidados&tarjeta_id=${t.id}`);
@@ -4185,10 +4173,22 @@ async function cargarTarjetas() {
                     }
                     const proximoMesEsperado = `${proxAnio}-${proxMes.toString().padStart(2, '0')}`;
 
+                    // Acumular en proyección mensual
                     result.data.forEach(venc => {
                         const fechaVenc = venc.fecha_vencimiento.substring(0, 7);
+                        const totalVenc = parseFloat(venc.total || 0);
+
                         if (fechaVenc === proximoMesEsperado) {
-                            totalProximo += parseFloat(venc.total || 0);
+                            totalProximo += totalVenc;
+                        }
+
+                        // Acumular para gráfico (próximos 12 meses desde próximoMesEsperado)
+                        if (fechaVenc >= proximoMesEsperado) {
+                            if (!proyeccionMensual[fechaVenc]) {
+                                proyeccionMensual[fechaVenc] = 0;
+                                mesesProyeccion.push(fechaVenc);
+                            }
+                            proyeccionMensual[fechaVenc] += totalVenc;
                         }
                     });
                 }
@@ -4197,6 +4197,35 @@ async function cargarTarjetas() {
                 vencimientosPorTarjeta[t.id] = 0;
             }
         }
+
+        // Ordenar meses y limitar a 12 meses
+        mesesProyeccion.sort();
+        mesesGrafico = mesesProyeccion.slice(0, 12);
+
+        // Renderizar tarjetas como cards
+        let html = `
+            <div class="container-fluid p-3">
+                ${proximoMesTotal > 0 ? `
+                <div class="alert alert-info mb-4">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <small class="text-muted d-block">📅 Próximo período a vencer</small>
+                            <strong style="text-transform: capitalize;">${proximoMesNombre.charAt(0).toUpperCase() + proximoMesNombre.slice(1)}</strong>
+                        </div>
+                        <div class="text-end">
+                            <small class="text-muted d-block">Total a pagar</small>
+                            <strong class="fs-5">${formatearMoneda(proximoMesTotal)}</strong>
+                        </div>
+                    </div>
+                </div>
+                ` : ''}
+                ${mesesGrafico.length > 0 ? `
+                <div class="mb-4">
+                    <h6 class="text-muted mb-3">Proyección de pagos (próximos 12 meses)</h6>
+                    <canvas id="chartProyeccionTarjetas" height="120"></canvas>
+                </div>
+                ` : ''}
+                <div class="row g-3">`;
 
         tarjetasActuales.forEach(t => {
             const porcentajeUso = t.limite_credito > 0 ? Math.round((t.deuda_comprometida / t.limite_credito) * 100) : 0;
@@ -4257,6 +4286,67 @@ async function cargarTarjetas() {
 
         html += '</div></div>';
         body.innerHTML = html;
+
+        // Renderizar gráfico de proyección mensual
+        if (mesesGrafico.length > 0) {
+            try {
+                // Destruir instancia previa si existe
+                if (chartProyeccionTarjetas) {
+                    chartProyeccionTarjetas.destroy();
+                    chartProyeccionTarjetas = null;
+                }
+
+                const canvasEl = document.getElementById('chartProyeccionTarjetas');
+                if (canvasEl) {
+                    // Construir arrays de labels y valores
+                    const labels = mesesGrafico.map(mes => {
+                        const [year, month] = mes.split('-');
+                        const fecha = new Date(year, parseInt(month) - 1, 1);
+                        return fecha.toLocaleDateString('es-AR', {month:'short', year:'2-digit'});
+                    });
+
+                    const valores = mesesGrafico.map(mes => proyeccionMensual[mes] || 0);
+
+                    // Crear chart.js
+                    chartProyeccionTarjetas = new Chart(canvasEl, {
+                        type: 'bar',
+                        data: {
+                            labels: labels,
+                            datasets: [{
+                                label: 'Pagos proyectados',
+                                data: valores,
+                                backgroundColor: '#6366f1cc',
+                                borderColor: '#6366f1',
+                                borderWidth: 1,
+                                borderRadius: 4
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: true,
+                            plugins: {
+                                legend: { display: false },
+                                tooltip: {
+                                    callbacks: {
+                                        label: ctx => formatearMoneda(ctx.parsed.y)
+                                    }
+                                }
+                            },
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    ticks: {
+                                        callback: v => '$' + (v >= 1000 ? (v / 1000).toFixed(0) + 'k' : v.toFixed(0))
+                                    }
+                                }
+                            }
+                        }
+                    });
+                }
+            } catch (e) {
+                console.error('Error renderizando gráfico:', e);
+            }
+        }
 
         // Actualizar selector en modal movimiento
         actualizarSelectTarjetasMovimiento();
