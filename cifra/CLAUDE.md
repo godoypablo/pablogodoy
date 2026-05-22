@@ -1,8 +1,15 @@
 # Cifra — finanzas personales, single-user
 
 ## Stack
-PHP+MySQL | Bootstrap5 | DataTables | PWA | `php -S localhost:8000`
+PHP+MySQL | Bootstrap5 | DataTables | Chart.js | PWA | `php -S localhost:8000`
 DB: gastos_personales — config/database.php
+
+**Librerías:**
+- Bootstrap 5.3.2 (CSS+JS)
+- Bootstrap Icons 1.11.2
+- DataTables 2.0.8 (JS+CSS)
+- jQuery 3.7.1 (requerido por DataTables)
+- Chart.js 4.4.0 (gráficos de proyección en tarjetas)
 
 ## DB
 ```
@@ -122,7 +129,7 @@ Resumen/Cuentas → modales | Vencimientos → modal+badges | Ingresos → modal
 
 ## Tarjetas de Crédito (tarjetas_api_v3.php, tarjetas_financiero_v3.php)
 
-**Modelo simplificado:** tarjetas → movimientos → cuotas (sin períodos ni resúmenes)
+**Modelo simplificado:** tarjetas → movimientos → cuotas. Cada cuota referencia su cierre real via FK.
 
 **Tablas:**
 ```
@@ -130,45 +137,67 @@ tarjetas_credito:      id, banco, nombre_tarjeta, marca, ultimos_4, limite_credi
                        fecha_cierre_dia, fecha_vencimiento_dia, activa
 movimientos_tarjeta:   id, tarjeta_id, fecha_compra, descripcion, comercio, categoria, 
                        monto_total, cuotas_totales, estado, fecha_cancelacion
-cuotas_movimiento:     id, movimiento_id, numero_cuota, fecha_vencimiento, monto, 
-                       pagada, fecha_pago
+cuotas_movimiento:     id, movimiento_id, cierre_id(FK), numero_cuota, fecha_vencimiento, 
+                       monto, pagada, fecha_pago
 cierres_tarjeta:       id, tarjeta_id, anio, mes, fecha_cierre, fecha_vencimiento
-                       (NUEVA: almacena fechas específicas por mes)
+                       (fuente de verdad: fechas reales por mes)
 ```
 
 **API Endpoints:**
 - `GET /api/tarjetas_api_v3.php` — lista tarjetas con deuda + disponible
 - `POST /api/tarjetas_api_v3.php` — crear tarjeta
-- `POST ?action=movimiento` — crear movimiento (auto-genera cuotas)
+- `POST ?action=movimiento` — crear movimiento (auto-genera cuotas usando cierres_tarjeta)
 - `GET ?action=movimientos&tarjeta_id=X` — listar movimientos activos
-- `GET ?action=vencimientos_consolidados&tarjeta_id=X` — agrupa cuotas por fecha (→ Dashboard)
+- `GET ?action=vencimientos_consolidados&tarjeta_id=X` — agrupa cuotas por fecha, solo futuras (>= CURDATE())
 - `GET ?action=disponible&tarjeta_id=X` — límite − deuda_comprometida
 - `PATCH ?action=marcar_pagada&cuota_id=X` — marca cuota pagada
 - `DELETE ?action=movimiento&id=X` — anula movimiento (soft-delete con fecha_cancelacion)
 - `GET ?action=cierres&tarjeta_id=X` — obtener cierres/vencimientos por mes
-- `PUT ?action=cierres&tarjeta_id=X` — actualizar cierre específico
+- `POST ?action=generar_cierres&tarjeta_id=X` — auto-genera 24 meses de cierres antes de crear movimiento
 
-**Cálculo de primer vencimiento (`calcularPrimerVencimiento`):**
-1. Determina si compra entra en cierre actual o próximo:
-   - Si `dia_compra <= fecha_cierre_dia` → vence mes siguiente
-   - Si `dia_compra > fecha_cierre_dia` → vence dos meses después
-2. Busca en `cierres_tarjeta` la fecha exacta de vencimiento para ese mes/año
-3. Si no existe → genera automáticamente usando `fecha_vencimiento_dia` como fallback
-4. Guarda el generado en `cierres_tarjeta` para futuras consultas (evita recalcular)
+**Lógica de Cuotas (`generarCuotas()`):**
+1. Calcula montos por cuota (última cuota absorbe redondeo)
+2. Busca en `cierres_tarjeta` los primeros N cierres (N=cuotas_totales) cuya fecha_cierre >= fecha_compra
+3. Para cada cierre encontrado, crea una cuota con:
+   - `cierre_id` = ID real del cierre
+   - `fecha_vencimiento` = fecha_vencimiento del cierre (no calculada)
+   - `monto` = monto_base o monto_ultima
+4. Si faltan cierres → error (se auto-genera antes de insertar movimiento)
 
-**UI Modal Tarjeta:**
-- Pestaña "Próximos Pagos": vencimientos consolidados con acordeón por mes
-  - Primer mes expandido, resto colapsados
+**Dashboard ("Tarjetas de Crédito" modal):**
+- **Alerta resumen**: total a pagar próximo mes, nombre del mes capitalizado
+- **Gráfico de proyección** (Chart.js, compacto mobile):
+  - Barras para próximos 12 meses (desde próximo mes)
+  - Agrupa vencimientos de todas las tarjetas por mes (YYYY-MM)
+  - Font 10px, sin padding, altura 140px, labels en "Jun 26" formato
+  - Tooltip muestra monto exacto en moneda ($X.XXX)
+- **Cards por tarjeta** (col-12 col-md-6):
+  - Nombre + banco + últimos 4 dígitos + badge activo/inactivo
+  - Total Pagos en [Próximo Mes] destacado en verde
+  - Deuda comprometida + barra progreso (color según uso%)
+  - Disponible / Límite
+  - Fechas: "Cierre: día X | Vence: día Y"
+  - Click abre modal detalle
+
+**Modal Detalle Tarjeta:**
+- Pestaña "Próximos Pagos": vencimientos consolidados agrupados por fecha
+  - Primer mes expandido, resto colapsados (acordeón)
   - Cada cuota con checkbox para marcar pagada (desaparece con animación)
-- Pestaña "Compras": movimientos registrados + botón "Agregar Compra"
-- Header: info tarjeta (límite, disponible, comprometido, uso%) + botón 📅 "Editar Cierres"
-- Modal "Editar Cierres": tabla con inputs de fecha para cada mes (editable sin reload)
+- Pestaña "Compras": movimientos activos con botón "Agregar Compra"
+- Header: límite, deuda comprometida, disponible, % uso
+- Botón 📅 "Editar Cierres": modal con tabla editable de fechas por mes
 
-**Importante:**
-- `fecha_cierre_dia` y `fecha_vencimiento_dia` en tarjetas_credito son valores **base** (fallback)
-- Las fechas **específicas y variables** se guardan en `cierres_tarjeta` (mes a mes)
-- Al crear movimiento, se consulta `cierres_tarjeta`; si no existe, se genera auto usando base
-- El usuario puede editar cierres desde UI cuando tenga información real
+**Arquitectura de fechas:**
+- `fecha_cierre_dia` y `fecha_vencimiento_dia` en tarjetas_credito = base (fallback solamente)
+- Fechas **reales y variables** guardadas en `cierres_tarjeta` (mes a mes)
+- Al crear movimiento: POST auto-genera cierres usando `max(cuotas_totales, 12)` meses
+- `generarCuotas()` busca cierres secuencialmente; si no existen → error pre-insert
+- Usuario puede editar cierres desde UI cuando tenga información real del banco
+
+**Validaciones:**
+- Comparación de fechas: día_compra vs fecha_cierre (full date, no solo día)
+- Cierre_id no nulo: cada cuota referencia su cierre real
+- Vencimientos solo futuros: `fecha_vencimiento >= CURDATE()` en queries de dashboard
 
 ## Login (login.php)
 - Logo Montserrat + barra degradé índigo→verde + card shadow
@@ -179,8 +208,9 @@ cierres_tarjeta:       id, tarjeta_id, anio, mes, fecha_cierre, fecha_vencimient
 - SW: HTML network-first, assets cache-first | CACHE_NAME formato: `cifra-YYYYMMDD-N`
 - **Bump CACHE_NAME en sw.js cada vez que cambie CSS o JS** — fuerza re-descarga en todos los dispositivos
 - Si hay varios bumps en el mismo día, incrementar el sufijo: `-1`, `-2`, etc.
+- Ejemplo: cambio en gráfico tarjetas (Chart.js + CSS) → bump CACHE_NAME, sube `sw.js`
 - Deploy FTP con NetBeans desde `/home/pablo/git/pablogodoy/` → Upload Directory: `/httpdocs` (configurado en nbproject/)
-- Deploy típico: index.php siempre | app.js si JS cambió | styles.css si CSS cambió | sw.js si hay bump | gastos_api.php si API cambió
+- Deploy típico: `index.php` siempre | `app.js` si JS cambió | `styles.css` si CSS cambió | `sw.js` si hay bump | `gastos_api.php` si API cambió
 - manifest.json: `"id": "/cifra/"`, `"start_url": "/cifra/index.php"`, `"scope": "/cifra/"` — paths absolutos
 - Android: para limpiar caché de SW → Chrome → ⋮ → Configuración del sitio → Almacenamiento → Borrar
 - Play Store: TWA via PWABuilder (USD 25, HTTPS) | App Store: Capacitor.js (USD 99/año)
