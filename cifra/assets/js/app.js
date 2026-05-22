@@ -5648,7 +5648,7 @@ async function renderizarChipTarjetas() {
         chip = document.createElement('button');
         chip.id = 'chipTarjetas';
         chip.className = 'cat-chip';
-        chip.style.setProperty('--chip-color', '#10b981');
+        chip.style.setProperty('--chip-color', '#059669');
         chip.onclick = () => abrirModalTarjetas();
         chip.innerHTML = `
             <i class="bi bi-credit-card cat-chip-icon"></i>
