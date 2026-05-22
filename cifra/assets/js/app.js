@@ -4154,7 +4154,7 @@ async function cargarTarjetas() {
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
                             <small class="text-muted d-block">📅 Próximo período a vencer</small>
-                            <strong class="text-capitalize">${proximoMesNombre}</strong>
+                            <strong style="text-transform: capitalize;">${proximoMesNombre.charAt(0).toUpperCase() + proximoMesNombre.slice(1)}</strong>
                         </div>
                         <div class="text-end">
                             <small class="text-muted d-block">Total a pagar</small>
