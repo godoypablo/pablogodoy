@@ -81,6 +81,7 @@ const app = {
 
 // Instancia global del chart de proyección de tarjetas
 let chartProyeccionTarjetas = null;
+let vencimientosPorTarjeta = {}; // { tarjeta_id: total_proximo_mes }
 
 // Cerrar color pickers al hacer clic fuera
 document.addEventListener('click', () => {
@@ -4150,7 +4151,7 @@ async function cargarTarjetas() {
         }
 
         // Inicializar proyección antes de recolectar vencimientos
-        const vencimientosPorTarjeta = {};
+        vencimientosPorTarjeta = {};
         const proyeccionMensual = {}; // { 'YYYY-MM': total }
         const mesesProyeccion = []; // para mantener orden cronológico
         let mesesGrafico = []; // será llenado después de recolectar
@@ -4279,6 +4280,13 @@ async function cargarTarjetas() {
                             <small class="text-muted">
                                 <i class="bi bi-calendar-event me-1"></i>Cierre: día ${t.fecha_cierre_dia} | Vence: día ${t.fecha_vencimiento_dia}
                             </small>
+                            ${t.concepto_id ? `
+                                <div class="mt-3 pt-2 border-top">
+                                    <button class="btn btn-sm btn-outline-primary w-100" onclick="abrirSincronizarTarjeta(${t.id})">
+                                        <i class="bi bi-arrow-repeat me-1"></i>Sincronizar
+                                    </button>
+                                </div>
+                            ` : ''}
                         </div>
                     </div>
                 </div>`;
@@ -4793,6 +4801,7 @@ function abrirFormularioTarjeta() {
     document.getElementById('formTarjeta').reset();
     document.getElementById('ftMonto')?.remove(); // Limpiar si existe
     document.getElementById('modalFormTarjetaLabel').textContent = '+ Nueva Tarjeta';
+    poblarSelectConceptosTarjeta();
     const modal = new bootstrap.Modal(document.getElementById('modalFormTarjeta'), { keyboard: false });
     modal.show();
 }
@@ -4807,6 +4816,7 @@ async function guardarTarjeta() {
     const cierre = parseInt(document.getElementById('ftCierre').value);
     const vencimiento = parseInt(document.getElementById('ftVencimiento').value);
     const titular = document.getElementById('ftTitular').value.trim();
+    const conceptoId = parseInt(document.getElementById('ftConcepto').value) || null;
 
     if (!banco || !nombre || !marca || !cierre || !vencimiento) {
         mostrarError('Complete los campos obligatorios');
@@ -4830,7 +4840,8 @@ async function guardarTarjeta() {
                 limite_credito: limite,
                 fecha_cierre_dia: cierre,
                 fecha_vencimiento_dia: vencimiento,
-                titular
+                titular,
+                concepto_id: conceptoId
             })
         });
 
@@ -5258,6 +5269,13 @@ function editarTarjeta(tarjetaId) {
                                         </label>
                                     </div>
                                 </div>
+                                <div class="col-12">
+                                    <label for="edConcepto" class="form-label">Concepto de Gasto Asociado</label>
+                                    <select class="form-select" id="edConcepto">
+                                        <option value="">— Sin concepto —</option>
+                                    </select>
+                                    <small class="text-muted d-block mt-1">Para sincronizar automáticamente los pagos con los gastos registrados</small>
+                                </div>
                             </div>
                         </form>
                     </div>
@@ -5275,6 +5293,10 @@ function editarTarjeta(tarjetaId) {
     if (modalDiv) modalDiv.remove();
 
     document.body.insertAdjacentHTML('beforeend', html);
+
+    // Cargar conceptos en el select edConcepto
+    poblarSelectConceptoEditarTarjeta(tarjeta.concepto_id || '');
+
     const modal = new bootstrap.Modal(document.getElementById('modalEditarTarjeta'), { keyboard: false });
     modal.show();
 }
@@ -5282,6 +5304,7 @@ function editarTarjeta(tarjetaId) {
 // Guardar edición de tarjeta
 async function guardarEdicionTarjeta(tarjetaId) {
     try {
+        const conceptoId = parseInt(document.getElementById('edConcepto').value) || null;
         const payload = {
             banco: document.getElementById('edBanco').value,
             nombre_tarjeta: document.getElementById('edNombre').value,
@@ -5291,7 +5314,8 @@ async function guardarEdicionTarjeta(tarjetaId) {
             limite_credito: parseFloat(document.getElementById('edLimite').value) || 0,
             fecha_cierre_dia: parseInt(document.getElementById('edCierreDia').value) || 25,
             fecha_vencimiento_dia: parseInt(document.getElementById('edVencimientoDia').value) || 3,
-            activa: document.getElementById('edActiva').checked ? 1 : 0
+            activa: document.getElementById('edActiva').checked ? 1 : 0,
+            concepto_id: conceptoId
         };
 
         const resp = await fetchAPI(`${TARJETAS_API}?id=${tarjetaId}`, {
@@ -5311,6 +5335,144 @@ async function guardarEdicionTarjeta(tarjetaId) {
 
     } catch (error) {
         mostrarError('Error: ' + error.message);
+    }
+}
+
+// Cargar conceptos tipo 'gasto' en un select
+async function poblarSelectConceptosTarjeta() {
+    try {
+        const resp = await fetch(CONCEPTOS_API_URL);
+        const res = await resp.json();
+        if (!res.success) throw new Error(res.message);
+
+        const gastos = res.data.filter(c => c.tipo === 'gasto');
+        const opciones = ['<option value="">— Sin concepto —</option>',
+            ...gastos.map(c =>
+                `<option value="${c.id}">${c.nombre}</option>`
+            )
+        ].join('');
+
+        ['ftConcepto'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) {
+                const val = el.value;
+                el.innerHTML = opciones;
+                el.value = val;
+            }
+        });
+    } catch (error) {
+        console.error('Error al cargar conceptos:', error);
+    }
+}
+
+// Cargar conceptos en modal de edición y establecer valor actual
+async function poblarSelectConceptoEditarTarjeta(conceptoId) {
+    try {
+        const resp = await fetch(CONCEPTOS_API_URL);
+        const res = await resp.json();
+        if (!res.success) throw new Error(res.message);
+
+        const gastos = res.data.filter(c => c.tipo === 'gasto');
+        const opciones = ['<option value="">— Sin concepto —</option>',
+            ...gastos.map(c =>
+                `<option value="${c.id}">${c.nombre}</option>`
+            )
+        ].join('');
+
+        const el = document.getElementById('edConcepto');
+        if (el) {
+            el.innerHTML = opciones;
+            el.value = conceptoId || '';
+        }
+    } catch (error) {
+        console.error('Error al cargar conceptos:', error);
+    }
+}
+
+// Abrir modal de sincronización de tarjeta
+function abrirSincronizarTarjeta(tarjetaId) {
+    tarjetaId = parseInt(tarjetaId, 10);
+    const tarjeta = tarjetasActuales.find(t => parseInt(t.id, 10) === tarjetaId);
+    if (!tarjeta) return;
+
+    // Calcular próximo mes
+    const mesActual = app.mesActual;
+    const anioActual = app.anioActual;
+    let proximoMes = mesActual + 1;
+    let proximoAnio = anioActual;
+    if (proximoMes > 12) {
+        proximoMes = 1;
+        proximoAnio++;
+    }
+
+    const meses = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+    const proximoMesNombre = meses[proximoMes - 1] + ' ' + proximoAnio;
+
+    // Buscar total de cuotas para el próximo mes (lo tenemos de cargarTarjetas)
+    let totalProximo = 0;
+    if (vencimientosPorTarjeta && vencimientosPorTarjeta[tarjetaId]) {
+        totalProximo = vencimientosPorTarjeta[tarjetaId];
+    }
+
+    // Guardar data en window para usarla en confirmarSincronizar
+    window.datosSincronizar = {
+        tarjetaId,
+        mes: proximoMes,
+        anio: proximoAnio,
+        totalCuotas: totalProximo,
+        nombreTarjeta: `${tarjeta.banco} - ${tarjeta.nombre_tarjeta} (${tarjeta.ultimos_4})`
+    };
+
+    // Poblar modal
+    document.getElementById('syncTarjetaNombre').textContent = window.datosSincronizar.nombreTarjeta;
+    document.getElementById('syncMesNombre').textContent = proximoMesNombre;
+    document.getElementById('syncTotalCuotas').textContent = formatearMoneda(totalProximo);
+    document.getElementById('syncAjuste').value = '0';
+
+    actualizarTotalSincronizar();
+
+    const modal = new bootstrap.Modal(document.getElementById('modalSincronizarTarjeta'), { keyboard: false });
+    modal.show();
+}
+
+// Actualizar total en modal de sincronización al cambiar ajuste
+function actualizarTotalSincronizar() {
+    if (!window.datosSincronizar) return;
+
+    const ajuste = parseFloat(document.getElementById('syncAjuste').value) || 0;
+    const totalFinal = window.datosSincronizar.totalCuotas + ajuste;
+
+    document.getElementById('syncTotalFinal').textContent = formatearMoneda(totalFinal);
+}
+
+// Confirmar sincronización y guardar en registros_mensuales
+async function confirmarSincronizar() {
+    if (!window.datosSincronizar) return;
+
+    const { tarjetaId, mes, anio, totalCuotas } = window.datosSincronizar;
+    const ajuste = parseFloat(document.getElementById('syncAjuste').value) || 0;
+
+    try {
+        const resp = await fetchAPI(`${TARJETAS_API}?action=sincronizar&tarjeta_id=${tarjetaId}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ mes, anio, ajuste })
+        });
+
+        const result = await resp.json();
+        if (!result.success) throw new Error(result.message);
+
+        const totalFinal = totalCuotas + ajuste;
+        mostrarToast(`✓ Concepto sincronizado: $${formatearMoneda(totalFinal)}`, 'success');
+        bootstrap.Modal.getInstance(document.getElementById('modalSincronizarTarjeta')).hide();
+
+        // Si el mes sincronizado es el actual, recargar datos
+        if (mes === app.mesActual && anio === app.anioActual) {
+            cargarDatos();
+        }
+
+    } catch (error) {
+        mostrarError('Error al sincronizar: ' + error.message);
     }
 }
 

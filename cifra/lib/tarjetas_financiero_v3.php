@@ -423,4 +423,82 @@ class TarjetasFinanciero {
         $stmt->execute([$movimiento_id]);
         return $stmt->fetchAll();
     }
+
+    // ============================================================
+    // SINCRONIZAR: Tarjeta → Concepto de Gasto
+    // ============================================================
+
+    /**
+     * Calcula el total de cuotas NO PAGADAS de una tarjeta para un mes/año específico,
+     * aplica un ajuste, y hace upsert en registros_mensuales del concepto asociado.
+     *
+     * @param int $tarjeta_id
+     * @param int $mes (1-12)
+     * @param int $anio
+     * @param float $ajuste (suma o resta al total calculado)
+     * @return array { total_cuotas, ajuste, total_final, registro_id, concepto_id }
+     */
+    public static function sincronizarConConcepto($tarjeta_id, $mes, $anio, $ajuste = 0) {
+        $db = self::getDb();
+
+        // 1. Obtener concepto_id de la tarjeta
+        $stmtTarjeta = $db->prepare("SELECT concepto_id FROM tarjetas_credito WHERE id = ?");
+        $stmtTarjeta->execute([$tarjeta_id]);
+        $tarjeta = $stmtTarjeta->fetch();
+
+        if (!$tarjeta || !$tarjeta['concepto_id']) {
+            throw new Exception("Tarjeta sin concepto asociado");
+        }
+
+        $concepto_id = (int)$tarjeta['concepto_id'];
+
+        // 2. Calcular total de cuotas NO PAGADAS para ese mes/año
+        $sql = "SELECT SUM(cm.monto) as total
+                FROM cuotas_movimiento cm
+                INNER JOIN movimientos_tarjeta mt ON cm.movimiento_id = mt.id
+                WHERE mt.tarjeta_id = ?
+                  AND YEAR(cm.fecha_vencimiento) = ?
+                  AND MONTH(cm.fecha_vencimiento) = ?
+                  AND cm.pagada = 0
+                  AND mt.fecha_cancelacion IS NULL";
+
+        $stmt = $db->prepare($sql);
+        $stmt->execute([$tarjeta_id, $anio, $mes]);
+        $result = $stmt->fetch();
+
+        $total_cuotas = $result['total'] ? (float)$result['total'] : 0;
+        $total_final = $total_cuotas + $ajuste;
+
+        // 3. Upsert en registros_mensuales
+        $sqlUpsert = "INSERT INTO registros_mensuales
+                      (concepto_id, mes, anio, importe, pagado, observaciones)
+                      VALUES (?, ?, ?, ?, 1, 'Sincronizado desde tarjetas de crédito')
+                      ON DUPLICATE KEY UPDATE
+                      importe = VALUES(importe),
+                      observaciones = 'Sincronizado desde tarjetas de crédito'";
+
+        $stmtUpsert = $db->prepare($sqlUpsert);
+        $stmtUpsert->execute([$concepto_id, $mes, $anio, $total_final]);
+
+        // Obtener ID del registro (si es INSERT nuevo)
+        $registro_id = $db->lastInsertId();
+
+        // Si fue UPDATE, obtener el ID existente
+        if (!$registro_id) {
+            $stmtGet = $db->prepare(
+                "SELECT id FROM registros_mensuales WHERE concepto_id = ? AND mes = ? AND anio = ?"
+            );
+            $stmtGet->execute([$concepto_id, $mes, $anio]);
+            $reg = $stmtGet->fetch();
+            $registro_id = $reg ? (int)$reg['id'] : null;
+        }
+
+        return [
+            'total_cuotas' => $total_cuotas,
+            'ajuste' => $ajuste,
+            'total_final' => $total_final,
+            'registro_id' => $registro_id,
+            'concepto_id' => $concepto_id
+        ];
+    }
 }

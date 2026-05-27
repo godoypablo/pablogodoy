@@ -174,7 +174,7 @@ $labelFiltro = $meses[(int)date('n') - 1] . ' ' . date('Y');
                             <span class="topbar-stat-label">Pendiente</span>
                             <span class="topbar-stat-valor" id="gastosPorPagarHeader">—</span>
                         </div>
-                        <div class="topbar-stat d-none" id="statProximoVenc" onclick="abrirModalTarjetas()" title="Próximo vencimiento de tarjeta">
+                        <div class="topbar-stat d-none" id="statProximoVenc" onclick="abrirModalVencimientos()" title="Próximo vencimiento de tarjeta">
                             <span class="topbar-stat-label">Próx. Venc.</span>
                             <span class="topbar-stat-valor" id="proximoVencHeader">—</span>
                         </div>
@@ -774,12 +774,71 @@ $labelFiltro = $meses[(int)date('n') - 1] . ' ' . date('Y');
                             <label class="form-label form-field-label">Titular</label>
                             <input type="text" id="ftTitular" class="form-control" placeholder="Ej: Juan Pérez">
                         </div>
+                        <div class="mb-3">
+                            <label class="form-label form-field-label">Concepto de gasto asociado <span class="text-muted">(opcional)</span></label>
+                            <select id="ftConcepto" class="form-select">
+                                <option value="">— Sin concepto —</option>
+                            </select>
+                            <small class="text-muted d-block mt-1">
+                                <i class="bi bi-info-circle me-1"></i>
+                                Para sincronizar automáticamente los pagos con los gastos registrados
+                            </small>
+                        </div>
                     </form>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
                     <button type="button" class="btn btn-primary" onclick="guardarTarjeta()">
                         <i class="bi bi-check-lg me-1"></i>Guardar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Sincronizar Tarjeta con Concepto de Gasto -->
+    <div class="modal fade" id="modalSincronizarTarjeta" tabindex="-1" aria-labelledby="modalSincronizarLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalSincronizarLabel">
+                        <i class="bi bi-arrow-repeat me-2"></i>Sincronizar con gastos
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label form-field-label">Tarjeta</label>
+                        <div id="syncTarjetaNombre" class="fw-bold">—</div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label form-field-label">Mes</label>
+                        <div id="syncMesNombre" class="text-muted">—</div>
+                    </div>
+                    <div class="p-3 rounded mb-3" style="background:rgba(99,102,241,0.05);border:1px solid rgba(99,102,241,0.2)">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="text-muted small">Total de cuotas:</span>
+                            <span class="fw-bold" id="syncTotalCuotas">$0,00</span>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label form-field-label">Ajuste ± <span class="text-muted">(opcional)</span></label>
+                        <input type="number" id="syncAjuste" class="form-control text-end" placeholder="0,00" step="0.01" value="0" oninput="actualizarTotalSincronizar()">
+                        <small class="text-muted d-block mt-1">
+                            Bonificación, descuento, o ajuste manual
+                        </small>
+                    </div>
+                    <div class="p-3 rounded" style="background:rgba(16,185,129,0.05);border:1px solid rgba(16,185,129,0.2)">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="text-muted small">Importe final a guardar:</span>
+                            <span class="fw-bold text-success" id="syncTotalFinal">$0,00</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" onclick="confirmarSincronizar()">
+                        <i class="bi bi-check-lg me-1"></i>Sincronizar
                     </button>
                 </div>
             </div>

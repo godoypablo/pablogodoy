@@ -138,7 +138,8 @@ try {
                     'limite_credito' => 'float',
                     'fecha_cierre_dia' => 'int',
                     'fecha_vencimiento_dia' => 'int',
-                    'activa' => 'bool'
+                    'activa' => 'bool',
+                    'concepto_id' => 'int_null'
                 ];
 
                 foreach ($campos as $campo => $tipo) {
@@ -148,6 +149,8 @@ try {
                             $params[] = (float)$data[$campo];
                         } elseif ($tipo === 'int') {
                             $params[] = (int)$data[$campo];
+                        } elseif ($tipo === 'int_null') {
+                            $params[] = $data[$campo] !== null ? (int)$data[$campo] : null;
                         } elseif ($tipo === 'bool') {
                             $params[] = (int)(bool)$data[$campo];
                         } else {
@@ -608,6 +611,33 @@ try {
 
             sendResponse(true, ['generados' => $generados], "Se generaron $generados cierres automáticamente");
 
+        } catch (Exception $e) {
+            sendResponse(false, null, 'Error: ' . $e->getMessage(), 500);
+        }
+    }
+
+    // ============================================================
+    // SINCRONIZAR TARJETA CON CONCEPTO DE GASTO
+    // ============================================================
+
+    if ($action === 'sincronizar' && $method === 'POST') {
+        if (!isset($_GET['tarjeta_id'])) {
+            sendResponse(false, null, 'tarjeta_id requerido', 400);
+        }
+
+        $data = json_decode(file_get_contents('php://input'), true);
+        $tarjeta_id = (int)$_GET['tarjeta_id'];
+        $mes = (int)($data['mes'] ?? 0);
+        $anio = (int)($data['anio'] ?? 0);
+        $ajuste = (float)($data['ajuste'] ?? 0);
+
+        if ($mes < 1 || $mes > 12 || $anio < 2000) {
+            sendResponse(false, null, 'Mes/año inválidos', 400);
+        }
+
+        try {
+            $resultado = TarjetasFinanciero::sincronizarConConcepto($tarjeta_id, $mes, $anio, $ajuste);
+            sendResponse(true, $resultado, 'Concepto sincronizado');
         } catch (Exception $e) {
             sendResponse(false, null, 'Error: ' . $e->getMessage(), 500);
         }
