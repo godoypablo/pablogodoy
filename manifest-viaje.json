@@ -1,0 +1,75 @@
+{
+  "name": "Gira Oceanía 2027 — Los 4 Magníficos",
+  "short_name": "Viaje NZL-AUS",
+  "description": "Planificación completa del viaje a Nueva Zelanda y Australia. Vuelos, presupuesto, paradas en motorhome, apps recomendadas y destinos.",
+  "start_url": "/viaje.php",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "theme_color": "#064e3b",
+  "background_color": "#f0fdf4",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect fill='%23064e3b' width='192' height='192' rx='45'/><text x='96' y='128' font-size='100' text-anchor='middle' dominant-baseline='middle'>🇳🇿</text></svg>",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect fill='%23064e3b' width='512' height='512' rx='120'/><text x='256' y='360' font-size='280' text-anchor='middle' dominant-baseline='middle'>🇳🇿</text></svg>",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 540 720'><defs><linearGradient id='grad' x1='0%' y1='0%' x2='0%' y2='100%'><stop offset='0%' style='stop-color:%23f0fdf4'/><stop offset='100%' style='stop-color:%23f0f9ff'/></linearGradient></defs><rect fill='url(%23grad)' width='540' height='720'/><rect fill='%23064e3b' width='540' height='120'/><text x='270' y='65' font-size='48' font-weight='bold' text-anchor='middle' dominant-baseline='middle' fill='white'>Gira Oceanía 2027</text></svg>",
+      "sizes": "540x720",
+      "type": "image/svg+xml",
+      "form_factor": "narrow"
+    }
+  ],
+  "categories": ["travel", "lifestyle"],
+  "shortcuts": [
+    {
+      "name": "Ver Vuelos",
+      "short_name": "Vuelos",
+      "description": "Itinerario de vuelos confirmados",
+      "url": "/viaje-nzl-aus.php?tab=itinerario",
+      "icons": [
+        {
+          "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 96 96'><text x='48' y='68' font-size='80' text-anchor='middle'>✈️</text></svg>",
+          "sizes": "96x96",
+          "type": "image/svg+xml"
+        }
+      ]
+    },
+    {
+      "name": "Paradas",
+      "short_name": "Motorhome",
+      "description": "Recorrido en motorhome",
+      "url": "/viaje-nzl-aus.php?tab=paradas",
+      "icons": [
+        {
+          "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 96 96'><text x='48' y='68' font-size='80' text-anchor='middle'>🚐</text></svg>",
+          "sizes": "96x96",
+          "type": "image/svg+xml"
+        }
+      ]
+    },
+    {
+      "name": "Presupuesto",
+      "short_name": "Gastos",
+      "description": "Detalles del presupuesto",
+      "url": "/viaje-nzl-aus.php?tab=presupuesto",
+      "icons": [
+        {
+          "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 96 96'><text x='48' y='68' font-size='80' text-anchor='middle'>💰</text></svg>",
+          "sizes": "96x96",
+          "type": "image/svg+xml"
+        }
+      ]
+    }
+  ]
+}
