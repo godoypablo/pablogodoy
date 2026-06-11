@@ -42,10 +42,10 @@ function obtenerSignoZodiaco($fechaNacimiento) {
 
 // ── GRUPO DE VIAJEROS ────────────────────────────────────
 $grupo_raw = [
-    ['nombre' => 'SEBASTIAN LLENSA',     'dni' => '25546552', 'nacimiento' => '15/12/1976'],
-    ['nombre' => 'PABLO ANDRÉS GODOY',   'dni' => '22342593', 'nacimiento' => '04/02/1972'],
-    ['nombre' => 'JORGE MARTIN ZUTTION', 'dni' => '21512748', 'nacimiento' => '18/11/1970'],
-    ['nombre' => 'RICARDO ANDRÉS RIVAS', 'dni' => '255466083', 'nacimiento' => '07/03/1977'],
+    ['nombre' => 'SEBASTIAN LLENSA',     'dni' => '25546552', 'nacimiento' => '15/12/1976', 'zodiaco' => '♐ Sagitario'],
+    ['nombre' => 'PABLO ANDRÉS GODOY',   'dni' => '22342593', 'nacimiento' => '04/02/1972', 'zodiaco' => '♒ Acuario'],
+    ['nombre' => 'JORGE MARTIN ZUTTION', 'dni' => '21512748', 'nacimiento' => '18/11/1970', 'zodiaco' => '♏ Escorpio'],
+    ['nombre' => 'RICARDO ANDRÉS RIVAS', 'dni' => '255466083', 'nacimiento' => '07/03/1977', 'zodiaco' => '♓ Piscis'],
 ];
 
 // Agregar edad y signo del zodíaco a cada persona
@@ -604,6 +604,11 @@ $destinos = [
                 <i class="bi bi-people-fill"></i> Integrantes
             </button>
         </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="tab-astrologia" data-bs-toggle="tab" data-bs-target="#astrologia" type="button" role="tab">
+                <i class="bi bi-star-fill"></i> Astrología
+            </button>
+        </li>
     </ul>
 
     <!-- CONTENIDO TABS -->
@@ -971,6 +976,121 @@ $destinos = [
 
             </div><!-- /sub-tab-content -->
 
+        </div>
+
+        <!-- TAB 6: ASTROLOGÍA GRUPAL -->
+        <div class="tab-pane fade" id="astrologia" role="tabpanel">
+            <div class="sec-group">
+                <div class="sec-title"><i class="bi bi-star-fill"></i> Dinámica Grupal por Signo Zodiacal</div>
+
+                <!-- ESCORPIO: JORGE -->
+                <div style="background: linear-gradient(135deg, rgba(239,68,68,.08) 0%, rgba(244,63,94,.08) 100%); padding: 14px; border-radius: 6px; margin-bottom: 12px; border-left: 4px solid #ef4444;">
+                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                        <span style="font-size: 1.5rem;">♏</span>
+                        <div>
+                            <div style="font-weight: 700; color: #7f1d1d; font-size: 0.95rem;">JORGE — Escorpio (55 años)</div>
+                            <div style="font-size: 0.8rem; color: #991b1b;">El Líder Estratégico</div>
+                        </div>
+                    </div>
+                    <div style="font-size: 0.85rem; color: #64748b; line-height: 1.5;">
+                        <p style="margin: 6px 0;"><strong>Rol en el viaje:</strong> Capitán del grupo, toma decisiones finales, observa dinámicas</p>
+                        <p style="margin: 6px 0;"><strong>Fortalezas:</strong> Intuitivo, decisivo, ve problemas antes que otros, protege al grupo</p>
+                        <p style="margin: 6px 0;"><strong>En ruta:</strong> Decide rutas alternativas, mantiene el control de situaciones complejas</p>
+                    </div>
+                </div>
+
+                <!-- ACUARIO: PABLO -->
+                <div style="background: linear-gradient(135deg, rgba(59,130,246,.08) 0%, rgba(96,165,250,.08) 100%); padding: 14px; border-radius: 6px; margin-bottom: 12px; border-left: 4px solid #3b82f6;">
+                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                        <span style="font-size: 1.5rem;">♒</span>
+                        <div>
+                            <div style="font-weight: 700; color: #1e3a8a; font-size: 0.95rem;">PABLO — Acuario (54 años)</div>
+                            <div style="font-size: 0.8rem; color: #1e40af;">El Innovador</div>
+                        </div>
+                    </div>
+                    <div style="font-size: 0.85rem; color: #64748b; line-height: 1.5;">
+                        <p style="margin: 6px 0;"><strong>Rol en el viaje:</strong> Propone ideas creativas e inesperadas</p>
+                        <p style="margin: 6px 0;"><strong>Fortalezas:</strong> Independiente, humanitario, piensa diferente, calmado</p>
+                        <p style="margin: 6px 0;"><strong>En ruta:</strong> Sugiere desvíos interesantes, cuestiona lo obvio, aporta perspectivas únicas</p>
+                    </div>
+                </div>
+
+                <!-- SAGITARIO: SEBASTIÁN -->
+                <div style="background: linear-gradient(135deg, rgba(251,146,60,.08) 0%, rgba(253,186,116,.08) 100%); padding: 14px; border-radius: 6px; margin-bottom: 12px; border-left: 4px solid #fb923c;">
+                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                        <span style="font-size: 1.5rem;">🏹</span>
+                        <div>
+                            <div style="font-weight: 700; color: #7c2d12; font-size: 0.95rem;">SEBASTIÁN — Sagitario (49 años)</div>
+                            <div style="font-size: 0.8rem; color: #92400e;">El Aventurero Nato</div>
+                        </div>
+                    </div>
+                    <div style="font-size: 0.85rem; color: #64748b; line-height: 1.5;">
+                        <p style="margin: 6px 0;"><strong>Rol en el viaje:</strong> Motor emocional, impulsor de experiencias y aventuras</p>
+                        <p style="margin: 6px 0;"><strong>Fortalezas:</strong> Optimista, honesto, expansivo, amante de libertad</p>
+                        <p style="margin: 6px 0;"><strong>En ruta:</strong> Anima exploración, contagia entusiasmo, ríe constante, rompe tensiones</p>
+                    </div>
+                </div>
+
+                <!-- PISCIS: RICARDO -->
+                <div style="background: linear-gradient(135deg, rgba(34,197,94,.08) 0%, rgba(74,222,128,.08) 100%); padding: 14px; border-radius: 6px; margin-bottom: 12px; border-left: 4px solid #22c55e;">
+                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                        <span style="font-size: 1.5rem;">🐠</span>
+                        <div>
+                            <div style="font-weight: 700; color: #166534; font-size: 0.95rem;">RICARDO — Piscis (49 años)</div>
+                            <div style="font-size: 0.8rem; color: #15803d;">El Mediador Empático</div>
+                        </div>
+                    </div>
+                    <div style="font-size: 0.85rem; color: #64748b; line-height: 1.5;">
+                        <p style="margin: 6px 0;"><strong>Rol en el viaje:</strong> Equilibrador emocional, mediador de conflictos</p>
+                        <p style="margin: 6px 0;"><strong>Fortalezas:</strong> Sensible, empático, creativo, intuición fuerte</p>
+                        <p style="margin: 6px 0;"><strong>En ruta:</strong> Propone pausas para disfrutar momentos, alivia tensiones, aporta creatividad</p>
+                    </div>
+                </div>
+
+                <!-- PRONÓSTICO -->
+                <div style="background: linear-gradient(135deg, #f0fdf4 0%, #f0f9ff 100%); padding: 14px; border-radius: 6px; margin-top: 15px; border: 2px solid #0ea5e9;">
+                    <div style="font-weight: 700; color: var(--primary); margin-bottom: 12px; font-size: 0.95rem;">✨ Pronóstico: Viaje Armonioso</div>
+
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;">
+                        <div style="background: white; padding: 10px; border-radius: 5px; border-left: 3px solid #0ea5e9;">
+                            <div style="font-weight: 600; color: var(--primary); font-size: 0.85rem;">Química General</div>
+                            <div style="color: #fbbf24; font-size: 1.2rem; margin-top: 4px;">⭐⭐⭐⭐⭐</div>
+                            <div style="font-size: 0.75rem; color: #64748b; margin-top: 4px;">Excelente — Máxima complementariedad</div>
+                        </div>
+
+                        <div style="background: white; padding: 10px; border-radius: 5px; border-left: 3px solid #0ea5e9;">
+                            <div style="font-weight: 600; color: var(--primary); font-size: 0.85rem;">Toma de Decisiones</div>
+                            <div style="color: #fbbf24; font-size: 1.2rem; margin-top: 4px;">⭐⭐⭐⭐</div>
+                            <div style="font-size: 0.75rem; color: #64748b; margin-top: 4px;">Buena — Todos aportan perspectivas</div>
+                        </div>
+
+                        <div style="background: white; padding: 10px; border-radius: 5px; border-left: 3px solid #0ea5e9;">
+                            <div style="font-weight: 600; color: var(--primary); font-size: 0.85rem;">Resolución de Conflictos</div>
+                            <div style="color: #fbbf24; font-size: 1.2rem; margin-top: 4px;">⭐⭐⭐⭐⭐</div>
+                            <div style="font-size: 0.75rem; color: #64748b; margin-top: 4px;">Excelente — Piscis media, todos calmados</div>
+                        </div>
+
+                        <div style="background: white; padding: 10px; border-radius: 5px; border-left: 3px solid #0ea5e9;">
+                            <div style="font-weight: 600; color: var(--primary); font-size: 0.85rem;">Aventura & Diversión</div>
+                            <div style="color: #fbbf24; font-size: 1.2rem; margin-top: 4px;">⭐⭐⭐⭐⭐</div>
+                            <div style="font-size: 0.75rem; color: #64748b; margin-top: 4px;">Excelente — Sagitario lidera expediciones</div>
+                        </div>
+
+                        <div style="background: white; padding: 10px; border-radius: 5px; border-left: 3px solid #0ea5e9;">
+                            <div style="font-weight: 600; color: var(--primary); font-size: 0.85rem;">Riesgo de Aburrimiento</div>
+                            <div style="color: #fbbf24; font-size: 1.2rem; margin-top: 4px;">⭐</div>
+                            <div style="font-size: 0.75rem; color: #64748b; margin-top: 4px;">Muy bajo — Demasiada diversidad</div>
+                        </div>
+
+                        <div style="background: white; padding: 10px; border-radius: 5px; border-left: 3px solid #0ea5e9;">
+                            <div style="font-weight: 600; color: var(--primary); font-size: 0.85rem;">Compatibilidad Final</div>
+                            <div style="color: #10b981; font-size: 1rem; margin-top: 4px; font-weight: 700;">✅ IDEAL</div>
+                            <div style="font-size: 0.75rem; color: #64748b; margin-top: 4px;">Grupo perfectamente balanceado</div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
         </div>
 
     </div><!-- /tab-content -->
