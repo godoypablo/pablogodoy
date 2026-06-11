@@ -71,7 +71,6 @@ git remote add origin https://github.com/godoypablo/proyecto-nuevo.git
 git branch -M main
 git push -u origin main
 ```
-
 #### Trabajar Todos los Días
 
 **Paso 1:** `git pull`
