@@ -3,390 +3,1206 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SIGEDO - Sistema de Gestión Electrónica de Documentos</title>
+    <title>SIGEDO Tutorial - Sistema de Gestión Electrónica de Documentos</title>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Inter', sans-serif; }
-        .hero {
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #f5f0ff 0%, #fff9f5 100%);
+        }
+        .header {
             background: linear-gradient(135deg, #9b59b6 0%, #6c3a82 100%);
             color: white;
-            padding: 60px 20px;
+            padding: 40px 20px;
+            margin-bottom: 40px;
             border-radius: 15px;
-            margin-bottom: 50px;
         }
-        .hero h1 { font-size: 2.5em; font-weight: bold; margin-bottom: 10px; }
-        .hero p { font-size: 1.2em; opacity: 0.95; }
-        .section-title {
-            color: #9b59b6;
-            font-weight: bold;
-            margin-top: 40px;
+        .header h1 { font-size: 2.5em; font-weight: bold; margin-bottom: 10px; }
+        .header p { font-size: 1.1em; opacity: 0.95; margin: 0; }
+
+        .nav-tabs {
+            border-bottom: 2px solid #9b59b6;
             margin-bottom: 30px;
-            border-left: 4px solid #9b59b6;
-            padding-left: 15px;
         }
-        .doc-card {
+        .nav-tabs .nav-link {
+            color: #666;
+            border: none;
+            border-bottom: 3px solid transparent;
+            font-weight: 600;
+            padding: 15px 25px;
+        }
+        .nav-tabs .nav-link:hover {
+            color: #9b59b6;
+            border-bottom-color: #9b59b6;
+        }
+        .nav-tabs .nav-link.active {
+            color: #9b59b6;
+            border-bottom-color: #9b59b6;
+            background: transparent;
+        }
+
+        .tab-content {
             background: white;
             border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        .accordion-button {
+            background-color: #f5f0ff;
+            color: #333;
+            font-weight: 600;
+            border: none;
+        }
+        .accordion-button:not(.collapsed) {
+            background-color: #9b59b6;
+            color: white;
+            box-shadow: none;
+        }
+        .accordion-button:focus {
+            border-color: #9b59b6;
+            box-shadow: 0 0 0 0.25rem rgba(155, 89, 182, 0.25);
+        }
+        .accordion-body {
+            background: white;
+            padding: 25px;
+        }
+
+        .feature-box {
+            background: #f5f0ff;
+            border-left: 4px solid #9b59b6;
             padding: 20px;
             margin-bottom: 20px;
-            border-left: 4px solid #9b59b6;
-            transition: transform 0.2s;
-        }
-        .doc-card:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-        }
-        .doc-card h3 { color: #9b59b6; font-weight: bold; margin-bottom: 10px; }
-        .doc-card .meta {
-            display: flex;
-            gap: 20px;
-            font-size: 0.9em;
-            color: #666;
-            margin-bottom: 10px;
-        }
-        .doc-card p { color: #666; margin: 0; }
-        .feature-box {
-            background: #f9f9f9;
-            border-radius: 10px;
-            padding: 20px;
-            margin-bottom: 15px;
-            border-left: 4px solid #9b59b6;
+            border-radius: 8px;
         }
         .feature-box strong { color: #9b59b6; }
-        .path {
-            background: #f5f0ff;
-            border-radius: 8px;
+
+        .code-block {
+            background: #2d2d2d;
+            color: #f8f8f2;
             padding: 20px;
-            margin-bottom: 15px;
-            border-left: 4px solid #9b59b6;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 20px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            line-height: 1.5;
         }
-        .path h4 { color: #9b59b6; margin-bottom: 10px; }
-        .path-item {
-            padding: 5px 0;
-            padding-left: 20px;
-            position: relative;
-        }
-        .path-item:before {
-            content: "→";
-            position: absolute;
-            left: 0;
-            color: #9b59b6;
-        }
-        .btn-primary {
-            background: #9b59b6;
-            border-color: #9b59b6;
-        }
-        .btn-primary:hover {
-            background: #7d4795;
-            border-color: #7d4795;
-        }
-        .stats {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 15px;
-            margin-bottom: 40px;
-        }
-        .stat {
+
+        .flow-diagram {
             background: white;
-            padding: 20px;
-            border-radius: 8px;
+            border-radius: 10px;
+            padding: 30px;
+            margin: 20px 0;
             text-align: center;
+        }
+        .flow-step {
+            display: inline-block;
+            background: #f5f0ff;
+            padding: 15px 25px;
+            border-radius: 8px;
+            margin: 10px;
+            min-width: 200px;
+        }
+        .flow-arrow {
+            display: inline-block;
+            color: #9b59b6;
+            margin: 0 10px;
+            font-size: 1.5em;
+        }
+
+        .table-scroll {
+            overflow-x: auto;
+        }
+        table {
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        thead {
+            background: #f5f0ff;
+            color: #9b59b6;
+            font-weight: 600;
+        }
+        tbody tr:hover {
+            background: #f9f9f9;
+        }
+
+        .breadcrumb-custom {
+            background: transparent;
+            padding: 0;
+            margin-bottom: 30px;
+        }
+
+        .stat-box {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            margin-bottom: 15px;
             box-shadow: 0 2px 5px rgba(0,0,0,0.05);
         }
-        .stat .number { font-size: 2em; font-weight: bold; color: #9b59b6; }
-        .stat .label { color: #666; font-size: 0.9em; margin-top: 5px; }
+        .stat-box .number {
+            font-size: 2em;
+            font-weight: bold;
+            color: #9b59b6;
+        }
+        .stat-box .label {
+            color: #666;
+            font-size: 0.9em;
+            margin-top: 5px;
+        }
+
         .back-btn {
             display: inline-block;
-            margin-bottom: 30px;
+            margin-bottom: 20px;
             color: #9b59b6;
             text-decoration: none;
+            font-weight: 600;
         }
         .back-btn:hover { text-decoration: underline; }
+
+        .alert-info {
+            background: #e8f4f8;
+            border-left: 4px solid #3498db;
+            color: #333;
+        }
+
+        .topic-badge {
+            display: inline-block;
+            background: #9b59b6;
+            color: white;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            margin: 3px;
+        }
     </style>
 </head>
-<body class="bg-light">
+<body>
 
 <div class="container py-5">
     <a href="/" class="back-btn"><i class="bi bi-arrow-left"></i> Volver al Panel</a>
 
-    <div class="hero">
-        <h1><i class="bi bi-file-earmark-text"></i> SIGEDO</h1>
-        <p>Sistema Integrado de Gestión Electrónica de Documentos</p>
+    <div class="header">
+        <h1><i class="bi bi-book"></i> Tutorial SIGEDO</h1>
+        <p>Sistema Integrado de Gestión Electrónica de Documentos - Aprende todo aquí</p>
     </div>
 
-    <!-- Introducción -->
-    <section>
-        <h2 class="section-title">¿Qué es SIGEDO?</h2>
-        <div class="row mb-5">
-            <div class="col-lg-8">
-                <p class="lead">
-                    <strong>SIGEDO</strong> es un sistema web profesional especializado en la gestión de documentos de auditoría
-                    para el <strong>Tribunal de Cuentas de Entre Ríos (TCER)</strong>, una institución argentina que audita y controla
-                    las cuentas del gobierno provincial.
-                </p>
-                <p>
-                    El sistema permite recibir documentos financieros (rendiciones, subsidios, multas), procesarlos a través de
-                    múltiples etapas de revisión y auditoría, y finalmente certificarlos con firma digital, manteniendo un
-                    registro imutable de cada acción.
-                </p>
-            </div>
-            <div class="col-lg-4">
-                <div class="stats">
-                    <div class="stat">
-                        <div class="number">9</div>
-                        <div class="label">Documentos</div>
-                    </div>
-                    <div class="stat">
+    <!-- Tabs de Navegación -->
+    <ul class="nav nav-tabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="intro-tab" data-bs-toggle="tab" data-bs-target="#intro" type="button" role="tab">
+                <i class="bi bi-book"></i> Introducción
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="flujos-tab" data-bs-toggle="tab" data-bs-target="#flujos" type="button" role="tab">
+                <i class="bi bi-diagram-2"></i> Flujos Reales
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="tecnico-tab" data-bs-toggle="tab" data-bs-target="#tecnico" type="button" role="tab">
+                <i class="bi bi-gear"></i> Aspecto Técnico
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="glosario-tab" data-bs-toggle="tab" data-bs-target="#glosario" type="button" role="tab">
+                <i class="bi bi-fonts"></i> Glosario
+            </button>
+        </li>
+    </ul>
+
+    <div class="tab-content">
+        <!-- TAB 1: INTRODUCCIÓN -->
+        <div class="tab-pane fade show active" id="intro" role="tabpanel">
+            <div class="row mb-5">
+                <div class="col-lg-8">
+                    <h2 class="mb-3">¿Qué es SIGEDO?</h2>
+                    <p class="lead">
+                        <strong>SIGEDO = Sistema Integrado de Gestión Electrónica de Documentos</strong>
+                    </p>
+                    <p>
+                        Es un sistema web especializado para el <strong>Tribunal de Cuentas de Entre Ríos (TCER)</strong>,
+                        una institución argentina que audita y controla las cuentas del gobierno provincial.
+                    </p>
+                    <p>
+                        <strong>Propósito principal:</strong> Gestionar documentos financieros (rendiciones de cuentas, subsidios, multas),
+                        procesarlos a través de múltiples etapas de revisión y auditoría, firmarlos digitalmente y mantener un registro
+                        imutable de cada acción para auditoría permanente.
+                    </p>
+                </div>
+                <div class="col-lg-4">
+                    <div class="stat-box">
                         <div class="number">3,680+</div>
-                        <div class="label">Líneas Doc</div>
+                        <div class="label">Líneas de Documentación</div>
                     </div>
-                    <div class="stat">
+                    <div class="stat-box">
+                        <div class="number">9</div>
+                        <div class="label">Documentos Completos</div>
+                    </div>
+                    <div class="stat-box">
                         <div class="number">8-10h</div>
-                        <div class="label">Lectura</div>
+                        <div class="label">Tiempo de Lectura</div>
+                    </div>
+                </div>
+            </div>
+
+            <h3 class="mt-5 mb-4">Flujo Principal en 7 Pasos</h3>
+            <div class="flow-diagram">
+                <div class="flow-step">
+                    <strong>1. Envío</strong><br>
+                    <small>Organismo envía documento</small>
+                </div>
+                <div class="flow-arrow">→</div>
+                <div class="flow-step">
+                    <strong>2. Clasificación</strong><br>
+                    <small>SIGEDO clasifica el tipo</small>
+                </div>
+                <div class="flow-arrow">→</div>
+                <div class="flow-step">
+                    <strong>3. Asignación</strong><br>
+                    <small>Se asigna a auditor</small>
+                </div>
+                <br>
+                <div class="flow-arrow">↓</div>
+                <br>
+                <div class="flow-step">
+                    <strong>4. Auditoría</strong><br>
+                    <small>Auditor revisa (días)</small>
+                </div>
+                <div class="flow-arrow">→</div>
+                <div class="flow-step">
+                    <strong>5. Informe</strong><br>
+                    <small>Se genera informe</small>
+                </div>
+                <div class="flow-arrow">→</div>
+                <div class="flow-step">
+                    <strong>6. Firma</strong><br>
+                    <small>Firma digital</small>
+                </div>
+                <br>
+                <div class="flow-arrow">↓</div>
+                <br>
+                <div class="flow-step">
+                    <strong>7. Archivo</strong><br>
+                    <small>PDF certificado</small>
+                </div>
+            </div>
+
+            <h3 class="mt-5 mb-4">7 Tipos de Documentos</h3>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="feature-box">
+                        <strong>📊 RENDICIÓN_ORGANISMO</strong>
+                        <p>Cuenta anual de ministerios y organismos gubernamentales</p>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="feature-box">
+                        <strong>💰 RENDICIÓN_SUBSIDIO</strong>
+                        <p>Informe de cómo se gastó un subsidio recibido</p>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="feature-box">
+                        <strong>📁 EXPEDIENTE</strong>
+                        <p>Carpeta de auditoría generada internamente por TCER</p>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="feature-box">
+                        <strong>⚠️ MULTA</strong>
+                        <p>Penalización por incumplimiento o irregularidades</p>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="feature-box">
+                        <strong>❌ OMISIÓN_RENDITIVA</strong>
+                        <p>Aviso automático cuando no se entrega cuenta a tiempo</p>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="feature-box">
+                        <strong>✉️ OFICIO/CÉDULA</strong>
+                        <p>Comunicaciones oficiales entre TCER y organismos</p>
+                    </div>
+                </div>
+                <div class="col-md-12">
+                    <div class="feature-box">
+                        <strong>📋 LEGAJO_RENDITIVO</strong>
+                        <p>Archivo completo de movimientos contables</p>
+                    </div>
+                </div>
+            </div>
+
+            <h3 class="mt-5 mb-4">Estados de un Documento (Máquina de Estados)</h3>
+            <p>Un documento pasa por estos estados en orden:</p>
+            <div class="code-block">
+INGRESADO
+    ↓
+CARATULADO (se asigna auditor)
+    ↓
+EN_AUDITORÍA (auditor revisa)
+    ↓
+PENDIENTE_INFORME (se escribe informe)
+    ↓
+EN_REVISIÓN_SUPERIOR (jefe revisa)
+    ↓
+APROBADO (aprobación de superiores)
+    ↓
+PENDIENTE_CERTIFICACIÓN (listo para firmar)
+    ↓
+CERTIFICADO (firmado digitalmente)
+    ↓
+ARCHIVADO (guardado permanentemente)
+            </div>
+            <div class="alert alert-info">
+                <strong>💡 Importante:</strong> El sistema permite <strong>100+ estados configurables</strong>.
+                El admin puede agregar nuevos estados sin tocar código.
+            </div>
+
+            <h3 class="mt-5 mb-4">5 Actores Principales</h3>
+            <div class="table-scroll">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Actor</th>
+                            <th>Responsabilidad</th>
+                            <th>Qué hace</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Auditor</strong></td>
+                            <td>Revisar documentos</td>
+                            <td>Analiza, genera informes, propone cambios de estado</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Contador</strong></td>
+                            <td>Revisar aspecto financiero</td>
+                            <td>Verifica números, busca inconsistencias</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Jefe</strong></td>
+                            <td>Supervisar y autorizar</td>
+                            <td>Aprueba trabajos, autoriza firmas digitales</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Admin</strong></td>
+                            <td>Gestionar sistema</td>
+                            <td>Configura estados, permisos, usuarios</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Usuario Externo</strong></td>
+                            <td>Enviar documentos</td>
+                            <td>Carga rendiciones, recibe resultados</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- TAB 2: FLUJOS REALES -->
+        <div class="tab-pane fade" id="flujos" role="tabpanel">
+            <h2 class="mb-4">Casos de Uso y Flujos Reales</h2>
+
+            <div class="accordion" id="flujoAccordion">
+                <!-- FLUJO 1 -->
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#flujo1">
+                            <i class="bi bi-1-circle-fill me-2"></i> Flujo 1: Ingreso de Documento
+                        </button>
+                    </h2>
+                    <div id="flujo1" class="accordion-collapse collapse" data-bs-parent="#flujoAccordion">
+                        <div class="accordion-body">
+                            <p><strong>Escenario:</strong> Un ministerio envía su Rendición Anual 2024</p>
+
+                            <h5 class="mt-4">Paso a Paso:</h5>
+
+                            <div class="feature-box">
+                                <strong>1. Usuario llena formulario web</strong>
+                                <p>- Tipo: RENDICION_ORGANISMO<br>
+                                   - Título: "Rendición Anual Ministerio Educación 2024"<br>
+                                   - Monto: $1,500,000.00<br>
+                                   - Archivo PDF adjunto</p>
+                            </div>
+
+                            <div class="feature-box">
+                                <strong>2. SIGEDO valida datos</strong>
+                                <p>✓ Título no vacío<br>
+                                   ✓ Monto positivo<br>
+                                   ✓ Tipo válido<br>
+                                   ✓ Usuario tiene permiso</p>
+                            </div>
+
+                            <div class="feature-box">
+                                <strong>3. Se crea documento con estado INGRESADO</strong>
+                                <p>- Se guarda en base de datos<br>
+                                   - Se obtiene ID = 1001<br>
+                                   - Se registra quién, cuándo, desde dónde</p>
+                            </div>
+
+                            <div class="feature-box">
+                                <strong>4. Sistema busca auditor disponible</strong>
+                                <p>- Encuentra "Juan García" con menos carga<br>
+                                   - Asigna documento a Juan<br>
+                                   - Estado → CARATULADO</p>
+                            </div>
+
+                            <div class="feature-box">
+                                <strong>5. Notificación enviada</strong>
+                                <p>- Email a Juan: "Tienes documento asignado"<br>
+                                   - Sistema registra acción en auditoría</p>
+                            </div>
+
+                            <h5 class="mt-4">Código (Concepto)</h5>
+                            <div class="code-block">
+ServicioDocumento.crearDocumento(dto)
+  ├─ Validar datos
+  ├─ Crear objeto Documento
+  ├─ Guardar en BD via DocumentoDAO
+  ├─ Registrar en ACTUACION
+  ├─ Buscar auditor disponible
+  ├─ Asignar auditor
+  ├─ Cambiar estado a CARATULADO
+  └─ Enviar notificaciones
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- FLUJO 2 -->
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flujo2">
+                            <i class="bi bi-2-circle-fill me-2"></i> Flujo 2: Auditoría Completa (Día a Día)
+                        </button>
+                    </h2>
+                    <div id="flujo2" class="accordion-collapse collapse" data-bs-parent="#flujoAccordion">
+                        <div class="accordion-body">
+                            <p><strong>Escenario:</strong> Juan (auditor) recibe documento y lo audita durante 5 días</p>
+
+                            <div class="feature-box">
+                                <strong>📅 DÍA 1 - Mañana: Documento Llega</strong>
+                                <p>✓ SIGEDO busca auditores disponibles<br>
+                                   ✓ Asigna a Juan<br>
+                                   ✓ Cambia estado: INGRESADO → CARATULADO<br>
+                                   ✓ Envía email a Juan</p>
+                            </div>
+
+                            <div class="feature-box">
+                                <strong>📅 DÍA 2-3: Juan Revisa Documentación</strong>
+                                <p>✓ Abre el documento en SIGEDO<br>
+                                   ✓ Ve historial de acciones<br>
+                                   ✓ Descarga archivos adjuntos<br>
+                                   ✓ Verifica: ¿Están completos los anexos?<br>
+                                   ✓ Si falta algo: Cambia a PENDIENTE_DOCUMENTACIÓN<br>
+                                   ✓ Escribe nota: "Falta comprobante del 15/3"<br>
+                                   ✓ Organismo carga documento faltante<br>
+                                   ✓ Juan verifica: Cambia a DOCUMENTACIÓN_COMPLETA</p>
+                            </div>
+
+                            <div class="feature-box">
+                                <strong>📅 DÍA 4-5: Auditoría Profunda</strong>
+                                <p>✓ Juan hace análisis técnico<br>
+                                   ✓ Revisa que dinero no se haya desviado<br>
+                                   ✓ Busca inconsistencias<br>
+                                   ✓ Genera Informe de Auditor con:<br>
+                                   &nbsp;&nbsp; - Conclusión: "Conforme con observaciones"<br>
+                                   &nbsp;&nbsp; - Observación: "Gasto $50k en capacitación no autorizado"<br>
+                                   &nbsp;&nbsp; - Recomendación: "Implementar pre-aprobación"<br>
+                                   ✓ Cambia estado: INFORME_GENERADO</p>
+                            </div>
+
+                            <div class="feature-box">
+                                <strong>📅 DÍA 6: Jefe Revisa</strong>
+                                <p>✓ Carlos (jefe) abre página de revisor<br>
+                                   ✓ Lee informe de Juan<br>
+                                   ✓ Hace clic: APROBAR<br>
+                                   ✓ Estado: REVISADO_SUPERIOR</p>
+                            </div>
+
+                            <div class="feature-box">
+                                <strong>📅 DÍA 7: Sistema Solicita Firma</strong>
+                                <p>✓ Documento llega a PENDIENTE_CERTIFICACIÓN<br>
+                                   ✓ Sistema solicita firma digital a Carlos<br>
+                                   ✓ Carlos abre app de firma<br>
+                                   ✓ Ingresa contraseña<br>
+                                   ✓ Se firma el PDF<br>
+                                   ✓ Sistema registra: "Firmado 07/07/2024 14:30"<br>
+                                   ✓ Estado: CERTIFICADO<br>
+                                   ✓ Organismo recibe notificación: "Aprobado ✅"</p>
+                            </div>
+
+                            <h5 class="mt-4">En Cualquier Momento:</h5>
+                            <p>✓ Cualquiera puede ver el <strong>historial completo</strong>
+                                <br>✓ Quién hizo qué, cuándo, por qué
+                                <br>✓ Si necesita correcciones → auditor puede volver atrás
+                                <br>✓ TODO queda registrado para auditoría</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- FLUJO 3 -->
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flujo3">
+                            <i class="bi bi-3-circle-fill me-2"></i> Flujo 3: Cambio de Estado con Validaciones
+                        </button>
+                    </h2>
+                    <div id="flujo3" class="accordion-collapse collapse" data-bs-parent="#flujoAccordion">
+                        <div class="accordion-body">
+                            <p><strong>Concepto:</strong> No todos los cambios de estado son permitidos</p>
+
+                            <h5 class="mt-3">Estados Válidos por Tipo de Documento:</h5>
+                            <div class="code-block">
+RENDICION_ORGANISMO:
+  INGRESADO → CARATULADO ✅
+  CARATULADO → EN_AUDITORIA ✅
+  EN_AUDITORIA → PENDIENTE_INFORME ✅
+  EN_AUDITORIA → PENDIENTE_CORRECCIONES ✅
+  EN_AUDITORIA → CERTIFICADO ❌ (requiere jefe)
+  CERTIFICADO → INGRESADO ❌ (no permitido)
+
+EXPEDIENTE:
+  INGRESADO → CARATULADO ✅
+  CARATULADO → CERTIFICADO ❌ (requiere auditoría)
+                            </div>
+
+                            <h5 class="mt-4">Cómo Se Valida:</h5>
+                            <div class="feature-box">
+                                <strong>Paso 1: Consultar tabla de configuración</strong>
+                                <p>SELECT * FROM CONFIGURACION_CLASIFICACION_ESTADO_DOCUMENTO<br>
+                                   WHERE tipo_documento = 'RENDICION_ORGANISMO'<br>
+                                   AND estado_origen = 'EN_AUDITORIA'<br>
+                                   AND estado_destino = 'CERTIFICADO'</p>
+                            </div>
+
+                            <div class="feature-box">
+                                <strong>Paso 2: Verificar permisos del usuario</strong>
+                                <p>¿Usuario tiene rol AUDITOR? ✓<br>
+                                   ¿Puede cambiar a este estado? Depende de config...</p>
+                            </div>
+
+                            <div class="feature-box">
+                                <strong>Paso 3: Si todo es válido → cambiar estado</strong>
+                                <p>✓ Actualizar tabla DOCUMENTO<br>
+                                   ✓ Registrar acción en ACTUACION<br>
+                                   ✓ Ejecutar acciones side-effects (notificaciones, etc.)</p>
+                            </div>
+
+                            <div class="alert alert-info mt-4">
+                                <strong>🎯 Ventaja:</strong> El admin puede cambiar las reglas <strong>sin tocar código</strong>.
+                                Solo edita la tabla de configuración.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- FLUJO 4 -->
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flujo4">
+                            <i class="bi bi-4-circle-fill me-2"></i> Flujo 4: Firma Digital (ProcesoLento)
+                        </button>
+                    </h2>
+                    <div id="flujo4" class="accordion-collapse collapse" data-bs-parent="#flujoAccordion">
+                        <div class="accordion-body">
+                            <h5>Problema Inicial:</h5>
+                            <div class="feature-box" style="border-left-color: #e74c3c; background: #fadbd8;">
+                                <strong style="color: #e74c3c;">⚠️ Si preguntas cada 100ms: "¿Hay firmas nuevas?"</strong>
+                                <p>= 36,000 requests por hora<br>
+                                   = Servidor muy lento<br>
+                                   = Base de datos saturada</p>
+                            </div>
+
+                            <h5 class="mt-4">Solución: ProcesoLento (Espera Inteligente)</h5>
+                            <div class="code-block">
+Paso 1: Documento llega a PENDIENTE_CERTIFICACION
+Paso 2: Sistema espera 120 segundos
+Paso 3: (Una sola vez) Verifica: "¿Hay firmas pendientes?"
+Paso 4: Si NO → Espera otros 120 segundos
+        Si SÍ → Notifica al jefe
+Paso 5: Jefe firma digitalmente
+Paso 6: Sistema registra firma:
+        - Quién: Carlos García
+        - Cuándo: 2024-07-08 14:30:15
+        - Con qué: Certificado Digital XYZ
+        - Resultado: PDF oficial generado
+Paso 7: Estado → CERTIFICADO
+Paso 8: Organismo recibe notificación
+                            </div>
+
+                            <div class="alert alert-success mt-4">
+                                <strong>✅ Resultado:</strong> 120 segundos × 8 horas = 240 requests/día (en lugar de 288,000)
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- FLUJO 5 -->
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flujo5">
+                            <i class="bi bi-5-circle-fill me-2"></i> Flujo 5: Generación de Reportes
+                        </button>
+                    </h2>
+                    <div id="flujo5" class="accordion-collapse collapse" data-bs-parent="#flujoAccordion">
+                        <div class="accordion-body">
+                            <p><strong>Ejemplo:</strong> Jefe quiere ver "Estado por Auditor"</p>
+
+                            <h5>Lo que ve el Jefe:</h5>
+                            <div class="code-block">
+Auditor          | Asignados | En Auditoría | Completados | Demora Prom
+─────────────────┼───────────┼──────────────┼─────────────┼────────────
+Juan García      |    15     |      8       |      5      |   5.3 días
+María López      |    12     |      6       |      4      |   4.8 días
+Carlos Martínez  |    10     |      5       |      3      |   6.2 días
+                            </div>
+
+                            <h5 class="mt-4">SQL que corre detrás:</h5>
+                            <div class="code-block">
+SELECT
+    u.nombre,
+    COUNT(d.id) AS documentos_asignados,
+    COUNT(CASE WHEN d.estado = 'EN_AUDITORIA' THEN 1 END)
+        AS en_auditoria,
+    COUNT(CASE WHEN d.estado = 'CERTIFICADO' THEN 1 END)
+        AS completados,
+    ROUND(AVG(EXTRACT(DAY FROM NOW() - d.fecha_ingreso)), 1)
+        AS demora_promedio
+FROM DOCUMENTO d
+JOIN USUARIO u ON d.auditor_id = u.id
+WHERE d.auditor_id IS NOT NULL
+GROUP BY u.id, u.nombre
+ORDER BY demora_promedio DESC
+                            </div>
+
+                            <h5 class="mt-4">Opciones:</h5>
+                            <p>✓ Ver en tabla HTML<br>
+                               ✓ Descargar como PDF<br>
+                               ✓ Exportar como Excel<br>
+                               ✓ Gráficos interactivos</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- FLUJO 6 -->
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flujo6">
+                            <i class="bi bi-6-circle-fill me-2"></i> Flujo 6: Gestión de Permisos (RBAC)
+                        </button>
+                    </h2>
+                    <div id="flujo6" class="accordion-collapse collapse" data-bs-parent="#flujoAccordion">
+                        <div class="accordion-body">
+                            <p><strong>Concepto:</strong> RBAC = Role-Based Access Control (Control basado en roles)</p>
+
+                            <h5>Permisos por Rol:</h5>
+                            <div class="table-scroll">
+                                <table class="table table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>Acción</th>
+                                            <th>Auditor</th>
+                                            <th>Jefe</th>
+                                            <th>Admin</th>
+                                            <th>Ext.</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td>Ver sus documentos</td>
+                                            <td>✅</td>
+                                            <td>✅</td>
+                                            <td>✅</td>
+                                            <td>✅</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Ver documentos dependencia</td>
+                                            <td>❌</td>
+                                            <td>✅</td>
+                                            <td>✅</td>
+                                            <td>❌</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Cambiar estado</td>
+                                            <td>✅</td>
+                                            <td>✅</td>
+                                            <td>✅</td>
+                                            <td>❌</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Firmar documento</td>
+                                            <td>❌</td>
+                                            <td>✅</td>
+                                            <td>✅</td>
+                                            <td>❌</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Configurar estados</td>
+                                            <td>❌</td>
+                                            <td>❌</td>
+                                            <td>✅</td>
+                                            <td>❌</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <h5 class="mt-4">Cómo Se Valida:</h5>
+                            <div class="code-block">
+Usuario intenta: cambiarEstado(docId, nuevoEstado)
+
+1. Verificar: ¿Usuario está autenticado?
+2. Verificar: ¿Usuario puede leer este documento?
+   - Si AUDITOR: ¿Es el auditor asignado?
+   - Si JEFE: ¿Es de su dependencia?
+   - Si ADMIN: Siempre OK
+3. Verificar: ¿Usuario puede cambiar estado?
+   - Solo AUDITOR y JEFE
+4. Verificar: ¿La transición es válida?
+   - Según tabla de configuración
+5. Si TODO OK → Ejecutar operación
+6. Si FALLA → Lanzar PermisoDenegadoException
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
-    </section>
 
-    <!-- Flujo Principal -->
-    <section>
-        <h2 class="section-title">Flujo Principal</h2>
-        <div class="row">
-            <div class="col-lg-8">
-                <div style="background: white; padding: 30px; border-radius: 10px; margin-bottom: 30px;">
-                    <div style="display: flex; align-items: center; margin-bottom: 15px;">
-                        <span style="color: #9b59b6; font-size: 1.2em; margin-right: 10px;">📄</span>
-                        <strong>Organismo envía documento</strong>
+        <!-- TAB 3: ASPECTO TÉCNICO -->
+        <div class="tab-pane fade" id="tecnico" role="tabpanel">
+            <h2 class="mb-4">Aspecto Técnico (Arquitectura)</h2>
+
+            <h3 class="mt-4 mb-3">Arquitectura de 4 Capas</h3>
+            <div class="code-block">
+┌─────────────────────────────────────────┐
+│ CAPA 1: PRESENTACIÓN (Web)              │
+│ - Navegador HTML/CSS/JS                 │
+│ - Páginas Wicket                        │
+│ - APIs REST                             │
+├─────────────────────────────────────────┤
+│ CAPA 2: APLICACIÓN (Lógica Negocio)    │
+│ - Servicios (ServicioXXX)               │
+│ - Validaciones                          │
+│ - Orquestación                          │
+├─────────────────────────────────────────┤
+│ CAPA 3: PERSISTENCIA (Acceso a Datos)   │
+│ - DAOs (Data Access Objects)            │
+│ - Queries SQL/Hibernate                 │
+│ - Transacciones                         │
+├─────────────────────────────────────────┤
+│ CAPA 4: BASE DE DATOS                   │
+│ - PostgreSQL                            │
+│ - Tablas, índices, constraints          │
+└─────────────────────────────────────────┘
+            </div>
+
+            <h3 class="mt-5 mb-3">7 Módulos de Código</h3>
+            <div class="feature-box">
+                <strong>common/</strong>
+                <p>Utilidades compartidas: excepciones, helpers, constantes</p>
+            </div>
+            <div class="feature-box">
+                <strong>model/</strong>
+                <p>Entidades (Documento, Usuario, etc.) - se mapean a tablas BD</p>
+            </div>
+            <div class="feature-box">
+                <strong>dao-api/ + dao-impl/</strong>
+                <p>Acceso a datos: interfaces + implementación con Hibernate/SQL</p>
+            </div>
+            <div class="feature-box">
+                <strong>service-api/ + service-impl/</strong>
+                <p>Lógica de negocio: reglas, validaciones, orquestación</p>
+            </div>
+            <div class="feature-box">
+                <strong>web/</strong>
+                <p>Interfaz: páginas Wicket, APIs REST, componentes UI</p>
+            </div>
+
+            <h3 class="mt-5 mb-3">Tecnologías Utilizadas</h3>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="feature-box">
+                        <strong>Java 11</strong>
+                        <p>Lenguaje compilado, rápido, seguro</p>
                     </div>
-                    <div style="border-left: 2px solid #9b59b6; padding-left: 30px; margin-left: 10px;">
-                        <p style="margin-bottom: 10px; color: #666;">↓</p>
-                        <div style="display: flex; align-items: center; margin-bottom: 15px;">
-                            <span style="color: #9b59b6; font-size: 1.2em; margin-right: 10px;">🔍</span>
-                            <strong>SIGEDO clasifica y asigna a auditor</strong>
+                    <div class="feature-box">
+                        <strong>Spring 5.3.39</strong>
+                        <p>Inyección de dependencias, transacciones</p>
+                    </div>
+                    <div class="feature-box">
+                        <strong>Wicket 6.13.0</strong>
+                        <p>Framework web con componentes reutilizables</p>
+                    </div>
+                    <div class="feature-box">
+                        <strong>Hibernate 3.5.6</strong>
+                        <p>ORM: traduce objetos Java → tablas SQL</p>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="feature-box">
+                        <strong>PostgreSQL</strong>
+                        <p>Base de datos profesional</p>
+                    </div>
+                    <div class="feature-box">
+                        <strong>Apache CXF 3.0.16</strong>
+                        <p>APIs REST para integración externa</p>
+                    </div>
+                    <div class="feature-box">
+                        <strong>JasperReports 6.20.6</strong>
+                        <p>Generación de PDFs y reportes</p>
+                    </div>
+                    <div class="feature-box">
+                        <strong>Lombok 1.18.6</strong>
+                        <p>Genera getters, setters, equals, toString automáticamente</p>
+                    </div>
+                </div>
+            </div>
+
+            <h3 class="mt-5 mb-3">Flujo de una Petición (Usuario → BD)</h3>
+            <div class="code-block">
+1. NAVEGADOR (Usuario hace clic)
+   Usuario rellena formulario → Hace clic "Crear"
+
+2. WICKET (Presentación - web/)
+   PaginaControlDocumento.java recibe datos
+   → Valida formato (no vacío, etc.)
+   → Crea DocumentoDTO
+
+3. SERVICIO (Lógica - service-impl/)
+   ServicioDocumento.crearDocumento(dto)
+   → Valida reglas de negocio
+   → Verifica permisos
+   → Crea objeto Documento
+   → Llama a DAO para guardar
+
+4. DAO (Persistencia - dao-impl/)
+   DocumentoDAO.save(documento)
+   → Usa Hibernate
+   → Convierte objeto Java → INSERT SQL
+
+5. BASE DE DATOS (PostgreSQL)
+   INSERT INTO DOCUMENTO (titulo, monto, estado, ...)
+   VALUES ('Mi Documento', 50000, 'INGRESADO', ...)
+
+6. RESPUESTA (vuelta)
+   Documento guardado con ID = 12345
+   → Registra acción en ACTUACION
+   → Notifica al usuario
+   → Redirige a página de detalle
+            </div>
+
+            <h3 class="mt-5 mb-3">Ejemplo: Crear Documento</h3>
+            <p><strong>Código Java (Concepto):</strong></p>
+            <div class="code-block">
+@Service
+@Transactional
+public class ServicioDocumentoImpl {
+
+    @Autowired
+    private DocumentoDAO documentoDAO;
+
+    public Documento crearDocumento(DocumentoDTO dto) {
+        // Validación
+        if (dto.getTitulo() == null) {
+            throw new IllegalArgumentException("Título requerido");
+        }
+
+        // Crear objeto
+        Documento doc = new Documento();
+        doc.setTitulo(dto.getTitulo());
+        doc.setMonto(dto.getMonto());
+        doc.setEstado(TipoEstadoDocumento.INGRESADO);
+
+        // Guardar
+        documentoDAO.save(doc);  // → INSERT en BD
+
+        // Registrar en auditoría
+        registrarAccion(doc, "Documento creado");
+
+        return doc;
+    }
+}
+            </div>
+
+            <h3 class="mt-5 mb-3">Patrones Importantes</h3>
+            <div class="feature-box">
+                <strong>1. Separación de Capas</strong>
+                <p>Web no habla con BD. Web → Servicios → DAOs → BD<br>
+                   Facilita testing, mantenimiento, reutilización</p>
+            </div>
+            <div class="feature-box">
+                <strong>2. Transacciones (@Transactional)</strong>
+                <p>Si algo falla → deshacer TODO<br>
+                   Evita datos inconsistentes</p>
+            </div>
+            <div class="feature-box">
+                <strong>3. Inyección de Dependencias (@Autowired)</strong>
+                <p>Spring crea objetos automáticamente<br>
+                   Facilita testing con mocks</p>
+            </div>
+            <div class="feature-box">
+                <strong>4. Auditoría Imutable</strong>
+                <p>CADA acción se registra en tabla ACTUACION<br>
+                   Quién, qué, cuándo, desde dónde</p>
+            </div>
+        </div>
+
+        <!-- TAB 4: GLOSARIO -->
+        <div class="tab-pane fade" id="glosario" role="tabpanel">
+            <h2 class="mb-4">Glosario Técnico</h2>
+            <p class="mb-4">Palabras raras que encontrarás en el código:</p>
+
+            <div class="accordion" id="glosarioAccordion">
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#glos1">
+                            <code>@Autowired</code>
+                        </button>
+                    </h2>
+                    <div id="glos1" class="accordion-collapse collapse show" data-bs-parent="#glosarioAccordion">
+                        <div class="accordion-body">
+                            <p><strong>Significado:</strong> "Spring, por favor inyecta automáticamente este objeto"</p>
+                            <div class="code-block">
+@Autowired
+private ServicioDocumento servicio;
+
+// Sin @Autowired tendrías que hacer:
+ServicioDocumento servicio = new ServicioDocumento();
+
+// Con @Autowired, Spring lo hace por ti
+                            </div>
+                            <p><strong>Beneficio:</strong> Más fácil de testear, cambiar, reutilizar</p>
                         </div>
-                        <p style="margin-bottom: 10px; color: #666;">↓</p>
-                        <div style="display: flex; align-items: center; margin-bottom: 15px;">
-                            <span style="color: #9b59b6; font-size: 1.2em; margin-right: 10px;">📊</span>
-                            <strong>Auditor revisa y audita (múltiples etapas)</strong>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#glos2">
+                            <code>DAO</code> (Data Access Object)
+                        </button>
+                    </h2>
+                    <div id="glos2" class="accordion-collapse collapse" data-bs-parent="#glosarioAccordion">
+                        <div class="accordion-body">
+                            <p><strong>Significado:</strong> Objeto que accede a la base de datos</p>
+                            <p><strong>Qué hace:</strong> Guardar, buscar, borrar registros</p>
+                            <div class="code-block">
+public interface DocumentoDAO {
+    Documento findById(Long id);
+    List<Documento> findAll();
+    void save(Documento d);
+    void delete(Long id);
+}
+                            </div>
+                            <p><strong>Ventaja:</strong> La lógica de negocio no escribe SQL directamente</p>
                         </div>
-                        <p style="margin-bottom: 10px; color: #666;">↓</p>
-                        <div style="display: flex; align-items: center; margin-bottom: 15px;">
-                            <span style="color: #9b59b6; font-size: 1.2em; margin-right: 10px;">✍️</span>
-                            <strong>Se firma digitalmente</strong>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#glos3">
+                            <code>Entity</code> (Entidad)
+                        </button>
+                    </h2>
+                    <div id="glos3" class="accordion-collapse collapse" data-bs-parent="#glosarioAccordion">
+                        <div class="accordion-body">
+                            <p><strong>Significado:</strong> Clase Java que representa una fila en una tabla</p>
+                            <div class="code-block">
+@Entity
+@Table(name = "DOCUMENTO")
+public class Documento {
+    @Id
+    private Long id;
+
+    private String titulo;
+    private BigDecimal monto;
+}
+                            </div>
+                            <p><strong>Mapeo:</strong> Objeto Documento ↔ Fila en tabla DOCUMENTO</p>
+                            <p><strong>Herramienta:</strong> Hibernate hace el mapeo automáticamente</p>
                         </div>
-                        <p style="margin-bottom: 10px; color: #666;">↓</p>
-                        <div style="display: flex; align-items: center;">
-                            <span style="color: #9b59b6; font-size: 1.2em; margin-right: 10px;">✅</span>
-                            <strong>Se genera PDF oficial certificado</strong>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#glos4">
+                            <code>Hibernate</code> (ORM)
+                        </button>
+                    </h2>
+                    <div id="glos4" class="accordion-collapse collapse" data-bs-parent="#glosarioAccordion">
+                        <div class="accordion-body">
+                            <p><strong>Significado:</strong> Traductor entre objetos Java y tablas SQL</p>
+                            <div class="code-block">
+Objeto Java:              Tabla SQL:
+Documento doc = ...       INSERT INTO DOCUMENTO
+doc.setTitulo("X");       (titulo) VALUES ('X');
+hibernateDAO.save(doc);
+                            </div>
+                            <p><strong>Ventaja:</strong> No escribes SQL a mano, Hibernate lo genera</p>
+                            <p><strong>Desventaja:</strong> Queries complejas son más difíciles</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#glos5">
+                            <code>@Service</code>
+                        </button>
+                    </h2>
+                    <div id="glos5" class="accordion-collapse collapse" data-bs-parent="#glosarioAccordion">
+                        <div class="accordion-body">
+                            <p><strong>Significado:</strong> "Esta clase tiene lógica de negocio"</p>
+                            <div class="code-block">
+@Service
+public class ServicioDocumento {
+    public void cambiarEstado(Long docId, TipoEstado nuevo) {
+        // Lógica de negocio aquí
+    }
+}
+                            </div>
+                            <p><strong>Responsabilidad:</strong> Validaciones, reglas de negocio, orquestación</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#glos6">
+                            <code>@Transactional</code>
+                        </button>
+                    </h2>
+                    <div id="glos6" class="accordion-collapse collapse" data-bs-parent="#glosarioAccordion">
+                        <div class="accordion-body">
+                            <p><strong>Significado:</strong> "Todo o nada" - si algo falla, deshacer todo</p>
+                            <div class="code-block">
+@Transactional
+public void guardarDocumento(Documento d) {
+    documentoDAO.save(d);       // Paso 1
+    actuacionDAO.save(accion);  // Paso 2
+    // Si falla (2), también se revierte (1)
+}
+                            </div>
+                            <p><strong>Ventaja:</strong> Datos siempre coherentes, no semi-guardado</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#glos7">
+                            <code>Spring</code>
+                        </button>
+                    </h2>
+                    <div id="glos7" class="accordion-collapse collapse" data-bs-parent="#glosarioAccordion">
+                        <div class="accordion-body">
+                            <p><strong>Significado:</strong> Framework que organiza y gestiona componentes Java</p>
+                            <p><strong>Qué hace:</strong></p>
+                            <ul>
+                                <li>Crea objetos automáticamente (@Autowired)</li>
+                                <li>Maneja transacciones (@Transactional)</li>
+                                <li>Inyecta dependencias</li>
+                                <li>Configura la aplicación</li>
+                            </ul>
+                            <p><strong>Analogía:</strong> Es el "chef" de la cocina que organiza todo</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#glos8">
+                            <code>Wicket</code>
+                        </button>
+                    </h2>
+                    <div id="glos8" class="accordion-collapse collapse" data-bs-parent="#glosarioAccordion">
+                        <div class="accordion-body">
+                            <p><strong>Significado:</strong> Framework Java para crear páginas web</p>
+                            <div class="code-block">
+// En lugar de escribir HTML directo:
+&lt;input type="text" name="titulo"&gt;
+
+// Escribes en Java:
+TextField titulo = new TextField("titulo");
+form.add(titulo);
+                            </div>
+                            <p><strong>Ventaja:</strong> Componentes reutilizables, más poder, menos HTML</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#glos9">
+                            <code>REST / API</code>
+                        </button>
+                    </h2>
+                    <div id="glos9" class="accordion-collapse collapse" data-bs-parent="#glosarioAccordion">
+                        <div class="accordion-body">
+                            <p><strong>Significado:</strong> Forma de comunicarse entre sistemas usando HTTP</p>
+                            <div class="code-block">
+GET /api/documentos
+  → Obtener lista de documentos
+
+POST /api/documentos
+  → Crear nuevo documento
+
+GET /api/documentos/123
+  → Obtener documento por ID
+
+PUT /api/documentos/123
+  → Actualizar documento
+
+DELETE /api/documentos/123
+  → Eliminar documento
+                            </div>
+                            <p><strong>Ventaja:</strong> Sistemas externos pueden usar SIGEDO sin HTML</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#glos10">
+                            <code>ORM</code> (Object Relational Mapping)
+                        </button>
+                    </h2>
+                    <div id="glos10" class="accordion-collapse collapse" data-bs-parent="#glosarioAccordion">
+                        <div class="accordion-body">
+                            <p><strong>Significado:</strong> Traducción entre objetos Java y tablas SQL</p>
+                            <div class="code-block">
+Objeto Java:          Tabla SQL:
+Documento {           DOCUMENTO
+  id: 1        →      id    | titulo      | fecha
+  titulo: X           1     | X           | 2024-07-03
+  fecha: 2024-07-03
+}
+                            </div>
+                            <p><strong>Herramienta en SIGEDO:</strong> Hibernate</p>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-    </section>
+    </div>
 
-    <!-- Tipos de Documentos -->
-    <section>
-        <h2 class="section-title">Tipos de Documentos que Gestiona</h2>
-        <div class="row">
-            <div class="col-md-6">
-                <div class="feature-box">
-                    <strong>📊 Rendiciones</strong>
-                    <p>Cuentas anuales de organismos, subsidios y gastos públicos</p>
-                </div>
-            </div>
-            <div class="col-md-6">
-                <div class="feature-box">
-                    <strong>📁 Expedientes</strong>
-                    <p>Carpetas de auditoría con documentación completa</p>
-                </div>
-            </div>
-            <div class="col-md-6">
-                <div class="feature-box">
-                    <strong>⚠️ Multas</strong>
-                    <p>Penalizaciones por incumplimiento</p>
-                </div>
-            </div>
-            <div class="col-md-6">
-                <div class="feature-box">
-                    <strong>❌ Omisiones</strong>
-                    <p>Avisos automáticos de no entrega de cuentas</p>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Tecnología -->
-    <section>
-        <h2 class="section-title">Tecnología</h2>
-        <div class="row">
-            <div class="col-lg-6">
-                <p><strong>Lenguaje:</strong> Java 11 (compilado, rápido, seguro)</p>
-                <p><strong>Framework Web:</strong> Wicket (componentes reutilizables)</p>
-                <p><strong>ORM:</strong> Hibernate (traduce objetos Java a BD)</p>
-                <p><strong>Base de Datos:</strong> PostgreSQL (profesional, confiable)</p>
-                <p><strong>APIs REST:</strong> Apache CXF (integración con otros sistemas)</p>
-                <p><strong>Reportes:</strong> JasperReports (PDF bonitos)</p>
-            </div>
-            <div class="col-lg-6">
-                <p><strong>Inyección de Dependencias:</strong> Spring (organiza componentes)</p>
-                <p><strong>Firma Digital:</strong> Integración con certificados electrónicos</p>
-                <p><strong>Build:</strong> Maven (gestión de dependencias)</p>
-                <p><strong>Logging:</strong> SLF4J + Logback (trazabilidad)</p>
-                <p><strong>Seguridad:</strong> Control de acceso basado en roles (RBAC)</p>
-                <p><strong>Auditoría:</strong> Registro imutable de todas las acciones</p>
-            </div>
-        </div>
-    </section>
-
-    <!-- Documentación -->
-    <section>
-        <h2 class="section-title">Documentación Completa (3,680+ líneas)</h2>
-        <p class="mb-4">Se han creado 9 documentos profesionales y profundos sobre SIGEDO:</p>
-
-        <div class="doc-card">
-            <h3>📖 Guía para Principiantes</h3>
-            <div class="meta">
-                <span>⏱️ 30 minutos</span>
-                <span>📄 380 líneas</span>
-            </div>
-            <p>Introducción accesible a SIGEDO para principiantes sin experiencia en Java. Explica qué es, cómo funciona, flujos principales, tipos de documentos, estados y actores.</p>
-        </div>
-
-        <div class="doc-card">
-            <h3>🏗️ Arquitectura Profunda</h3>
-            <div class="meta">
-                <span>⏱️ 1.5 horas</span>
-                <span>📄 650 líneas</span>
-            </div>
-            <p>Arquitectura técnica completa: 4 capas, 7 módulos, patrones de diseño, relaciones entre entidades y flujo completo de peticiones.</p>
-        </div>
-
-        <div class="doc-card">
-            <h3>🔄 Flujos y Casos de Uso</h3>
-            <div class="meta">
-                <span>⏱️ 2 horas</span>
-                <span>📄 700 líneas</span>
-            </div>
-            <p>6 flujos reales paso a paso: ingreso de documento, auditoría completa, cambio de estados, firma digital, reportes y gestión de permisos.</p>
-        </div>
-
-        <div class="doc-card">
-            <h3>🗄️ Base de Datos</h3>
-            <div class="meta">
-                <span>⏱️ 1.5 horas</span>
-                <span>📄 550 líneas</span>
-            </div>
-            <p>Base de datos completa: DDL de tablas, índices, constraints, consultas SQL, Hibernate, monitoreo y optimización de performance.</p>
-        </div>
-
-        <div class="doc-card">
-            <h3>🌐 APIs REST</h3>
-            <div class="meta">
-                <span>⏱️ 1.5 horas</span>
-                <span>📄 600 líneas</span>
-            </div>
-            <p>APIs REST: endpoints, autenticación JWT, ejemplos con curl, JavaScript y Python. Integración con sistemas externos.</p>
-        </div>
-
-        <div class="doc-card">
-            <h3>💻 Desarrollo Práctico</h3>
-            <div class="meta">
-                <span>⏱️ 2-3 horas</span>
-                <span>📄 800 líneas</span>
-            </div>
-            <p>Caso práctico completo paso a paso: agregar un campo nuevo a usuario. Incluye qué editar en cada módulo, testing y debugging.</p>
-        </div>
-
-        <div class="doc-card">
-            <h3>📑 Índice Completo</h3>
-            <div class="meta">
-                <span>⏱️ 20 minutos</span>
-                <span>📄 400 líneas</span>
-            </div>
-            <p>Guía de navegación: rutas de aprendizaje, búsqueda rápida de temas, checklist de lectura recomendada.</p>
-        </div>
-
-        <div class="doc-card">
-            <h3>🔤 Glosario Técnico</h3>
-            <div class="meta">
-                <span>⏱️ 30 minutos</span>
-                <span>📄 640 líneas</span>
-            </div>
-            <p>Diccionario técnico: explica palabras raras (@Autowired, DAO, Entity, Hibernate, Spring, Wicket, etc.) con ejemplos.</p>
-        </div>
-    </section>
-
-    <!-- Rutas de Aprendizaje -->
-    <section>
-        <h2 class="section-title">Rutas de Aprendizaje Recomendadas</h2>
-
-        <div class="path">
-            <h4>🚀 Principiante (30 minutos)</h4>
-            <p style="margin-bottom: 10px; color: #666;">Para entender qué es SIGEDO sin necesidad de programar</p>
-            <div class="path-item">Leer: Guía para Principiantes</div>
-            <div class="path-item">Ver: Diagrama de flujos</div>
-            <div class="path-item">Resultado: Entiendes qué hace SIGEDO</div>
-        </div>
-
-        <div class="path">
-            <h4>🎓 Básico (1 hora)</h4>
-            <p style="margin-bottom: 10px; color: #666;">Para entender cómo está organizado</p>
-            <div class="path-item">Ruta anterior +</div>
-            <div class="path-item">Leer: Arquitectura Profunda</div>
-            <div class="path-item">Resultado: Entiendes la estructura del código</div>
-        </div>
-
-        <div class="path">
-            <h4>🔧 Intermedio (2-3 horas)</h4>
-            <p style="margin-bottom: 10px; color: #666;">Para ver casos reales ejecutándose</p>
-            <div class="path-item">Rutas anteriores +</div>
-            <div class="path-item">Leer: Flujos y Casos de Uso</div>
-            <div class="path-item">Resultado: Entiendes qué código se ejecuta en cada acción</div>
-        </div>
-
-        <div class="path">
-            <h4>⚡ Avanzado (8-10 horas)</h4>
-            <p style="margin-bottom: 10px; color: #666;">Para programar cambios en SIGEDO</p>
-            <div class="path-item">Todos los anteriores +</div>
-            <div class="path-item">Leer: Base de Datos + APIs + Desarrollo Práctico</div>
-            <div class="path-item">Practicar: Seguir caso práctico completo</div>
-            <div class="path-item">Resultado: Puedes hacer cambios reales sin ayuda</div>
-        </div>
-    </section>
-
-    <!-- Acceso a Documentación -->
-    <section>
-        <h2 class="section-title">Acceso a la Documentación</h2>
-        <p class="mb-4">Todos los documentos están en el repositorio GitHub:</p>
-        <p>
-            <strong>📍 Ubicación:</strong>
-            <code style="background: #f5f0ff; padding: 5px 10px; border-radius: 5px; color: #9b59b6;">
-                /home/pablog/git/PabloGodoy/SIGEDO_*.md
-            </code>
-        </p>
-        <p style="margin-top: 20px;">
-            <strong>🔗 Repositorio:</strong>
-            <a href="https://github.com/godoypablo/pablogodoy" target="_blank" class="btn btn-primary btn-sm">
-                Ver en GitHub <i class="bi bi-box-arrow-up-right"></i>
-            </a>
-        </p>
-    </section>
-
-    <!-- CTA -->
-    <section style="background: #f5f0ff; border-radius: 15px; padding: 40px; text-align: center; margin-top: 50px; margin-bottom: 50px;">
-        <h2 style="color: #9b59b6; margin-bottom: 20px;">¿Listo para aprender?</h2>
-        <p style="margin-bottom: 25px; color: #666;">
-            Comienza por la Guía para Principiantes (30 minutos) y sigue la ruta que mejor se adapte a tu experiencia.
-        </p>
-        <a href="https://github.com/godoypablo/pablogodoy" target="_blank" class="btn btn-primary btn-lg">
-            Acceder a la Documentación
-        </a>
-    </section>
+    <!-- Footer -->
+    <div style="text-align: center; margin-top: 60px; padding-top: 30px; border-top: 1px solid #ddd; color: #999;">
+        <p><strong>📚 Tutorial Completo de SIGEDO</strong></p>
+        <p>Todo en una página | Tabs para navegar | Acordeones para profundidad</p>
+        <p><a href="/" style="color: #9b59b6; text-decoration: none;">← Volver al Panel</a></p>
+    </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
