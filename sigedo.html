@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SIGEDO - Sistema de Gestión Electrónica de Documentos</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .hero {
+            background: linear-gradient(135deg, #9b59b6 0%, #6c3a82 100%);
+            color: white;
+            padding: 60px 20px;
+            border-radius: 15px;
+            margin-bottom: 50px;
+        }
+        .hero h1 { font-size: 2.5em; font-weight: bold; margin-bottom: 10px; }
+        .hero p { font-size: 1.2em; opacity: 0.95; }
+        .section-title {
+            color: #9b59b6;
+            font-weight: bold;
+            margin-top: 40px;
+            margin-bottom: 30px;
+            border-left: 4px solid #9b59b6;
+            padding-left: 15px;
+        }
+        .doc-card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-left: 4px solid #9b59b6;
+            transition: transform 0.2s;
+        }
+        .doc-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        .doc-card h3 { color: #9b59b6; font-weight: bold; margin-bottom: 10px; }
+        .doc-card .meta {
+            display: flex;
+            gap: 20px;
+            font-size: 0.9em;
+            color: #666;
+            margin-bottom: 10px;
+        }
+        .doc-card p { color: #666; margin: 0; }
+        .feature-box {
+            background: #f9f9f9;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 15px;
+            border-left: 4px solid #9b59b6;
+        }
+        .feature-box strong { color: #9b59b6; }
+        .path {
+            background: #f5f0ff;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 15px;
+            border-left: 4px solid #9b59b6;
+        }
+        .path h4 { color: #9b59b6; margin-bottom: 10px; }
+        .path-item {
+            padding: 5px 0;
+            padding-left: 20px;
+            position: relative;
+        }
+        .path-item:before {
+            content: "→";
+            position: absolute;
+            left: 0;
+            color: #9b59b6;
+        }
+        .btn-primary {
+            background: #9b59b6;
+            border-color: #9b59b6;
+        }
+        .btn-primary:hover {
+            background: #7d4795;
+            border-color: #7d4795;
+        }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 40px;
+        }
+        .stat {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        .stat .number { font-size: 2em; font-weight: bold; color: #9b59b6; }
+        .stat .label { color: #666; font-size: 0.9em; margin-top: 5px; }
+        .back-btn {
+            display: inline-block;
+            margin-bottom: 30px;
+            color: #9b59b6;
+            text-decoration: none;
+        }
+        .back-btn:hover { text-decoration: underline; }
+    </style>
+</head>
+<body class="bg-light">
+
+<div class="container py-5">
+    <a href="/" class="back-btn"><i class="bi bi-arrow-left"></i> Volver al Panel</a>
+
+    <div class="hero">
+        <h1><i class="bi bi-file-earmark-text"></i> SIGEDO</h1>
+        <p>Sistema Integrado de Gestión Electrónica de Documentos</p>
+    </div>
+
+    <!-- Introducción -->
+    <section>
+        <h2 class="section-title">¿Qué es SIGEDO?</h2>
+        <div class="row mb-5">
+            <div class="col-lg-8">
+                <p class="lead">
+                    <strong>SIGEDO</strong> es un sistema web profesional especializado en la gestión de documentos de auditoría
+                    para el <strong>Tribunal de Cuentas de Entre Ríos (TCER)</strong>, una institución argentina que audita y controla
+                    las cuentas del gobierno provincial.
+                </p>
+                <p>
+                    El sistema permite recibir documentos financieros (rendiciones, subsidios, multas), procesarlos a través de
+                    múltiples etapas de revisión y auditoría, y finalmente certificarlos con firma digital, manteniendo un
+                    registro imutable de cada acción.
+                </p>
+            </div>
+            <div class="col-lg-4">
+                <div class="stats">
+                    <div class="stat">
+                        <div class="number">9</div>
+                        <div class="label">Documentos</div>
+                    </div>
+                    <div class="stat">
+                        <div class="number">3,680+</div>
+                        <div class="label">Líneas Doc</div>
+                    </div>
+                    <div class="stat">
+                        <div class="number">8-10h</div>
+                        <div class="label">Lectura</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Flujo Principal -->
+    <section>
+        <h2 class="section-title">Flujo Principal</h2>
+        <div class="row">
+            <div class="col-lg-8">
+                <div style="background: white; padding: 30px; border-radius: 10px; margin-bottom: 30px;">
+                    <div style="display: flex; align-items: center; margin-bottom: 15px;">
+                        <span style="color: #9b59b6; font-size: 1.2em; margin-right: 10px;">📄</span>
+                        <strong>Organismo envía documento</strong>
+                    </div>
+                    <div style="border-left: 2px solid #9b59b6; padding-left: 30px; margin-left: 10px;">
+                        <p style="margin-bottom: 10px; color: #666;">↓</p>
+                        <div style="display: flex; align-items: center; margin-bottom: 15px;">
+                            <span style="color: #9b59b6; font-size: 1.2em; margin-right: 10px;">🔍</span>
+                            <strong>SIGEDO clasifica y asigna a auditor</strong>
+                        </div>
+                        <p style="margin-bottom: 10px; color: #666;">↓</p>
+                        <div style="display: flex; align-items: center; margin-bottom: 15px;">
+                            <span style="color: #9b59b6; font-size: 1.2em; margin-right: 10px;">📊</span>
+                            <strong>Auditor revisa y audita (múltiples etapas)</strong>
+                        </div>
+                        <p style="margin-bottom: 10px; color: #666;">↓</p>
+                        <div style="display: flex; align-items: center; margin-bottom: 15px;">
+                            <span style="color: #9b59b6; font-size: 1.2em; margin-right: 10px;">✍️</span>
+                            <strong>Se firma digitalmente</strong>
+                        </div>
+                        <p style="margin-bottom: 10px; color: #666;">↓</p>
+                        <div style="display: flex; align-items: center;">
+                            <span style="color: #9b59b6; font-size: 1.2em; margin-right: 10px;">✅</span>
+                            <strong>Se genera PDF oficial certificado</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Tipos de Documentos -->
+    <section>
+        <h2 class="section-title">Tipos de Documentos que Gestiona</h2>
+        <div class="row">
+            <div class="col-md-6">
+                <div class="feature-box">
+                    <strong>📊 Rendiciones</strong>
+                    <p>Cuentas anuales de organismos, subsidios y gastos públicos</p>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="feature-box">
+                    <strong>📁 Expedientes</strong>
+                    <p>Carpetas de auditoría con documentación completa</p>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="feature-box">
+                    <strong>⚠️ Multas</strong>
+                    <p>Penalizaciones por incumplimiento</p>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="feature-box">
+                    <strong>❌ Omisiones</strong>
+                    <p>Avisos automáticos de no entrega de cuentas</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Tecnología -->
+    <section>
+        <h2 class="section-title">Tecnología</h2>
+        <div class="row">
+            <div class="col-lg-6">
+                <p><strong>Lenguaje:</strong> Java 11 (compilado, rápido, seguro)</p>
+                <p><strong>Framework Web:</strong> Wicket (componentes reutilizables)</p>
+                <p><strong>ORM:</strong> Hibernate (traduce objetos Java a BD)</p>
+                <p><strong>Base de Datos:</strong> PostgreSQL (profesional, confiable)</p>
+                <p><strong>APIs REST:</strong> Apache CXF (integración con otros sistemas)</p>
+                <p><strong>Reportes:</strong> JasperReports (PDF bonitos)</p>
+            </div>
+            <div class="col-lg-6">
+                <p><strong>Inyección de Dependencias:</strong> Spring (organiza componentes)</p>
+                <p><strong>Firma Digital:</strong> Integración con certificados electrónicos</p>
+                <p><strong>Build:</strong> Maven (gestión de dependencias)</p>
+                <p><strong>Logging:</strong> SLF4J + Logback (trazabilidad)</p>
+                <p><strong>Seguridad:</strong> Control de acceso basado en roles (RBAC)</p>
+                <p><strong>Auditoría:</strong> Registro imutable de todas las acciones</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Documentación -->
+    <section>
+        <h2 class="section-title">Documentación Completa (3,680+ líneas)</h2>
+        <p class="mb-4">Se han creado 9 documentos profesionales y profundos sobre SIGEDO:</p>
+
+        <div class="doc-card">
+            <h3>📖 Guía para Principiantes</h3>
+            <div class="meta">
+                <span>⏱️ 30 minutos</span>
+                <span>📄 380 líneas</span>
+            </div>
+            <p>Introducción accesible a SIGEDO para principiantes sin experiencia en Java. Explica qué es, cómo funciona, flujos principales, tipos de documentos, estados y actores.</p>
+        </div>
+
+        <div class="doc-card">
+            <h3>🏗️ Arquitectura Profunda</h3>
+            <div class="meta">
+                <span>⏱️ 1.5 horas</span>
+                <span>📄 650 líneas</span>
+            </div>
+            <p>Arquitectura técnica completa: 4 capas, 7 módulos, patrones de diseño, relaciones entre entidades y flujo completo de peticiones.</p>
+        </div>
+
+        <div class="doc-card">
+            <h3>🔄 Flujos y Casos de Uso</h3>
+            <div class="meta">
+                <span>⏱️ 2 horas</span>
+                <span>📄 700 líneas</span>
+            </div>
+            <p>6 flujos reales paso a paso: ingreso de documento, auditoría completa, cambio de estados, firma digital, reportes y gestión de permisos.</p>
+        </div>
+
+        <div class="doc-card">
+            <h3>🗄️ Base de Datos</h3>
+            <div class="meta">
+                <span>⏱️ 1.5 horas</span>
+                <span>📄 550 líneas</span>
+            </div>
+            <p>Base de datos completa: DDL de tablas, índices, constraints, consultas SQL, Hibernate, monitoreo y optimización de performance.</p>
+        </div>
+
+        <div class="doc-card">
+            <h3>🌐 APIs REST</h3>
+            <div class="meta">
+                <span>⏱️ 1.5 horas</span>
+                <span>📄 600 líneas</span>
+            </div>
+            <p>APIs REST: endpoints, autenticación JWT, ejemplos con curl, JavaScript y Python. Integración con sistemas externos.</p>
+        </div>
+
+        <div class="doc-card">
+            <h3>💻 Desarrollo Práctico</h3>
+            <div class="meta">
+                <span>⏱️ 2-3 horas</span>
+                <span>📄 800 líneas</span>
+            </div>
+            <p>Caso práctico completo paso a paso: agregar un campo nuevo a usuario. Incluye qué editar en cada módulo, testing y debugging.</p>
+        </div>
+
+        <div class="doc-card">
+            <h3>📑 Índice Completo</h3>
+            <div class="meta">
+                <span>⏱️ 20 minutos</span>
+                <span>📄 400 líneas</span>
+            </div>
+            <p>Guía de navegación: rutas de aprendizaje, búsqueda rápida de temas, checklist de lectura recomendada.</p>
+        </div>
+
+        <div class="doc-card">
+            <h3>🔤 Glosario Técnico</h3>
+            <div class="meta">
+                <span>⏱️ 30 minutos</span>
+                <span>📄 640 líneas</span>
+            </div>
+            <p>Diccionario técnico: explica palabras raras (@Autowired, DAO, Entity, Hibernate, Spring, Wicket, etc.) con ejemplos.</p>
+        </div>
+    </section>
+
+    <!-- Rutas de Aprendizaje -->
+    <section>
+        <h2 class="section-title">Rutas de Aprendizaje Recomendadas</h2>
+
+        <div class="path">
+            <h4>🚀 Principiante (30 minutos)</h4>
+            <p style="margin-bottom: 10px; color: #666;">Para entender qué es SIGEDO sin necesidad de programar</p>
+            <div class="path-item">Leer: Guía para Principiantes</div>
+            <div class="path-item">Ver: Diagrama de flujos</div>
+            <div class="path-item">Resultado: Entiendes qué hace SIGEDO</div>
+        </div>
+
+        <div class="path">
+            <h4>🎓 Básico (1 hora)</h4>
+            <p style="margin-bottom: 10px; color: #666;">Para entender cómo está organizado</p>
+            <div class="path-item">Ruta anterior +</div>
+            <div class="path-item">Leer: Arquitectura Profunda</div>
+            <div class="path-item">Resultado: Entiendes la estructura del código</div>
+        </div>
+
+        <div class="path">
+            <h4>🔧 Intermedio (2-3 horas)</h4>
+            <p style="margin-bottom: 10px; color: #666;">Para ver casos reales ejecutándose</p>
+            <div class="path-item">Rutas anteriores +</div>
+            <div class="path-item">Leer: Flujos y Casos de Uso</div>
+            <div class="path-item">Resultado: Entiendes qué código se ejecuta en cada acción</div>
+        </div>
+
+        <div class="path">
+            <h4>⚡ Avanzado (8-10 horas)</h4>
+            <p style="margin-bottom: 10px; color: #666;">Para programar cambios en SIGEDO</p>
+            <div class="path-item">Todos los anteriores +</div>
+            <div class="path-item">Leer: Base de Datos + APIs + Desarrollo Práctico</div>
+            <div class="path-item">Practicar: Seguir caso práctico completo</div>
+            <div class="path-item">Resultado: Puedes hacer cambios reales sin ayuda</div>
+        </div>
+    </section>
+
+    <!-- Acceso a Documentación -->
+    <section>
+        <h2 class="section-title">Acceso a la Documentación</h2>
+        <p class="mb-4">Todos los documentos están en el repositorio GitHub:</p>
+        <p>
+            <strong>📍 Ubicación:</strong>
+            <code style="background: #f5f0ff; padding: 5px 10px; border-radius: 5px; color: #9b59b6;">
+                /home/pablog/git/PabloGodoy/SIGEDO_*.md
+            </code>
+        </p>
+        <p style="margin-top: 20px;">
+            <strong>🔗 Repositorio:</strong>
+            <a href="https://github.com/godoypablo/pablogodoy" target="_blank" class="btn btn-primary btn-sm">
+                Ver en GitHub <i class="bi bi-box-arrow-up-right"></i>
+            </a>
+        </p>
+    </section>
+
+    <!-- CTA -->
+    <section style="background: #f5f0ff; border-radius: 15px; padding: 40px; text-align: center; margin-top: 50px; margin-bottom: 50px;">
+        <h2 style="color: #9b59b6; margin-bottom: 20px;">¿Listo para aprender?</h2>
+        <p style="margin-bottom: 25px; color: #666;">
+            Comienza por la Guía para Principiantes (30 minutos) y sigue la ruta que mejor se adapte a tu experiencia.
+        </p>
+        <a href="https://github.com/godoypablo/pablogodoy" target="_blank" class="btn btn-primary btn-lg">
+            Acceder a la Documentación
+        </a>
+    </section>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

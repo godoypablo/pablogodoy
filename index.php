@@ -28,6 +28,7 @@
         .color-claude { color: #d97757; } /* Tono arcilla de Claude */
         .color-linux { color: #87cf3e; }  /* Verde Mint */
         .color-github { color: #24292e; }
+        .color-sigedo { color: #9b59b6; } /* Púrpura SIGEDO */
     </style>
 </head>
 <body>
@@ -76,6 +77,14 @@
                 <div class="icon-box color-github"><i class="bi bi-github"></i></div>
                 <h3 class="h5 fw-bold">GitHub</h3>
                 <p class="text-secondary small">Mis Repositorios</p>
+            </a>
+        </div>
+
+        <div class="col-md-6 col-lg-4">
+            <a href="sigedo.html" class="card h-100 border-0 shadow-sm dashboard-card p-4 text-center">
+                <div class="icon-box color-sigedo"><i class="bi bi-file-earmark-text"></i></div>
+                <h3 class="h5 fw-bold">SIGEDO</h3>
+                <p class="text-secondary small">Gestión Electrónica de Documentos</p>
             </a>
         </div>
     </div>
