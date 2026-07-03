@@ -261,6 +261,187 @@ mtr google.com
 
 ---
 
+### 5. SIGEDO - Sistema de Gestión Electrónica de Documentos
+
+**Objetivo:** Gestionar documentos de auditoría para el Tribunal de Cuentas de Entre Ríos (TCER).
+
+**Ubicación:** `/home/pablog/git/sigedo`
+
+#### ¿Qué es SIGEDO?
+
+**SIGEDO = Sistema Integrado de Gestión Electrónica de Documentos**
+
+Sistema web que procesa documentos fiscales (rendiciones, subsidios, multas) a través de múltiples etapas:
+- Recepción y clasificación
+- Auditoría técnica
+- Revisión de superiores
+- Firma digital
+- Certificación y archivo
+
+Mantiene un registro completo de auditoría: quién hizo qué, cuándo y por qué.
+
+#### Flujo Principal
+
+```
+Organismo envía documento → SIGEDO clasifica → Se asigna auditor
+    ↓
+Auditor revisa (múltiples etapas) → Se firma digitalmente
+    ↓
+Se genera PDF oficial → Se archiva permanentemente
+```
+
+#### Tecnología
+
+| Componente | Tecnología |
+|-----------|-----------|
+| **Lenguaje** | Java 11 |
+| **Framework Web** | Wicket 6.13.0 |
+| **Base de Datos** | PostgreSQL |
+| **ORM** | Hibernate 3.5.6 |
+| **Inyección de Dependencias** | Spring 5.3.39 |
+| **APIs REST** | Apache CXF 3.0.16 |
+| **Reportes** | JasperReports 6.20.6 |
+| **Build** | Maven |
+
+#### Arquitectura de Módulos
+
+```
+sigedo/
+├── common/         ← Utilidades compartidas
+├── model/          ← Entidades (Documento, Usuario, etc.)
+├── dao-api/        ← Interfaces de acceso a datos
+├── dao-impl/       ← Implementación (SQL/Hibernate)
+├── service-api/    ← Interfaces de lógica de negocio
+├── service-impl/   ← Implementación de servicios
+└── web/            ← Interfaz web (Wicket) + APIs REST
+```
+
+#### Tipos de Documentos
+
+| Tipo | Descripción |
+|------|------------|
+| RENDICIÓN_ORGANISMO | Cuenta anual de ministerios/secretarías |
+| RENDICIÓN_SUBSIDIO | Informe de gastos de subsidios |
+| EXPEDIENTE | Carpeta de auditoría (generada internamente) |
+| MULTA | Penalizaciones por incumplimiento |
+| OMISIÓN_RENDITIVA | Aviso de no entrega de cuenta |
+| OFICIO/CÉDULA | Comunicaciones oficiales |
+| LEGAJO_RENDITIVO | Archivo contable completo |
+
+#### Estados Típicos de un Documento
+
+```
+INGRESADO → CARATULADO → EN_AUDITORÍA → PENDIENTE_INFORME
+    ↓
+EN_REVISIÓN_SUPERIOR → PENDIENTE_CERTIFICACIÓN → CERTIFICADO → ARCHIVADO
+```
+
+**Nota:** El sistema permite 100+ estados configurables sin tocar código.
+
+#### Actores
+
+| Rol | Responsabilidad |
+|-----|-----------------|
+| **Auditor** | Revisa documentos, genera informes |
+| **Contador** | Verifica aspecto financiero |
+| **Abogado** | Revisa conformidad legal |
+| **Jefe** | Aprueba trabajos, firma digitalmente |
+| **Admin** | Configura sistema, permisos, estados |
+| **Usuario Externo** | Envía documentos, recibe resultados |
+
+#### Levantar el Servidor (Desarrollo)
+
+**Requisitos:**
+- Java 11+
+- Maven
+- PostgreSQL corriendo
+
+**Pasos:**
+
+1. **Compilar (primera vez o después de cambios)**
+   ```bash
+   cd /home/pablog/git/sigedo
+   mvn clean install -DskipTests
+   ```
+
+2. **Levantar servidor Jetty**
+   ```bash
+   mvn jetty:run -pl web
+   ```
+
+3. **Acceder en navegador**
+   ```
+   http://localhost:8090/tcer/
+   ```
+
+4. **Detener**
+   ```
+   Ctrl+C en terminal
+   ```
+
+#### Cambios Comunes
+
+**Agregar un nuevo campo a un documento:**
+1. Editar modelo → `model/src/main/java/.../Documento.java`
+2. Editar DAO si necesita búsquedas → `dao-impl/.../DocumentoDAO.java`
+3. Editar página web → `web/src/main/java/.../PaginaControlDocumento.java`
+4. Compilar: `mvn clean install -DskipTests`
+
+**Cambiar un mensaje en pantalla:**
+- Editar página → `web/src/main/java/.../PaginaXXX.java`
+- Buscar texto y cambiar
+- Compilar
+
+**Agregar validación:**
+- Editar servicio → `service-impl/.../ServicioXXX.java`
+- Agregar lógica de validación
+- Compilar
+
+#### Patrones Importantes
+
+**ProcesoLento (Procesamiento Diferido):**
+- Problema: Monitorear estado cada 100ms = 1000 requests/hora (lento)
+- Solución: Esperar 120 segundos, hacer 1 request
+- Clase: `ar.gob.tcer.web.common.ProcesoLento`
+- Uso: `ejecutarProcesoLentoEnXDecimasDeSegundos(300)` = esperar 30 seg
+
+**Estados Configurables:**
+- No hardcodear estados válidos
+- Usar `ConfiguracionClasificacionEstadoDocumento`
+- Admin configura transiciones sin tocar código
+
+**Discriminador (Polimorfismo):**
+- Todos los tipos en tabla DOCUMENTO con columna TIPO
+- Subclases Java (Expediente, RendicionOrganismo, etc.)
+- Una tabla, múltiples tipos
+
+#### Documentación
+
+- **Guía Principiante:** `SIGEDO_GUIA_PRINCIPIANTE.md` (leer aquí si no sabes Java)
+- **Glosario Técnico:** `GLOSARIO_TECNICO.md` (qué significa cada palabra rara)
+- **Guía de Usuario:** `GUIA_SIGEDO_PARA_USUARIOS.md` (cómo funciona desde perspectiva usuario)
+- **Mapa Rápido:** `MAPA_RAPIDO_CAMBIOS.md` (dónde editar para cada cambio)
+
+#### Compilación y Troubleshooting
+
+**Error: "Puerto 8090 en uso"**
+```bash
+# Encuentra qué proceso usa el puerto
+netstat -tulpn | grep 8090
+
+# O cambia puerto en web/pom.xml → <port>XXXX</port>
+```
+
+**Error: "BUILD FAILURE"**
+- Verificar Java 11: `java -version`
+- Limpiar: `mvn clean install -DskipTests`
+
+**La app levanta pero no funciona:**
+- Revisar logs en terminal donde corre Jetty
+- Revisar `jetty.log` en raíz del proyecto
+
+---
+
 ## 🎯 Resumen Ejecutivo
 
 Este documento centraliza:
@@ -268,5 +449,6 @@ Este documento centraliza:
 2. **Versionado de Código:** Flujo simplificado de GitHub
 3. **Línea de Comandos:** Referencia rápida de comandos Linux útiles
 4. **Viaje Planificado:** Toda la información del viaje a NZ-AUS 2027
+5. **SIGEDO:** Sistema de gestión electrónica de documentos para TCER
 
-**Última actualización:** 2026-06-10
+**Última actualización:** 2026-07-03
