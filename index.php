@@ -28,7 +28,7 @@
         .color-claude { color: #d97757; } /* Tono arcilla de Claude */
         .color-linux { color: #87cf3e; }  /* Verde Mint */
         .color-github { color: #24292e; }
-        .color-sigedo { color: #0ea5e9; } /* Celeste SIGEDO */
+        .color-sigedo { color: #006BA6; } /* Azul TCER SIGEDO */
     </style>
 </head>
 <body>
