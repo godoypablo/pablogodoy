@@ -200,6 +200,11 @@
             </button>
         </li>
         <li class="nav-item" role="presentation">
+            <button class="nav-link" id="inicio-tab" data-bs-toggle="tab" data-bs-target="#inicio" type="button" role="tab">
+                <i class="bi bi-lightning-fill"></i> Inicio Rápido
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
             <button class="nav-link" id="flujos-tab" data-bs-toggle="tab" data-bs-target="#flujos" type="button" role="tab">
                 <i class="bi bi-diagram-2"></i> Flujos Reales
             </button>
@@ -406,7 +411,362 @@ ARCHIVADO (guardado permanentemente)
             </div>
         </div>
 
-        <!-- TAB 2: FLUJOS REALES -->
+        <!-- TAB 2: INICIO RÁPIDO -->
+        <div class="tab-pane fade" id="inicio" role="tabpanel">
+            <h2 class="mb-4"><i class="bi bi-lightning-fill"></i> Guía Rápida: Iniciar SIGEDO Localmente</h2>
+            <p class="lead mb-5">Cómo levantar SIGEDO después de volver de vacaciones y encender la PC.</p>
+
+            <div class="accordion" id="inicioAccordion">
+                <!-- PASO 1 -->
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#paso1">
+                            <i class="bi bi-1-circle-fill me-2"></i> Prerequisitos
+                        </button>
+                    </h2>
+                    <div id="paso1" class="accordion-collapse collapse show" data-bs-parent="#inicioAccordion">
+                        <div class="accordion-body">
+                            <p><strong>Asegúrate de tener instalado:</strong></p>
+                            <div class="feature-box">
+                                <strong>Java 11</strong>
+                                <p>Verifica: <code>java -version</code></p>
+                            </div>
+                            <div class="feature-box">
+                                <strong>Maven 3.6+</strong>
+                                <p>Verifica: <code>mvn -version</code></p>
+                            </div>
+                            <div class="feature-box">
+                                <strong>PostgreSQL</strong>
+                                <p>Debe estar instalado en el sistema</p>
+                            </div>
+                            <div class="feature-box">
+                                <strong>NetBeans (Opcional)</strong>
+                                <p>Si prefieres usar IDE en lugar de terminal</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PASO 2 -->
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#paso2">
+                            <i class="bi bi-2-circle-fill me-2"></i> Iniciar PostgreSQL
+                        </button>
+                    </h2>
+                    <div id="paso2" class="accordion-collapse collapse" data-bs-parent="#inicioAccordion">
+                        <div class="accordion-body">
+                            <h5>Ver estado actual:</h5>
+                            <div class="code-block">sudo systemctl status postgresql</div>
+
+                            <h5 class="mt-3">Si no está corriendo, iniciarlo:</h5>
+                            <div class="code-block">sudo systemctl start postgresql</div>
+
+                            <h5 class="mt-3">Verificar que la base de datos existe:</h5>
+                            <div class="code-block">psql -U postgres -l | grep sigedo</div>
+
+                            <h5 class="mt-3">Si no existe, crearla:</h5>
+                            <div class="code-block">createdb -U postgres sigedo</div>
+
+                            <div class="alert alert-info mt-3">
+                                <i class="bi bi-info-circle me-2"></i>
+                                <strong>Tip:</strong> PostgreSQL debe estar corriendo ANTES de iniciar SIGEDO.
+                                Si no, obtendrás errores de conexión.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PASO 3 -->
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#paso3">
+                            <i class="bi bi-3-circle-fill me-2"></i> Configurar Propiedades
+                        </button>
+                    </h2>
+                    <div id="paso3" class="accordion-collapse collapse" data-bs-parent="#inicioAccordion">
+                        <div class="accordion-body">
+                            <p>Crea estos dos archivos en <code>web/src/main/resources/</code>:</p>
+
+                            <h5 class="mt-4"><strong>Archivo 1: jdbc.properties</strong></h5>
+                            <div class="code-block">jdbc.driver=org.postgresql.Driver
+jdbc.url=jdbc:postgresql://localhost:5432/sigedo
+jdbc.user=postgres
+jdbc.password=postgres
+date.defaultFormat=dd/MM/yyyy</div>
+
+                            <h5 class="mt-4"><strong>Archivo 2: environment.properties</strong></h5>
+                            <div class="code-block">hibernate.dialect=org.hibernate.dialect.PostgreSQLDialect
+omision.renditiva=01:00:00
+omision.renditiva.diligenciables=02:00:00
+omision.renditiva.estados=03:00:00
+omision.renditiva.legajos=04:00:00
+omision.renditiva.multas=05:00:00
+omision.subsidios=06:00:00
+alerta.chequeo=07:00:00
+cambiar.estado.notificacion.electronica=08:00:00
+chequear.usuarios=09:00:00
+comision.servicio.generacion=10:00:00
+geo.salida.particular=11:00:00
+rendicionElectronica.chequeo=12:00:00
+cargo.subsidio.siaf=13:00:00</div>
+
+                            <div class="alert alert-warning mt-3">
+                                <i class="bi bi-exclamation-triangle me-2"></i>
+                                <strong>Importante:</strong> Los placeholders en <code>environment.properties</code> deben estar en formato <code>HH:mm:ss</code> (ej: 01:00:00, no 1:00 ni true).
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PASO 4 -->
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#paso4">
+                            <i class="bi bi-4-circle-fill me-2"></i> Compilar el Proyecto
+                        </button>
+                    </h2>
+                    <div id="paso4" class="accordion-collapse collapse" data-bs-parent="#inicioAccordion">
+                        <div class="accordion-body">
+                            <p><strong>Desde la carpeta raíz del proyecto:</strong></p>
+                            <div class="code-block">cd /home/pablog/git/sigedo
+mvn clean install -DskipTests</div>
+
+                            <p class="mt-3"><strong>¿Qué hace este comando?</strong></p>
+                            <ul class="mt-2">
+                                <li><code>clean</code>: Limpia construcciones anteriores</li>
+                                <li><code>install</code>: Compila el proyecto</li>
+                                <li><code>-DskipTests</code>: Omite tests para ahorrar tiempo</li>
+                            </ul>
+
+                            <div class="alert alert-info mt-3">
+                                <i class="bi bi-info-circle me-2"></i>
+                                <strong>Tiempo:</strong> La primera compilación tarda 3-5 minutos.
+                                Las siguientes son más rápidas.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PASO 5 -->
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#paso5">
+                            <i class="bi bi-5-circle-fill me-2"></i> Ejecutar Jetty
+                        </button>
+                    </h2>
+                    <div id="paso5" class="accordion-collapse collapse" data-bs-parent="#inicioAccordion">
+                        <div class="accordion-body">
+                            <p><strong>Ejecutar Jetty en el puerto 8090:</strong></p>
+                            <div class="code-block">mvn jetty:run -pl web</div>
+
+                            <h5 class="mt-4">Esperar hasta ver en consola:</h5>
+                            <div class="code-block">[INFO] Started ServerConnector@...{HTTP/1.1, (http/1.1)}{0.0.0.0:8090}
+[INFO] Started Jetty Server</div>
+
+                            <h5 class="mt-4">Para detener:</h5>
+                            <div class="code-block">Ctrl+C</div>
+
+                            <div class="alert alert-success mt-3">
+                                <i class="bi bi-check-circle me-2"></i>
+                                <strong>✅ Listo:</strong> El servidor está corriendo
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PASO 6 -->
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#paso6">
+                            <i class="bi bi-6-circle-fill me-2"></i> Acceder a la Aplicación
+                        </button>
+                    </h2>
+                    <div id="paso6" class="accordion-collapse collapse" data-bs-parent="#inicioAccordion">
+                        <div class="accordion-body">
+                            <p><strong>Abre en el navegador:</strong></p>
+                            <div class="code-block" style="text-align: center; padding: 30px;">
+                                <a href="http://localhost:8090/tcer/" target="_blank" style="color: #f5f5f5; text-decoration: none; font-size: 1.2em;">
+                                    http://localhost:8090/tcer/
+                                </a>
+                            </div>
+
+                            <div class="alert alert-info mt-3">
+                                <i class="bi bi-info-circle me-2"></i>
+                                <strong>Nota:</strong> Reemplaza <code>localhost</code> por tu IP si accedes desde otra PC.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- DESDE NETBEANS -->
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#netbeans">
+                            <i class="bi bi-terminal-fill me-2"></i> Desde NetBeans (Método Alternativo)
+                        </button>
+                    </h2>
+                    <div id="netbeans" class="accordion-collapse collapse" data-bs-parent="#inicioAccordion">
+                        <div class="accordion-body">
+                            <div class="feature-box">
+                                <strong>Paso 1: Abre el proyecto</strong>
+                                <p>File → Open Project<br>
+                                   Selecciona la carpeta raíz de sigedo</p>
+                            </div>
+
+                            <div class="feature-box mt-3">
+                                <strong>Paso 2: Realiza pasos 2-3</strong>
+                                <p>PostgreSQL debe estar corriendo<br>
+                                   Configura jdbc.properties y environment.properties</p>
+                            </div>
+
+                            <div class="feature-box mt-3">
+                                <strong>Paso 3: Clic derecho en "web"</strong>
+                                <p>Run Maven → Goals</p>
+                            </div>
+
+                            <div class="feature-box mt-3">
+                                <strong>Paso 4: Escribe en el campo</strong>
+                                <p><code>jetty:run</code></p>
+                            </div>
+
+                            <div class="feature-box mt-3">
+                                <strong>Paso 5: Click en "Execute"</strong>
+                                <p>NetBeans ejecuta Jetty en la consola</p>
+                            </div>
+
+                            <div class="alert alert-success mt-4">
+                                <i class="bi bi-check-circle me-2"></i>
+                                Cuando veas "[INFO] Started Jetty Server", abre
+                                <a href="http://localhost:8090/tcer/" target="_blank" style="color: #006BA6;">
+                                    http://localhost:8090/tcer/
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TROUBLESHOOTING -->
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#troubleshooting">
+                            <i class="bi bi-bug me-2"></i> Troubleshooting
+                        </button>
+                    </h2>
+                    <div id="troubleshooting" class="accordion-collapse collapse" data-bs-parent="#inicioAccordion">
+                        <div class="accordion-body">
+                            <h5 class="mt-3"><strong style="color: #A6192E;">❌ Error: "Puerto 8090 en uso"</strong></h5>
+                            <p>Significa que otro proceso está usando el puerto.</p>
+                            <div class="code-block">netstat -tulpn | grep 8090</div>
+                            <p class="mt-2"><strong>Solución 1:</strong> Cambia el puerto en <code>web/pom.xml</code></p>
+                            <div class="code-block">&lt;port&gt;9999&lt;/port&gt;  (cambiar a otro número)</div>
+                            <p><strong>Solución 2:</strong> Mata el proceso que usa el puerto</p>
+                            <div class="code-block">lsof -i :8090  # ver qué proceso
+kill -9 &lt;PID&gt;</div>
+
+                            <h5 class="mt-5"><strong style="color: #A6192E;">❌ Error: "BUILD FAILURE"</strong></h5>
+                            <p><strong>Verificaciones:</strong></p>
+                            <ul>
+                                <li>Java 11: <code>java -version</code> (debe ser 11.x.x)</li>
+                                <li>Maven: <code>mvn -version</code></li>
+                                <li>PostgreSQL corriendo: <code>sudo systemctl status postgresql</code></li>
+                            </ul>
+                            <p class="mt-2"><strong>Solución:</strong> Limpia e intenta de nuevo</p>
+                            <div class="code-block">mvn clean install -DskipTests</div>
+
+                            <h5 class="mt-5"><strong style="color: #A6192E;">❌ Error: "Unable to create a Configuration, because no Jakarta Bean Validation provider"</strong></h5>
+                            <p><strong>Causa:</strong> Falta dependencia de Hibernate Validator</p>
+                            <p><strong>Solución:</strong> Ejecuta nuevamente</p>
+                            <div class="code-block">mvn clean install -DskipTests</div>
+
+                            <h5 class="mt-5"><strong style="color: #A6192E;">❌ La app levanta pero no funciona / Error 503</strong></h5>
+                            <p><strong>Causa principal:</strong> PostgreSQL no está corriendo o faltan configuraciones</p>
+                            <div class="code-block">psql -U postgres -c "SELECT 1"</div>
+                            <p class="mt-2"><strong>Si falla, reinicia PostgreSQL:</strong></p>
+                            <div class="code-block">sudo systemctl restart postgresql</div>
+
+                            <h5 class="mt-5"><strong style="color: #A6192E;">❌ Error: "Conexión a BD rechazada"</strong></h5>
+                            <p><strong>Verificar credenciales en jdbc.properties:</strong></p>
+                            <div class="code-block">jdbc.url=jdbc:postgresql://localhost:5432/sigedo
+jdbc.user=postgres
+jdbc.password=postgres</div>
+                            <p class="mt-2"><strong>Prueba conectar directamente:</strong></p>
+                            <div class="code-block">psql -U postgres -d sigedo -c "SELECT 1"</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CHECKLIST -->
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#checklist">
+                            <i class="bi bi-check2-all me-2"></i> Checklist Final
+                        </button>
+                    </h2>
+                    <div id="checklist" class="accordion-collapse collapse" data-bs-parent="#inicioAccordion">
+                        <div class="accordion-body">
+                            <div style="background: white; padding: 20px; border-radius: 8px;">
+                                <div class="form-check mb-3">
+                                    <input class="form-check-input" type="checkbox" id="check1">
+                                    <label class="form-check-label" for="check1">
+                                        Java 11 instalado: <code>java -version</code>
+                                    </label>
+                                </div>
+                                <div class="form-check mb-3">
+                                    <input class="form-check-input" type="checkbox" id="check2">
+                                    <label class="form-check-label" for="check2">
+                                        Maven instalado: <code>mvn -version</code>
+                                    </label>
+                                </div>
+                                <div class="form-check mb-3">
+                                    <input class="form-check-input" type="checkbox" id="check3">
+                                    <label class="form-check-label" for="check3">
+                                        PostgreSQL corriendo: <code>sudo systemctl status postgresql</code>
+                                    </label>
+                                </div>
+                                <div class="form-check mb-3">
+                                    <input class="form-check-input" type="checkbox" id="check4">
+                                    <label class="form-check-label" for="check4">
+                                        BD "sigedo" existe: <code>psql -U postgres -l</code>
+                                    </label>
+                                </div>
+                                <div class="form-check mb-3">
+                                    <input class="form-check-input" type="checkbox" id="check5">
+                                    <label class="form-check-label" for="check5">
+                                        Archivos <code>jdbc.properties</code> y <code>environment.properties</code> creados
+                                    </label>
+                                </div>
+                                <div class="form-check mb-3">
+                                    <input class="form-check-input" type="checkbox" id="check6">
+                                    <label class="form-check-label" for="check6">
+                                        Compilación exitosa: <code>mvn clean install</code>
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="check7">
+                                    <label class="form-check-label" for="check7">
+                                        Jetty corriendo: <code>mvn jetty:run -pl web</code>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div class="alert alert-success mt-4">
+                                <i class="bi bi-check-circle me-2"></i>
+                                <strong>Si marcaste todo:</strong> ¡SIGEDO está listo en <a href="http://localhost:8090/tcer/" target="_blank">http://localhost:8090/tcer/</a>!
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="alert alert-info mt-5">
+                <i class="bi bi-lightbulb me-2"></i>
+                <strong>Truco de Productividad:</strong> Guarda este checklist en una nota de tu PC.
+                Cada vez que vuelvas, tarda 5 minutos seguir estos pasos.
+            </div>
+        </div>
+
+        <!-- TAB 3: FLUJOS REALES -->
         <div class="tab-pane fade" id="flujos" role="tabpanel">
             <h2 class="mb-4">Casos de Uso y Flujos Reales</h2>
 
@@ -777,7 +1137,7 @@ Usuario intenta: cambiarEstado(docId, nuevoEstado)
             </div>
         </div>
 
-        <!-- TAB 3: ASPECTO TÉCNICO -->
+        <!-- TAB 4: ASPECTO TÉCNICO -->
         <div class="tab-pane fade" id="tecnico" role="tabpanel">
             <h2 class="mb-4">Aspecto Técnico (Arquitectura)</h2>
 
@@ -956,7 +1316,7 @@ public class ServicioDocumentoImpl {
             </div>
         </div>
 
-        <!-- TAB 4: GLOSARIO -->
+        <!-- TAB 5: GLOSARIO -->
         <div class="tab-pane fade" id="glosario" role="tabpanel">
             <h2 class="mb-4">Glosario Técnico</h2>
             <p class="mb-4">Palabras raras que encontrarás en el código:</p>
