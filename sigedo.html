@@ -219,6 +219,11 @@
                 <i class="bi bi-fonts"></i> Glosario
             </button>
         </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="dependencias-tab" data-bs-toggle="tab" data-bs-target="#dependencias" type="button" role="tab">
+                <i class="bi bi-collection"></i> Rendiciones
+            </button>
+        </li>
     </ul>
 
     <div class="tab-content">
@@ -1553,6 +1558,325 @@ Documento {           DOCUMENTO
                         </div>
                     </div>
                 </div>
+            </div>
+        </div>
+
+        <!-- TAB 6: RENDICIONES -->
+        <div class="tab-pane fade" id="dependencias" role="tabpanel">
+            <h2 class="mb-4"><i class="bi bi-collection"></i> Guía Completa: Rendiciones Electrónicas en SIGEDO</h2>
+            <p class="lead mb-5">Aprende cómo gestionar, auditar y usar el módulo de rendiciones</p>
+
+            <!-- SECCIÓN 1: ¿QUÉ ES? -->
+            <div class="section">
+                <h3 class="mb-3">¿Qué es el módulo de Rendiciones?</h3>
+                <p style="color: #555; line-height: 1.8; font-size: 1.05em;">
+                    Las <strong>Rendiciones Electrónicas</strong> son documentos que presentan las instituciones públicas
+                    (cuentadantes) para justificar cómo gastaron y recaudaron dinero. El sistema SIGEDO permite:
+                </p>
+                <ul style="margin-left: 20px; color: #555; line-height: 1.8; margin-top: 15px;">
+                    <li>📝 Que las instituciones carguen sus datos en línea</li>
+                    <li>✅ Que los auditores revisen y aprueben</li>
+                    <li>📊 Generar reportes y estadísticas</li>
+                    <li>🔐 Mantener un registro auditable</li>
+                </ul>
+            </div>
+
+            <!-- SECCIÓN 2: PANTALLAS PRINCIPALES -->
+            <div class="section mt-5">
+                <h3 class="mb-4">🖥️ Pantallas Principales</h3>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <div class="feature-box">
+                            <strong>⚙️ Configuración Anexo</strong>
+                            <p>Define la estructura y campos de los anexos que presentan las instituciones.</p>
+                            <span class="topic-badge">Admin</span>
+                            <span class="topic-badge">Admin Dependencia</span>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <div class="feature-box">
+                            <strong>📋 Nomenclaturas</strong>
+                            <p>Catálogos de códigos de ingresos, egresos y categorías válidas.</p>
+                            <span class="topic-badge">Admin</span>
+                            <span class="topic-badge">Auditor</span>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <div class="feature-box">
+                            <strong>🎨 Maqueta Rendición</strong>
+                            <p>Define qué anexos son obligatorios y periodos de rendición.</p>
+                            <span class="topic-badge">Admin</span>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <div class="feature-box">
+                            <strong>🏛️ Por Institución</strong>
+                            <p>Instituciones ven y descargan sus rendiciones. Admins ven todas.</p>
+                            <span class="topic-badge">Cuentadante Externo</span>
+                            <span class="topic-badge">Admin</span>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <div class="feature-box">
+                            <strong>💰 Planilla Movimientos</strong>
+                            <p>Registro detallado de ingresos y egresos de efectivo.</p>
+                            <span class="topic-badge">Admin (Juntas Gobierno)</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECCIÓN 3: ACCESO POR ROL -->
+            <div class="section mt-5">
+                <h3 class="mb-4">🔐 ¿Quién Accede a Qué?</h3>
+                <div class="table-scroll">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Pantalla</th>
+                                <th>Admin Interno</th>
+                                <th>Auditor</th>
+                                <th>Cuentadante Externo</th>
+                                <th>Cooperativa</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>Configuración Anexo</strong></td>
+                                <td>✅ Editar</td>
+                                <td>❌</td>
+                                <td>❌</td>
+                                <td>❌</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Nomenclaturas</strong></td>
+                                <td>✅ Editar</td>
+                                <td>✅ Ver</td>
+                                <td>❌</td>
+                                <td>❌</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Maqueta Rendición</strong></td>
+                                <td>✅ Editar</td>
+                                <td>❌</td>
+                                <td>❌</td>
+                                <td>❌</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Por Institución</strong></td>
+                                <td>✅ Ver todas</td>
+                                <td>✅ Auditar</td>
+                                <td>✅ Ver las suyas</td>
+                                <td>✅ Ver las suyas</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Planilla Movimientos</strong></td>
+                                <td>✅ Editar</td>
+                                <td>❌</td>
+                                <td>❌</td>
+                                <td>❌</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- SECCIÓN 4: FLUJO DE TRABAJO -->
+            <div class="section mt-5">
+                <h3 class="mb-4">🔄 Flujo Típico: De Inicio a Rendición Aprobada</h3>
+                <div class="accordion" id="flujoRendicionAccordion">
+                    <div class="accordion-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#flujor1">
+                                <i class="bi bi-1-circle-fill me-2"></i> ADMIN crea maqueta
+                            </button>
+                        </h2>
+                        <div id="flujor1" class="accordion-collapse collapse show" data-bs-parent="#flujoRendicionAccordion">
+                            <div class="accordion-body">
+                                Admin → Rendiciones → Maqueta Rendición → Crear nueva maqueta para 2024
+                            </div>
+                        </div>
+                    </div>
+                    <div class="accordion-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flujor2">
+                                <i class="bi bi-2-circle-fill me-2"></i> ADMIN configura anexos
+                            </button>
+                        </h2>
+                        <div id="flujor2" class="accordion-collapse collapse" data-bs-parent="#flujoRendicionAccordion">
+                            <div class="accordion-body">
+                                Admin → Rendiciones → Configuración Anexo → Asignar campos por tipo institución
+                            </div>
+                        </div>
+                    </div>
+                    <div class="accordion-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flujor3">
+                                <i class="bi bi-3-circle-fill me-2"></i> ADMIN define nomenclaturas
+                            </button>
+                        </h2>
+                        <div id="flujor3" class="accordion-collapse collapse" data-bs-parent="#flujoRendicionAccordion">
+                            <div class="accordion-body">
+                                Admin → Rendiciones → Nomenclaturas → Crear códigos de ingresos/egresos
+                            </div>
+                        </div>
+                    </div>
+                    <div class="accordion-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flujor4">
+                                <i class="bi bi-4-circle-fill me-2"></i> Institución accede
+                            </button>
+                        </h2>
+                        <div id="flujor4" class="accordion-collapse collapse" data-bs-parent="#flujoRendicionAccordion">
+                            <div class="accordion-body">
+                                Login → Rendiciones Electrónicas → Por Institución
+                            </div>
+                        </div>
+                    </div>
+                    <div class="accordion-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flujor5">
+                                <i class="bi bi-5-circle-fill me-2"></i> Carga datos en anexos
+                            </button>
+                        </h2>
+                        <div id="flujor5" class="accordion-collapse collapse" data-bs-parent="#flujoRendicionAccordion">
+                            <div class="accordion-body">
+                                Por Institución → Seleccionar año/período → Llenar anexos con datos
+                            </div>
+                        </div>
+                    </div>
+                    <div class="accordion-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flujor6">
+                                <i class="bi bi-6-circle-fill me-2"></i> Presenta la rendición
+                            </button>
+                        </h2>
+                        <div id="flujor6" class="accordion-collapse collapse" data-bs-parent="#flujoRendicionAccordion">
+                            <div class="accordion-body">
+                                Por Institución → Botón "Presentar Rendición" → Enviado a auditar
+                            </div>
+                        </div>
+                    </div>
+                    <div class="accordion-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flujor7">
+                                <i class="bi bi-7-circle-fill me-2"></i> Auditor revisa
+                            </button>
+                        </h2>
+                        <div id="flujor7" class="accordion-collapse collapse" data-bs-parent="#flujoRendicionAccordion">
+                            <div class="accordion-body">
+                                Por Institución → Ver detalles de la rendición → Verificar datos
+                            </div>
+                        </div>
+                    </div>
+                    <div class="accordion-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flujor8">
+                                <i class="bi bi-8-circle-fill me-2"></i> Aprobación
+                            </button>
+                        </h2>
+                        <div id="flujor8" class="accordion-collapse collapse" data-bs-parent="#flujoRendicionAccordion">
+                            <div class="accordion-body">
+                                Botón "Aprobar" o "Observar" → Guardar estado final
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECCIÓN 5: ESTADOS -->
+            <div class="section mt-5">
+                <h3 class="mb-4">📊 Estados de una Rendición</h3>
+                <div class="table-scroll">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Estado</th>
+                                <th>Significado</th>
+                                <th>¿Quién lo ve?</th>
+                                <th>¿Puede editarse?</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><span class="status-badge status-pending">SIN_PRESENTAR</span></td>
+                                <td>La institución aún no ha cargado datos</td>
+                                <td>Admin, Institución</td>
+                                <td>✅ Sí</td>
+                            </tr>
+                            <tr>
+                                <td><span class="status-badge status-pending">EN_ELABORACION</span></td>
+                                <td>Institución está cargando datos actualmente</td>
+                                <td>Admin, Institución</td>
+                                <td>✅ Sí</td>
+                            </tr>
+                            <tr>
+                                <td><span class="status-badge status-reviewed">PRESENTADA</span></td>
+                                <td>Enviada a auditar, en espera de revisión</td>
+                                <td>Admin, Auditor, Institución</td>
+                                <td>❌ No</td>
+                            </tr>
+                            <tr>
+                                <td><span class="status-badge status-approved">APROBADA</span></td>
+                                <td>Auditoría completada y aprobada</td>
+                                <td>Admin, Auditor, Institución</td>
+                                <td>❌ No</td>
+                            </tr>
+                            <tr>
+                                <td><span class="status-badge status-pending">OBSERVADA</span></td>
+                                <td>Hay observaciones, necesita corrección</td>
+                                <td>Admin, Auditor, Institución</td>
+                                <td>✅ Sí</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- SECCIÓN 6: TIPS -->
+            <div class="section mt-5">
+                <h3 class="mb-4">💡 Tips Útiles</h3>
+                <div class="alert alert-info">
+                    <strong>📥 Descarga de Reportes:</strong><br>
+                    En la pantalla "Por Institución", cada rendición tiene un botón para descargar un PDF con todos los datos.
+                    Usuarios externos pueden descargar solo sus propias rendiciones.
+                </div>
+                <div class="alert alert-info">
+                    <strong>⏰ Períodos de Rendición:</strong><br>
+                    La maqueta define si es anual, semestral, trimestral, etc. El sistema automáticamente muestra
+                    los períodos vigentes según la institución.
+                </div>
+                <div class="alert alert-info">
+                    <strong>🔍 Búsqueda y Filtros:</strong><br>
+                    En "Por Institución" puedes filtrar por: institución, año, período, estado de rendición.
+                    Muy útil cuando tienes miles de rendiciones.
+                </div>
+                <div class="alert alert-info">
+                    <strong>📌 Plantillas (Maqueta):</strong><br>
+                    La maqueta es como un "template" reutilizable. Creas una vez y se aplica a todas las instituciones
+                    del mismo tipo. Modificarla afecta a todas las futuras rendiciones.
+                </div>
+                <div class="alert alert-info">
+                    <strong>🔐 Seguridad:</strong><br>
+                    Los usuarios externos NUNCA pueden ver rendiciones de otras instituciones, ni modificar
+                    configuraciones. Está controlado por el sistema.
+                </div>
+            </div>
+
+            <!-- SECCIÓN 7: CONEXIÓN CON OTROS MÓDULOS -->
+            <div class="section mt-5">
+                <h3 class="mb-4">🔗 Relacionados (Ver También)</h3>
+                <p style="margin-bottom: 15px; color: #555;">
+                    Estas pantallas complementan Rendiciones y te muestran análisis y reportes:
+                </p>
+                <ul style="color: #555; line-height: 1.8; margin-left: 20px;">
+                    <li><strong>Documentos → Consultas Gerenciales → Detalle Situación Renditiva:</strong>
+                        Reportes analíticos de cómo van las rendiciones por institución</li>
+                    <li><strong>Documentos → Consultas Gerenciales → Situación Renditiva Datos Globales:</strong>
+                        Estadísticas generales de todas las rendiciones</li>
+                    <li><strong>Documentos → Omisión Renditiva:</strong>
+                        Instituciones que no presentaron a tiempo</li>
+                </ul>
             </div>
         </div>
     </div>

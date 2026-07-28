@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestor de Cuotas Hipotecarias - Banco Entre Ríos</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+        }
+
+        header h1 {
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+
+        header p {
+            opacity: 0.9;
+            font-size: 14px;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            padding: 20px 30px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .stat {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .stat-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: #666;
+            text-transform: uppercase;
+        }
+
+        .stat-value {
+            font-size: 20px;
+            font-weight: bold;
+            margin-top: 5px;
+        }
+
+        .stat.pagadas .stat-value { color: #27ae60; }
+        .stat.impagas .stat-value { color: #e74c3c; }
+        .stat.total .stat-value { color: #3498db; }
+
+        .controls {
+            padding: 20px 30px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: center;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        input[type="text"], select {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        input[type="text"] {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        select {
+            min-width: 120px;
+        }
+
+        button {
+            padding: 8px 16px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background 0.3s;
+        }
+
+        button:hover {
+            background: #5568d3;
+        }
+
+        button.reset {
+            background: #95a5a6;
+        }
+
+        button.reset:hover {
+            background: #7f8c8d;
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead {
+            background: #f8f9fa;
+            position: sticky;
+            top: 0;
+        }
+
+        th {
+            padding: 12px 15px;
+            text-align: left;
+            font-weight: 600;
+            color: #333;
+            border-bottom: 2px solid #e9ecef;
+            font-size: 13px;
+            text-transform: uppercase;
+        }
+
+        td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #e9ecef;
+            font-size: 14px;
+        }
+
+        tr:hover {
+            background: #f8f9fa;
+        }
+
+        .nro-cuota {
+            font-weight: 600;
+            width: 60px;
+            text-align: center;
+        }
+
+        .estado-cell {
+            text-align: center;
+            width: 60px;
+        }
+
+        .checkbox {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+        .fecha {
+            min-width: 100px;
+        }
+
+        .numero {
+            text-align: right;
+            font-family: 'Courier New', monospace;
+            min-width: 80px;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            width: 100%;
+            text-align: center;
+        }
+
+        .badge.pagada {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .badge.impaga {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .footer {
+            padding: 20px 30px;
+            background: #f8f9fa;
+            border-top: 1px solid #e9ecef;
+            font-size: 12px;
+            color: #666;
+            text-align: center;
+        }
+
+        .info-box {
+            padding: 15px;
+            background: #e7f3ff;
+            border-left: 4px solid #3498db;
+            margin: 20px 30px;
+            border-radius: 4px;
+            font-size: 13px;
+            color: #0c5aa0;
+        }
+
+        .info-box strong {
+            display: block;
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>💰 Gestor de Cuotas Hipotecarias</h1>
+            <p>Banco Entre Ríos | Crédito en UVAs | Acreedor: GODOY PABLO ANDRES</p>
+        </header>
+
+        <div class="stats">
+            <div class="stat pagadas">
+                <div>
+                    <div class="stat-label">Cuotas Pagadas</div>
+                    <div class="stat-value" id="cuotasPagadas">0</div>
+                </div>
+            </div>
+            <div class="stat impagas">
+                <div>
+                    <div class="stat-label">Cuotas Impagas</div>
+                    <div class="stat-value" id="cuotasImpagas">0</div>
+                </div>
+            </div>
+            <div class="stat total">
+                <div>
+                    <div class="stat-label">Total Cuotas</div>
+                    <div class="stat-value" id="totalCuotas">0</div>
+                </div>
+            </div>
+            <div class="stat total">
+                <div>
+                    <div class="stat-label">Monto Pagado</div>
+                    <div class="stat-value" id="montoPagado">$0</div>
+                </div>
+            </div>
+            <div class="stat total">
+                <div>
+                    <div class="stat-label">Monto Pendiente</div>
+                    <div class="stat-value" id="montoPendiente">$0</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="info-box">
+            <strong>📌 Información del Crédito</strong>
+            120 cuotas mensuales en UVAs | Vencimiento final: 27/02/2036 | Capital inicial ajustado por inflación
+        </div>
+
+        <div class="controls">
+            <input type="text" id="searchInput" placeholder="Buscar por nro de cuota o fecha...">
+            <select id="filterEstado">
+                <option value="">Todas las cuotas</option>
+                <option value="PAGADA">Pagadas</option>
+                <option value="IMPAGA">Impagas</option>
+            </select>
+            <button onclick="exportarCSV()">📥 Exportar CSV</button>
+            <button class="reset" onclick="location.reload()">🔄 Recargar</button>
+        </div>
+
+        <div class="table-wrapper">
+            <table id="cuotasTable">
+                <thead>
+                    <tr>
+                        <th>Nro</th>
+                        <th>Estado</th>
+                        <th>Fecha Vto</th>
+                        <th class="numero">Capital (UVA)</th>
+                        <th class="numero">Interés (UVA)</th>
+                        <th class="numero">Total (UVA)</th>
+                    </tr>
+                </thead>
+                <tbody id="tbody">
+                </tbody>
+            </table>
+        </div>
+
+        <div class="footer">
+            <strong>Última actualización:</strong> <span id="timestamp"></span> |
+            Datos extraídos del estado de cuenta oficial del Banco Entre Ríos
+        </div>
+    </div>
+
+    <script>
+        const datos = [];
+
+        // Cargar datos del JSON
+        async function cargarDatos() {
+            try {
+                const response = await fetch('datos_cuotas.json');
+                const json = await response.json();
+                datos.push(...json.cuotas);
+                renderizar(datos);
+                actualizarStats();
+                document.getElementById('timestamp').textContent = new Date().toLocaleString('es-AR');
+            } catch (e) {
+                console.error('Error cargando datos:', e);
+                // Si no está disponible el JSON, usar datos hardcodeados
+                alert('No se pudo cargar datos_cuotas.json. Asegúrate de tenerlo en el mismo directorio.');
+            }
+        }
+
+        function renderizar(items) {
+            const tbody = document.getElementById('tbody');
+            tbody.innerHTML = '';
+
+            items.forEach(cuota => {
+                const row = document.createElement('tr');
+                row.dataset.nroCuota = cuota.nro_cuota;
+                row.dataset.estado = cuota.estado;
+
+                row.innerHTML = `
+                    <td class="nro-cuota">${cuota.nro_cuota}</td>
+                    <td class="estado-cell">
+                        <label style="display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer;">
+                            <input type="checkbox" class="checkbox estado-checkbox"
+                                ${cuota.estado === 'PAGADA' ? 'checked' : ''}
+                                onchange="cambiarEstado(${cuota.nro_cuota})">
+                            <span class="badge ${cuota.estado.toLowerCase()}">
+                                ${cuota.estado === 'PAGADA' ? '✓ Pagada' : 'Impaga'}
+                            </span>
+                        </label>
+                    </td>
+                    <td class="fecha">${formatoFecha(cuota.fecha_vencimiento)}</td>
+                    <td class="numero">${cuota.capital.toFixed(2)}</td>
+                    <td class="numero">${cuota.interes.toFixed(2)}</td>
+                    <td class="numero"><strong>${cuota.total.toFixed(2)}</strong></td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        function cambiarEstado(nroCuota) {
+            const cuota = datos.find(c => c.nro_cuota === nroCuota);
+            if (cuota) {
+                cuota.estado = cuota.estado === 'PAGADA' ? 'IMPAGA' : 'PAGADA';
+                guardarEnLocal();
+                renderizar(datos);
+                actualizarStats();
+                aplicarFiltros();
+            }
+        }
+
+        function actualizarStats() {
+            const pagadas = datos.filter(c => c.estado === 'PAGADA').length;
+            const impagas = datos.filter(c => c.estado === 'IMPAGA').length;
+            const montoPagado = datos
+                .filter(c => c.estado === 'PAGADA')
+                .reduce((sum, c) => sum + c.total, 0);
+            const montoPendiente = datos
+                .filter(c => c.estado === 'IMPAGA')
+                .reduce((sum, c) => sum + c.total, 0);
+
+            document.getElementById('cuotasPagadas').textContent = pagadas;
+            document.getElementById('cuotasImpagas').textContent = impagas;
+            document.getElementById('totalCuotas').textContent = datos.length;
+            document.getElementById('montoPagado').textContent = montoPagado.toFixed(2) + ' UVA';
+            document.getElementById('montoPendiente').textContent = montoPendiente.toFixed(2) + ' UVA';
+        }
+
+        function formatoFecha(fecha) {
+            const [año, mes, día] = fecha.split('-');
+            return `${día}/${mes}/${año}`;
+        }
+
+        function guardarEnLocal() {
+            localStorage.setItem('cuotas_hipoteca', JSON.stringify(datos));
+        }
+
+        function restaurarDelLocal() {
+            const guardado = localStorage.getItem('cuotas_hipoteca');
+            if (guardado) {
+                const cuotasGuardadas = JSON.parse(guardado);
+                cuotasGuardadas.forEach(cg => {
+                    const cuota = datos.find(c => c.nro_cuota === cg.nro_cuota);
+                    if (cuota) cuota.estado = cg.estado;
+                });
+            }
+        }
+
+        function aplicarFiltros() {
+            const search = document.getElementById('searchInput').value.toLowerCase();
+            const filterEstado = document.getElementById('filterEstado').value;
+
+            document.querySelectorAll('#tbody tr').forEach(row => {
+                const nro = row.dataset.nroCuota;
+                const estado = row.dataset.estado;
+                const fechaCell = row.cells[2].textContent;
+
+                const coincideBusqueda = nro.includes(search) || fechaCell.includes(search);
+                const coincideEstado = !filterEstado || estado === filterEstado;
+
+                row.style.display = (coincideBusqueda && coincideEstado) ? '' : 'none';
+            });
+        }
+
+        function exportarCSV() {
+            let csv = 'Nro Cuota,Estado,Fecha Vto,Capital (UVA),Interés (UVA),Total (UVA)\n';
+            datos.forEach(c => {
+                csv += `${c.nro_cuota},${c.estado},${c.fecha_vencimiento},${c.capital},${c.interes},${c.total}\n`;
+            });
+
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `cuotas_hipoteca_${new Date().toISOString().split('T')[0]}.csv`;
+            a.click();
+        }
+
+        // Event listeners
+        document.getElementById('searchInput').addEventListener('input', aplicarFiltros);
+        document.getElementById('filterEstado').addEventListener('change', aplicarFiltros);
+
+        // Cargar datos al iniciar
+        cargarDatos();
+        restaurarDelLocal();
+    </script>
+</body>
+</html>

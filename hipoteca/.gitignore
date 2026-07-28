@@ -1,0 +1,19 @@
+# Base de datos SQLite (datos sensibles, no sincronizar)
+hipoteca.db
+*.db
+*.sqlite
+*.sqlite3
+
+# Cache y archivos temporales
+*.pyc
+__pycache__/
+.DS_Store
+*.swp
+*.swo
+
+# Logs
+*.log
+
+# Backups
+*.bak
+*~

@@ -121,6 +121,13 @@ $labelFiltro = $meses[(int)date('n') - 1] . ' ' . date('Y');
                         </li>
                         <li><hr class="dropdown-divider"></li>
                         <li>
+                            <a class="dropdown-item d-flex align-items-center gap-2" href="hipoteca.php">
+                                <i class="bi bi-building menu-icon"></i>
+                                Cuotas Hipotecarias
+                            </a>
+                        </li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
                             <a class="dropdown-item d-flex align-items-center gap-2" href="#" onclick="toggleDarkMode();return false;">
                                 <i class="bi bi-moon-fill menu-icon" id="iconDarkMode"></i>
                                 Cambiar tema

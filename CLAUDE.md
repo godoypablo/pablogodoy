@@ -442,6 +442,119 @@ netstat -tulpn | grep 8090
 
 ---
 
+### 6. Crédito Hipotecario - Banco Entre Ríos (UVAs)
+
+**Objetivo:** Gestionar y dar seguimiento a las 120 cuotas del crédito hipotecario en UVAs.
+
+**Ubicación:** `/cifra/hipoteca.php` (integrado en Cifra con autenticación)  
+**BD:** `gastos_personales.cuotas_hipoteca` (MariaDB)
+
+#### Información del Crédito
+
+| Dato | Valor |
+|------|-------|
+| **Banco** | Banco Entre Ríos |
+| **Acreedor** | GODOY PABLO ANDRES |
+| **Tipo** | Hipotecario |
+| **Moneda** | UVAs (Unidades de Valor Adquisitivo) |
+| **Total de cuotas** | 120 |
+| **Período** | Marzo 2026 - Febrero 2036 |
+| **Cuotas pagadas** | 4 (mar-jun 2026) |
+| **Cuotas impagas** | 116 (jul 2026 - feb 2036) |
+| **Monto total pagado** | 1,327.21 UVAs |
+| **Monto pendiente** | 60,254.91 UVAs |
+
+#### Acceso
+
+**URL:** `https://www.pablogodoy.com.ar/cifra/hipoteca.php`
+
+**Requisitos:**
+- ✅ Loguearse en Cifra primero
+- ✅ Menú de Cifra → "Cuotas Hipotecarias"
+
+**Protección:**
+- ✅ Autenticación vía sesión de Cifra (`require_auth_or_redirect()`)
+- ✅ API protegida con `require_auth_or_401()`
+
+#### Estructura de Base de Datos
+
+**Tabla:** `cuotas_hipoteca`
+
+| Campo | Tipo | Descripción |
+|-------|------|-------------|
+| `nro_cuota` | INT | Número 1-120 |
+| `estado` | ENUM | PAGADA / IMPAGA |
+| `fecha_vencimiento` | DATE | Fecha vto cuota |
+| `capital` | DECIMAL | Capital en UVAs |
+| `interes` | DECIMAL | Interés en UVAs |
+| `total_uva` | DECIMAL | Total en UVAs |
+| `valor_uva` | DECIMAL | Valor de 1 UVA en $ARS |
+| `total_pesos` | DECIMAL | Calculado: total_uva × valor_uva |
+| `fecha_pago` | DATE | Cuándo se pagó (auto) |
+
+#### Características
+
+✅ **Checkbox para cambiar estado** PAGADA ↔ IMPAGA  
+✅ **Editar valor_uva por cuota** (clic en la celda)  
+✅ **Total en pesos calculado automáticamente**  
+✅ **Estadísticas en tiempo real**  
+✅ **Historial de fecha_pago**  
+
+#### Valores de UVA (Actualización Mensual)
+
+**Conocidos:**
+- Mar-Jun 2026: $1,025.50 (4 cuotas pagadas)
+- Jul 2026: $2,020.51 (actualizado)
+- Ago 2026+: $0.00 (pendiente)
+
+**Procedimiento mensual:**
+1. Busca valor en: https://ikiwi.net.ar/calculadoras/uva-a-pesos/
+2. Abre hipoteca.php
+3. Haz clic en "Valor UVA ($)" de esa cuota
+4. Ingresa valor (ej: `2050.00`)
+5. Presiona Enter → se calcula automáticamente
+
+**Archivos de referencia:**
+- `actualizar_valor_uva_por_mes.sql` - Script para actualizar masivamente
+- `ACTUALIZAR_VALORES_UVA.md` - Guía completa
+
+#### Archivos del Proyecto
+
+```
+cifra/
+├── hipoteca.php             ← Interfaz (protegida con login)
+└── api/
+    └── hipoteca_api.php     ← API REST (autenticada)
+
+hipoteca/
+├── datos_cuotas.json        ← 120 cuotas (backup)
+├── 00_alterar_tabla.sql     ← Estructura de BD
+├── 02_insert_cuotas.sql     ← Datos iniciales
+├── actualizar_valor_uva_por_mes.sql ← Script actualización
+└── ACTUALIZAR_VALORES_UVA.md ← Guía mantenimiento
+```
+
+#### Flujo Típico de Uso
+
+1. **Loguearse en Cifra** → `https://www.pablogodoy.com.ar/cifra/`
+2. **Menú** → "Cuotas Hipotecarias"
+3. **Ver tabla** con 120 cuotas
+4. **Cada mes:**
+   - Pagar cuota en el banco
+   - Marcar como PAGADA (checkbox)
+   - Actualizar Valor UVA (clic en celda)
+   - Total en $ se calcula automáticamente
+
+#### Importancia
+
+- **UVAs:** Valor cambia diariamente según BCRA/inflación
+- **Tracking:** Crítico controlar pagos (vencimiento ~27 cada mes)
+- **Transparencia:** Ver deuda real en pesos (no solo UVAs)
+
+---
+
+---
+
 ## 🎯 Resumen Ejecutivo
 
 Este documento centraliza:
@@ -450,5 +563,35 @@ Este documento centraliza:
 3. **Línea de Comandos:** Referencia rápida de comandos Linux útiles
 4. **Viaje Planificado:** Toda la información del viaje a NZ-AUS 2027
 5. **SIGEDO:** Sistema de gestión electrónica de documentos para TCER
+6. **Crédito Hipotecario:** Gestor de 120 cuotas en UVAs (integrado en Cifra)
 
-**Última actualización:** 2026-07-03
+---
+
+## 🏗️ Cambios Recientes (2026-07-21)
+
+### Cuotas Hipotecarias - Implementación Completa ✅
+
+**Integración en Cifra:**
+- ✅ Página `hipoteca.php` con autenticación de Cifra
+- ✅ API `api/hipoteca_api.php` protegida
+- ✅ Enlace en menú de Cifra → "Cuotas Hipotecarias"
+- ✅ Base de datos MariaDB en `gastos_personales.cuotas_hipoteca`
+
+**Funcionalidades:**
+- ✅ Tabla de 120 cuotas con estado (PAGADA/IMPAGA)
+- ✅ Checkbox para cambiar estado (auto guarda fecha_pago)
+- ✅ Editar valor_uva por cuota individual (clic en la celda)
+- ✅ Total en pesos calculado automáticamente (total_uva × valor_uva)
+- ✅ Estadísticas en tiempo real
+
+**Valores de UVA:**
+- ✅ Mar-Jun 2026: $1,025.50 (pagadas)
+- ✅ Jul 2026: $2,020.51 (actualizado)
+- ✅ Ago 2026+: $0.00 (pendiente actualizar mensualmente)
+
+**Actualización mensual:**
+- Ingresa valor en https://ikiwi.net.ar/
+- Haz clic en celda "Valor UVA" en hipoteca.php
+- Se recalcula automáticamente
+
+**Última actualización:** 2026-07-21 / 21:00 ARS
