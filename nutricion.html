@@ -5,815 +5,491 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Plan de Nutrición - Digestión Liviana</title>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Poppins', sans-serif;
-            background: linear-gradient(135deg, #f5f9f8 0%, #e8f4f1 100%);
-            color: #2c3e50;
-            line-height: 1.6;
-            min-height: 100vh;
-        }
-
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-
-        /* Header */
-        header {
-            background: linear-gradient(135deg, #b8e6dd 0%, #a8d8e8 100%);
-            padding: 40px 20px;
-            border-radius: 20px;
-            text-align: center;
-            margin-bottom: 40px;
-            box-shadow: 0 8px 24px rgba(168, 216, 232, 0.2);
-        }
-
-        header h1 {
-            font-size: 2.5rem;
-            color: #1a5d52;
-            margin-bottom: 10px;
-            font-weight: 700;
-        }
-
-        header p {
-            font-size: 1.1rem;
-            color: #276666;
-            font-weight: 300;
-        }
-
-        /* Reglas de Oro */
-        .golden-rules {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-            margin-bottom: 40px;
-        }
-
-        .rule-box {
-            background: white;
-            padding: 25px;
-            border-radius: 15px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-            border-left: 5px solid #d4e8e4;
-        }
-
-        .rule-box.avoid {
-            border-left-color: #f5a5a5;
-        }
-
-        .rule-box.prioritize {
-            border-left-color: #a8d8e8;
-        }
-
-        .rule-box h3 {
-            font-size: 1.3rem;
-            margin-bottom: 15px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .rule-box.avoid h3 {
-            color: #c0493c;
-        }
-
-        .rule-box.prioritize h3 {
-            color: #2b8fa8;
-        }
-
-        .rule-box ul {
-            list-style: none;
-            font-size: 0.95rem;
-        }
-
-        .rule-box li {
-            padding: 8px 0;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .rule-box li::before {
-            content: "•";
-            font-size: 1.5rem;
-            font-weight: bold;
-        }
-
-        .rule-box.avoid li::before {
-            color: #f5a5a5;
-        }
-
-        .rule-box.prioritize li::before {
-            color: #a8d8e8;
-        }
-
-        /* Weekly Menu */
-        .menu-section h2 {
-            text-align: center;
-            font-size: 2rem;
-            color: #1a5d52;
-            margin-bottom: 30px;
-            font-weight: 700;
-        }
-
-        .days-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-            gap: 20px;
-            margin-bottom: 50px;
-        }
-
-        .day-card {
-            background: white;
-            border-radius: 15px;
-            overflow: hidden;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-        }
-
-        .day-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
-        }
-
-        .day-header {
-            background: linear-gradient(135deg, #c0e8e1 0%, #b8d9e8 100%);
-            padding: 20px;
-            text-align: center;
-            border-bottom: 3px solid #a8d8e8;
-        }
-
-        .day-header h3 {
-            font-size: 1.5rem;
-            color: #1a5d52;
-            font-weight: 600;
-        }
-
-        .meals {
-            padding: 20px;
-        }
-
-        .meal {
-            margin-bottom: 15px;
-            padding-bottom: 15px;
-            border-bottom: 1px solid #e8f4f1;
-        }
-
-        .meal:last-child {
-            margin-bottom: 0;
-            padding-bottom: 0;
-            border-bottom: none;
-        }
-
-        .meal-time {
-            font-size: 0.85rem;
-            font-weight: 600;
-            color: #2b8fa8;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-bottom: 5px;
-        }
-
-        .meal-content {
-            font-size: 0.95rem;
-            color: #3a4f5d;
-            line-height: 1.5;
-        }
-
-        .meal-icon {
-            display: inline-block;
-            margin-right: 5px;
-            font-size: 1.2rem;
-        }
-
-        /* Shopping List */
-        .shopping-section {
-            background: white;
-            padding: 40px;
-            border-radius: 15px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-        }
-
-        .shopping-section h2 {
-            font-size: 2rem;
-            color: #1a5d52;
-            margin-bottom: 30px;
-            text-align: center;
-            font-weight: 700;
-        }
-
-        .shopping-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 25px;
-        }
-
-        .shopping-category {
-            padding: 25px;
-            background: linear-gradient(135deg, #f9fdfb 0%, #eef8f5 100%);
-            border-radius: 12px;
-            border: 2px solid #d4e8e4;
-        }
-
-        .shopping-category h3 {
-            font-size: 1.2rem;
-            color: #1a5d52;
-            margin-bottom: 15px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-weight: 600;
-        }
-
-        .shopping-category ul {
-            list-style: none;
-            font-size: 0.95rem;
-            color: #3a4f5d;
-        }
-
-        .shopping-category li {
-            padding: 8px 0;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .shopping-category li::before {
-            content: "✓";
-            color: #a8d8e8;
-            font-weight: bold;
-            font-size: 1.1rem;
-        }
-
-        /* Meals with Images */
-        .meal-featured {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 25px;
-            margin-bottom: 50px;
-        }
-
-        .meal-card {
-            background: white;
-            border-radius: 12px;
-            overflow: hidden;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-            transition: transform 0.3s ease;
-        }
-
-        .meal-card:hover {
-            transform: translateY(-3px);
-        }
-
-        .meal-card-icon {
-            width: 100%;
-            height: 200px;
-            background: linear-gradient(135deg, #c0e8e1 0%, #b8d9e8 100%);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 4rem;
-            color: #1a5d52;
-        }
-
-        .meal-info {
-            padding: 20px;
-        }
-
-        .meal-info h4 {
-            font-size: 1.1rem;
-            color: #1a5d52;
-            margin-bottom: 8px;
-            font-weight: 600;
-        }
-
-        .meal-info p {
-            font-size: 0.9rem;
-            color: #5a6f77;
-        }
-
-        /* Tips Section */
-        .tips-section {
-            background: linear-gradient(135deg, #b8e6dd 0%, #a8d8e8 100%);
-            padding: 40px;
-            border-radius: 15px;
-            margin-bottom: 40px;
-            box-shadow: 0 8px 24px rgba(168, 216, 232, 0.2);
-        }
-
-        .tips-section h2 {
-            color: #1a5d52;
-            font-size: 1.8rem;
-            margin-bottom: 20px;
-            font-weight: 700;
-        }
-
-        .tips-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
-        }
-
-        .tip {
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            font-size: 0.95rem;
-            color: #3a4f5d;
-            line-height: 1.6;
-        }
-
-        .tip strong {
-            color: #1a5d52;
-            display: block;
-            margin-bottom: 8px;
-        }
-
-        /* Footer */
-        footer {
-            text-align: center;
-            padding: 30px 20px;
-            color: #7a8d94;
-            font-size: 0.9rem;
-            margin-top: 50px;
-        }
-
-        footer a {
-            color: #2b8fa8;
-            text-decoration: none;
-        }
-
-        footer a:hover {
-            text-decoration: underline;
-        }
-
-        /* Responsive */
-        @media (max-width: 768px) {
-            header h1 {
-                font-size: 1.8rem;
-            }
-
-            .golden-rules {
-                grid-template-columns: 1fr;
-            }
-
-            .shopping-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .meal-featured {
-                grid-template-columns: 1fr;
-            }
-
-            .tips-grid {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        /* Utilities */
-        .back-link {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            color: #2b8fa8;
-            text-decoration: none;
-            font-weight: 500;
-            margin-bottom: 30px;
-            transition: color 0.3s ease;
-        }
-
-        .back-link:hover {
-            color: #1a5d52;
-        }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f8f9fa; padding: 20px 0; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .header { text-align: center; margin-bottom: 30px; background: linear-gradient(135deg, #b8e6dd 0%, #a8d8e8 100%); padding: 40px; border-radius: 10px; color: #1a5d52; }
+        .header h1 { font-weight: 700; margin-bottom: 10px; }
+        .nav-tabs { border-bottom: 2px solid #dee2e6; }
+        .nav-link { color: #495057; border: none; border-bottom: 3px solid transparent; }
+        .nav-link.active { color: #1a5d52; border-bottom-color: #a8d8e8; background: transparent; }
+        .table { font-size: 0.9rem; }
+        .table thead { background-color: #2c3e50; color: white; }
+        .table td { vertical-align: middle; padding: 10px; }
+        .table tbody tr:hover { background-color: #f0f7f5; }
+        .table-responsive { overflow-x: auto; }
+        .shopping-category { background-color: #f0f7f5; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
+        .shopping-category h4 { color: #1a5d52; font-weight: 600; margin-bottom: 15px; }
+        .shopping-list { list-style: none; padding: 0; }
+        .shopping-list li { padding: 8px 0; border-bottom: 1px solid #d4e8e4; display: flex; align-items: center; }
+        .shopping-list li:last-child { border-bottom: none; }
+        .shopping-list li::before { content: "✓"; color: #a8d8e8; font-weight: bold; margin-right: 10px; font-size: 1.1rem; }
+        .back-link { display: inline-flex; align-items: center; gap: 8px; color: #2b8fa8; text-decoration: none; font-weight: 500; margin-bottom: 30px; }
+        .back-link:hover { color: #1a5d52; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <a href="/" class="back-link">← Volver al Panel</a>
+    <a href="/" class="back-link"><i class="bi bi-arrow-left"></i> Volver al Panel</a>
 
-    <!-- Header -->
-    <header>
-        <h1>🥗 Plan de Alimentación Semanal</h1>
-        <p>Guía Visual para Digestión Liviana</p>
-    </header>
-
-    <!-- Reglas de Oro -->
-    <div class="golden-rules">
-        <div class="rule-box avoid">
-            <h3>⚠️ Evitar</h3>
-            <ul>
-                <li>Lácteos grasos (quesos duros, leche entera)</li>
-                <li>Fibra dura (harinas integrales, semillas)</li>
-                <li>Alimentos fritos o grasosos</li>
-                <li>Mate fuerte y café concentrado</li>
-                <li>Bebidas gaseosas y alcohol</li>
-                <li>Picantes y condimentos fuertes</li>
-            </ul>
-        </div>
-        <div class="rule-box prioritize">
-            <h3>✅ Priorizar</h3>
-            <ul>
-                <li>Cocciones blandas (vapor, horno, hervido)</li>
-                <li>Agua natural en abundancia</li>
-                <li>Infusiones suaves (té, manzanilla)</li>
-                <li>Proteínas magras (pollo, pescado, huevo)</li>
-                <li>Almidones bien cocidos</li>
-                <li>Frutas y verduras sin fibra cruda</li>
-            </ul>
-        </div>
+    <div class="header">
+        <h1>🥗 Plan de Nutrición - Menú Semanal Detallado</h1>
+        <p class="mb-0">Digestión Liviana - 4 Semanas + Lista de Compras</p>
     </div>
 
-    <!-- Sección de Comidas Destacadas -->
-    <div style="margin-bottom: 50px;">
-        <h2 style="text-align: center; font-size: 2rem; color: #1a5d52; margin-bottom: 30px; font-weight: 700;">
-            🍽️ Platos Principales Recomendados
-        </h2>
-        <div class="meal-featured">
-            <div class="meal-card">
-                <div class="meal-card-icon">🍗</div>
-                <div class="meal-info">
-                    <h4>Pechuga a la Plancha</h4>
-                    <p>Con puré de calabaza sin cáscara. Proteína magra y fácil digestión.</p>
-                </div>
+    <ul class="nav nav-tabs mb-4" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="semana1-tab" data-bs-toggle="tab" data-bs-target="#semana1" type="button" role="tab">Semana 1</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="semana2-tab" data-bs-toggle="tab" data-bs-target="#semana2" type="button" role="tab">Semana 2</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="semana3-tab" data-bs-toggle="tab" data-bs-target="#semana3" type="button" role="tab">Semana 3</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="semana4-tab" data-bs-toggle="tab" data-bs-target="#semana4" type="button" role="tab">Semana 4</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="compras-tab" data-bs-toggle="tab" data-bs-target="#compras" type="button" role="tab">🛒 Lista de Compras</button>
+        </li>
+    </ul>
+
+    <div class="tab-content">
+        <!-- SEMANA 1 -->
+        <div class="tab-pane fade show active" id="semana1" role="tabpanel">
+            <div class="table-responsive">
+                <table class="table table-striped table-bordered align-middle">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Día</th>
+                            <th>Desayuno</th>
+                            <th>Colación Mañana</th>
+                            <th>Almuerzo</th>
+                            <th>Merienda</th>
+                            <th>Colación Tarde</th>
+                            <th>Cena</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Lunes</strong></td>
+                            <td>Té de desayuno + 2 galletitas de agua sin sal con queso Por Salut</td>
+                            <td>1 banana madura o 1 galleta de arroz</td>
+                            <td>Pechuga a la plancha + puré de calabaza (sin cáscara)</td>
+                            <td>Té de desayuno + 2 tostadas de pan blanco sin corteza</td>
+                            <td>1 banana madura</td>
+                            <td>Filete de merluza al vapor/horno + puré de papa</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Martes</strong></td>
+                            <td>Infusión suave (manzanilla/té) + tostadas de pan blanco</td>
+                            <td>Gelatina de manzana o frutilla</td>
+                            <td>Arroz blanco bien cocido con pollo desmenuzado</td>
+                            <td>Té de desayuno + 2 galletitas de agua</td>
+                            <td>Gelatina</td>
+                            <td>Omelette de 2 claras y 1 yema + zapallito pelado al vapor</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Miércoles</strong></td>
+                            <td>Té de desayuno + 2 galletitas de agua</td>
+                            <td>1 banana madura</td>
+                            <td>Pollo al horno (sin piel) + zanahoria hervida</td>
+                            <td>Té suave + tostadas de pan blanco</td>
+                            <td>1 banana madura</td>
+                            <td>1 lata de atún al natural + arroz blanco</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Jueves</strong></td>
+                            <td>Infusión suave + tostadas de pan blanco</td>
+                            <td>Gelatina</td>
+                            <td>Churrasquito de cerdo magro + puré de papa</td>
+                            <td>Té de desayuno + 2 galletitas de agua</td>
+                            <td>Gelatina</td>
+                            <td>Pechuga a la plancha + puré de calabaza</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Viernes</strong></td>
+                            <td>Té de desayuno + 2 galletitas de agua</td>
+                            <td>1 banana madura</td>
+                            <td>Filete de merluza + arroz blanco</td>
+                            <td>Té suave + tostadas de pan blanco</td>
+                            <td>1 banana madura</td>
+                            <td>Pollo hervido o a la plancha + zanahoria hervida</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Sábado</strong></td>
+                            <td>Infusión suave + tostadas de pan blanco</td>
+                            <td>Gelatina</td>
+                            <td>Zapallito relleno con carne picada magra y arroz</td>
+                            <td>Té de desayuno + 2 galletitas de agua</td>
+                            <td>Gelatina</td>
+                            <td>Omelette suave + puré de papa</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Domingo</strong></td>
+                            <td>Té de desayuno + 2 galletitas de agua</td>
+                            <td>1 banana madura</td>
+                            <td>Pollo al horno + calabaza y papas al horno (sin cáscara)</td>
+                            <td>Té suave + tostadas de pan blanco</td>
+                            <td>1 banana madura</td>
+                            <td>Atún al natural con arroz blanco y zanahoria hervida</td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
-            <div class="meal-card">
-                <div class="meal-card-icon">🐟</div>
-                <div class="meal-info">
-                    <h4>Filete de Merluza</h4>
-                    <p>Al vapor u horno con arroz blanco. Pescado blanco muy digestivo.</p>
-                </div>
+        </div>
+
+        <!-- SEMANA 2 -->
+        <div class="tab-pane fade" id="semana2" role="tabpanel">
+            <div class="table-responsive">
+                <table class="table table-striped table-bordered align-middle">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Día</th>
+                            <th>Desayuno</th>
+                            <th>Colación Mañana</th>
+                            <th>Almuerzo</th>
+                            <th>Merienda</th>
+                            <th>Colación Tarde</th>
+                            <th>Cena</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Lunes</strong></td>
+                            <td>Té de desayuno + tostadas de pan blanco sin corteza</td>
+                            <td>1 banana madura</td>
+                            <td>Filete de merluza al horno + puré de calabaza</td>
+                            <td>Manzanilla + 2 galletitas de agua</td>
+                            <td>Gelatina de manzana</td>
+                            <td>Pechuga a la plancha + arroz blanco bien cocido</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Martes</strong></td>
+                            <td>Infusión suave + 2 galletitas de agua con queso</td>
+                            <td>Gelatina</td>
+                            <td>Pollo desmenuzado con puré de papa y zanahoria</td>
+                            <td>Té de desayuno + tostadas de pan blanco</td>
+                            <td>1 banana madura</td>
+                            <td>Huevo a la copa + zapallito al vapor</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Miércoles</strong></td>
+                            <td>Té con leche descremada + tostadas</td>
+                            <td>1 galleta de arroz</td>
+                            <td>Carne picada magra con arroz blanco y calabaza</td>
+                            <td>Manzanilla + 2 galletitas de agua</td>
+                            <td>Gelatina</td>
+                            <td>Atún al natural + puré de papa</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Jueves</strong></td>
+                            <td>Té de desayuno + 2 galletitas de agua sin sal</td>
+                            <td>1 banana madura</td>
+                            <td>Filete de merluza al vapor + zanahoria hervida + arroz</td>
+                            <td>Té suave + tostadas de pan blanco</td>
+                            <td>Gelatina de frutilla</td>
+                            <td>Pechuga a la plancha + puré de calabaza sin cáscara</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Viernes</strong></td>
+                            <td>Infusión suave + tostadas de pan blanco</td>
+                            <td>1 banana madura</td>
+                            <td>Pollo al horno + papas y calabaza al horno</td>
+                            <td>Té de desayuno + 2 galletitas de agua</td>
+                            <td>Gelatina</td>
+                            <td>Churrasquito de cerdo + puré de papa suave</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Sábado</strong></td>
+                            <td>Té de desayuno + 2 galletitas de agua con queso Por Salut</td>
+                            <td>Gelatina</td>
+                            <td>Arroz blanco con pollo y zanahoria bien cocida</td>
+                            <td>Manzanilla + tostadas de pan blanco</td>
+                            <td>1 banana madura</td>
+                            <td>Omelette de 2 claras y 1 yema + zapallito pelado al vapor</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Domingo</strong></td>
+                            <td>Infusión suave + tostadas de pan blanco</td>
+                            <td>1 banana madura</td>
+                            <td>Filete de merluza + puré de papa + zanahoria</td>
+                            <td>Té suave + 2 galletitas de agua</td>
+                            <td>Gelatina</td>
+                            <td>Pechuga a la plancha + arroz blanco</td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
-            <div class="meal-card">
-                <div class="meal-card-icon">🍚</div>
-                <div class="meal-info">
-                    <h4>Arroz Blanco con Pollo</h4>
-                    <p>Bien cocido y suave. Combinación clásica y nutritiva.</p>
-                </div>
+        </div>
+
+        <!-- SEMANA 3 -->
+        <div class="tab-pane fade" id="semana3" role="tabpanel">
+            <div class="table-responsive">
+                <table class="table table-striped table-bordered align-middle">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Día</th>
+                            <th>Desayuno</th>
+                            <th>Colación Mañana</th>
+                            <th>Almuerzo</th>
+                            <th>Merienda</th>
+                            <th>Colación Tarde</th>
+                            <th>Cena</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Lunes</strong></td>
+                            <td>Té de desayuno + 2 galletitas de agua</td>
+                            <td>1 banana madura</td>
+                            <td>Pollo hervido desmenuzado + puré de calabaza</td>
+                            <td>Té de desayuno + tostadas de pan blanco sin corteza</td>
+                            <td>Gelatina</td>
+                            <td>Filete de merluza al horno + arroz blanco</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Martes</strong></td>
+                            <td>Manzanilla + tostadas de pan blanco</td>
+                            <td>Gelatina de manzana</td>
+                            <td>Carne picada magra con puré de papa + zanahoria</td>
+                            <td>Té suave + 2 galletitas de agua</td>
+                            <td>1 banana madura</td>
+                            <td>Huevo revuelto suave + zapallito al vapor</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Miércoles</strong></td>
+                            <td>Té con leche descremada + 2 galletitas</td>
+                            <td>1 galleta de arroz</td>
+                            <td>Filete de merluza + arroz blanco + zanahoria hervida</td>
+                            <td>Manzanilla + tostadas de pan blanco</td>
+                            <td>Gelatina</td>
+                            <td>Pechuga a la plancha + puré de calabaza</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Jueves</strong></td>
+                            <td>Té de desayuno + tostadas de pan blanco con queso</td>
+                            <td>1 banana madura</td>
+                            <td>Pollo al horno + papas y calabaza al horno</td>
+                            <td>Té de desayuno + 2 galletitas de agua</td>
+                            <td>Gelatina de frutilla</td>
+                            <td>Atún al natural + puré de papa</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Viernes</strong></td>
+                            <td>Infusión suave + 2 galletitas de agua</td>
+                            <td>Gelatina</td>
+                            <td>Arroz blanco con pollo bien cocido y zanahoria</td>
+                            <td>Té suave + tostadas de pan blanco</td>
+                            <td>1 banana madura</td>
+                            <td>Churrasquito de cerdo magro + puré de papa</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Sábado</strong></td>
+                            <td>Té de desayuno + 2 galletitas de agua con queso Por Salut</td>
+                            <td>1 banana madura</td>
+                            <td>Filete de merluza al vapor + calabaza y papa</td>
+                            <td>Manzanilla + tostadas de pan blanco</td>
+                            <td>Gelatina</td>
+                            <td>Omelette suave + zapallito pelado al vapor</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Domingo</strong></td>
+                            <td>Té de desayuno + tostadas de pan blanco</td>
+                            <td>Gelatina de manzana</td>
+                            <td>Pollo al horno + zanahoria hervida + puré de papa</td>
+                            <td>Té suave + 2 galletitas de agua</td>
+                            <td>1 banana madura</td>
+                            <td>Pechuga a la plancha + arroz blanco</td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
-            <div class="meal-card">
-                <div class="meal-card-icon">🍞</div>
-                <div class="meal-info">
-                    <h4>Tostadas de Pan Blanco</h4>
-                    <p>Sin corteza, secas o con queso Por Salut. Base de varios desayunos.</p>
-                </div>
+        </div>
+
+        <!-- SEMANA 4 -->
+        <div class="tab-pane fade" id="semana4" role="tabpanel">
+            <div class="table-responsive">
+                <table class="table table-striped table-bordered align-middle">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Día</th>
+                            <th>Desayuno</th>
+                            <th>Colación Mañana</th>
+                            <th>Almuerzo</th>
+                            <th>Merienda</th>
+                            <th>Colación Tarde</th>
+                            <th>Cena</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Lunes</strong></td>
+                            <td>Infusión suave + tostadas de pan blanco</td>
+                            <td>1 banana madura</td>
+                            <td>Filete de merluza al vapor + puré de calabaza</td>
+                            <td>Té de desayuno + 2 galletitas de agua</td>
+                            <td>Gelatina</td>
+                            <td>Pollo desmenuzado + arroz blanco bien cocido</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Martes</strong></td>
+                            <td>Té de desayuno + 2 galletitas de agua con queso</td>
+                            <td>Gelatina de manzana</td>
+                            <td>Carne picada magra + puré de papa + zanahoria</td>
+                            <td>Manzanilla + tostadas de pan blanco</td>
+                            <td>1 banana madura</td>
+                            <td>Huevo a la copa + zapallito al vapor</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Miércoles</strong></td>
+                            <td>Té con leche descremada + tostadas</td>
+                            <td>1 galleta de arroz</td>
+                            <td>Pollo al horno + papas y calabaza al horno</td>
+                            <td>Té suave + 2 galletitas de agua</td>
+                            <td>Gelatina</td>
+                            <td>Atún al natural + puré de papa</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Jueves</strong></td>
+                            <td>Té de desayuno + 2 galletitas de agua sin sal</td>
+                            <td>1 banana madura</td>
+                            <td>Filete de merluza + arroz blanco + zanahoria hervida</td>
+                            <td>Manzanilla + tostadas de pan blanco</td>
+                            <td>Gelatina de frutilla</td>
+                            <td>Pechuga a la plancha + puré de calabaza sin cáscara</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Viernes</strong></td>
+                            <td>Infusión suave + 2 galletitas de agua con queso</td>
+                            <td>Gelatina</td>
+                            <td>Arroz blanco con pollo desmenuzado + zanahoria</td>
+                            <td>Té de desayuno + tostadas de pan blanco</td>
+                            <td>1 banana madura</td>
+                            <td>Churrasquito de cerdo magro + puré de papa suave</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Sábado</strong></td>
+                            <td>Té de desayuno + 2 galletitas de agua con queso Por Salut</td>
+                            <td>1 banana madura</td>
+                            <td>Pollo al horno + calabaza y papas al horno</td>
+                            <td>Té suave + tostadas de pan blanco</td>
+                            <td>Gelatina</td>
+                            <td>Omelette de 2 claras y 1 yema + zapallito pelado</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Domingo</strong></td>
+                            <td>Manzanilla + tostadas de pan blanco</td>
+                            <td>Gelatina de manzana</td>
+                            <td>Filete de merluza al vapor + puré de papa + zanahoria</td>
+                            <td>Té de desayuno + 2 galletitas de agua</td>
+                            <td>1 banana madura</td>
+                            <td>Pechuga a la plancha + arroz blanco</td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
-            <div class="meal-card">
-                <div class="meal-card-icon">🫖</div>
-                <div class="meal-info">
-                    <h4>Infusiones Suaves</h4>
-                    <p>Té claro, manzanilla, té de menta. Beber con calma.</p>
+        </div>
+
+        <!-- LISTA DE COMPRAS -->
+        <div class="tab-pane fade" id="compras" role="tabpanel">
+            <div class="p-4">
+                <h3 class="mb-4">🛒 Lista de Compra Semanal</h3>
+
+                <div class="shopping-category">
+                    <h4>🥕 Verduras</h4>
+                    <ul class="shopping-list">
+                        <li>Papa blanca (2-3 kg)</li>
+                        <li>Calabaza/Zapallo (1 pieza mediana)</li>
+                        <li>Zapallito italiano (2-3 unidades)</li>
+                        <li>Zanahoria (1 kg)</li>
+                        <li>Cebolla blanca (1 unidad - poco uso)</li>
+                    </ul>
                 </div>
-            </div>
-            <div class="meal-card">
-                <div class="meal-card-icon">🍌</div>
-                <div class="meal-info">
-                    <h4>Banana Madura</h4>
-                    <p>Excelente entre comidas. Naturalmente suave y nutritiva.</p>
+
+                <div class="shopping-category">
+                    <h4>🍌 Frutas</h4>
+                    <ul class="shopping-list">
+                        <li>Banana madura (1 racimo - 7-8 unidades)</li>
+                    </ul>
+                </div>
+
+                <div class="shopping-category">
+                    <h4>🍗 Carnes y Proteínas</h4>
+                    <ul class="shopping-list">
+                        <li>Pechuga de pollo (1-1,2 kg)</li>
+                        <li>Filete de merluza (600-800 g)</li>
+                        <li>Huevos (1-2 docenas)</li>
+                        <li>Carne picada magra (cerdo/vaca) (500-600 g)</li>
+                        <li>Pollo entero o en piezas (1-1,5 kg)</li>
+                        <li>Atún al natural en lata (4-5 latas)</li>
+                    </ul>
+                </div>
+
+                <div class="shopping-category">
+                    <h4>🧀 Lácteos</h4>
+                    <ul class="shopping-list">
+                        <li>Queso Por Salut light (1 paquete)</li>
+                        <li>Leche descremada (1 litro - opcional)</li>
+                    </ul>
+                </div>
+
+                <div class="shopping-category">
+                    <h4>🍞 Panificados y Harinas</h4>
+                    <ul class="shopping-list">
+                        <li>Pan blanco fresco (1-2 panes)</li>
+                        <li>Galletas de agua sin sal (2-3 paquetes)</li>
+                        <li>Galletas de arroz (1 paquete)</li>
+                        <li>Arroz blanco grano largo (1 kg)</li>
+                    </ul>
+                </div>
+
+                <div class="shopping-category">
+                    <h4>🍮 Gelatinas y Postres</h4>
+                    <ul class="shopping-list">
+                        <li>Gelatina de manzana (2-3 sobre o polvo)</li>
+                        <li>Gelatina de frutilla (2-3 sobre o polvo)</li>
+                    </ul>
+                </div>
+
+                <div class="shopping-category">
+                    <h4>☕ Infusiones y Bebidas</h4>
+                    <ul class="shopping-list">
+                        <li>Té negro/de desayuno (bolsitas o suelto)</li>
+                        <li>Manzanilla (bolsitas o suelto)</li>
+                        <li>Agua natural (botellas o sifón)</li>
+                    </ul>
+                </div>
+
+                <div class="shopping-category">
+                    <h4>🧂 Almacén y Condimentos</h4>
+                    <ul class="shopping-list">
+                        <li>Aceite de oliva extra virgen (poco uso - 250 ml)</li>
+                        <li>Sal fina (cantidad pequeña - usar con moderación)</li>
+                    </ul>
+                </div>
+
+                <div class="alert alert-info mt-4" role="alert">
+                    <strong>💡 Recomendaciones:</strong>
+                    <ul class="mb-0 mt-2">
+                        <li>Las cantidades están calculadas para una semana.</li>
+                        <li>Compra pan fresco diariamente o congela los días que no uses.</li>
+                        <li>Las carnes deben estar refrigeradas. Compra fresco 2-3 veces por semana.</li>
+                        <li>Prefiere verduras frescas sobre congeladas (mejor digestión).</li>
+                        <li>Usa agua filtrada o destilada si es posible.</li>
+                        <li>Evita productos con aditivos, colorantes o conservantes innecesarios.</li>
+                    </ul>
                 </div>
             </div>
         </div>
     </div>
-
-    <!-- Menú Semanal -->
-    <div class="menu-section">
-        <h2>📅 Menú Semanal Detallado</h2>
-        <div class="days-grid">
-            <!-- Lunes -->
-            <div class="day-card">
-                <div class="day-header">
-                    <h3>Lunes</h3>
-                </div>
-                <div class="meals">
-                    <div class="meal">
-                        <div class="meal-time">🌅 Desayuno</div>
-                        <div class="meal-content">Té claro + 2 galletitas de agua sin sal con queso Por Salut</div>
-                    </div>
-                    <div class="meal">
-                        <div class="meal-time">☕ Colación Mañana</div>
-                        <div class="meal-content">1 banana madura o 1 galleta de arroz</div>
-                    </div>
-                    <div class="meal">
-                        <div class="meal-time">🍽️ Almuerzo</div>
-                        <div class="meal-content">Pechuga a la plancha + puré de calabaza (sin cáscara)</div>
-                    </div>
-                    <div class="meal">
-                        <div class="meal-time">🫖 Merienda</div>
-                        <div class="meal-content">Té claro + 2 tostadas de pan blanco sin corteza</div>
-                    </div>
-                    <div class="meal">
-                        <div class="meal-time">🍌 Colación Tarde</div>
-                        <div class="meal-content">1 banana madura</div>
-                    </div>
-                    <div class="meal">
-                        <div class="meal-time">🌙 Cena</div>
-                        <div class="meal-content">Filete de merluza al vapor/horno + puré de papa</div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Martes -->
-            <div class="day-card">
-                <div class="day-header">
-                    <h3>Martes</h3>
-                </div>
-                <div class="meals">
-                    <div class="meal">
-                        <div class="meal-time">🌅 Desayuno</div>
-                        <div class="meal-content">Infusión suave (manzanilla/té) + tostadas de pan blanco</div>
-                    </div>
-                    <div class="meal">
-                        <div class="meal-time">☕ Colación Mañana</div>
-                        <div class="meal-content">Gelatina de manzana o frutilla</div>
-                    </div>
-                    <div class="meal">
-                        <div class="meal-time">🍽️ Almuerzo</div>
-                        <div class="meal-content">Arroz blanco bien cocido con pollo desmenuzado</div>
-                    </div>
-                    <div class="meal">
-                        <div class="meal-time">🫖 Merienda</div>
-                        <div class="meal-content">Té claro + 2 galletitas de agua</div>
-                    </div>
-                    <div class="meal">
-                        <div class="meal-time">🍮 Colación Tarde</div>
-                        <div class="meal-content">Gelatina</div>
-                    </div>
-                    <div class="meal">
-                        <div class="meal-time">🌙 Cena</div>
-                        <div class="meal-content">Omelette de 2 claras y 1 yema + zapallito pelado al vapor</div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Miércoles -->
-            <div class="day-card">
-                <div class="day-header">
-                    <h3>Miércoles</h3>
-                </div>
-                <div class="meals">
-                    <div class="meal">
-                        <div class="meal-time">🌅 Desayuno</div>
-                        <div class="meal-content">Té claro + 2 galletitas de agua</div>
-                    </div>
-                    <div class="meal">
-                        <div class="meal-time">☕ Colación Mañana</div>
-                        <div class="meal-content">1 banana madura</div>
-                    </div>
-                    <div class="meal">
-                        <div class="meal-time">🍽️ Almuerzo</div>
-                        <div class="meal-content">Pollo al horno (sin piel) + zanahoria hervida</div>
-                    </div>
-                    <div class="meal">
-                        <div class="meal-time">🫖 Merienda</div>
-                        <div class="meal-content">Té suave + tostadas de pan blanco</div>
-                    </div>
-                    <div class="meal">
-                        <div class="meal-time">🍌 Colación Tarde</div>
-                        <div class="meal-content">1 banana madura</div>
-                    </div>
-                    <div class="meal">
-                        <div class="meal-time">🌙 Cena</div>
-                        <div class="meal-content">1 lata de atún al natural + arroz blanco</div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Jueves -->
-            <div class="day-card">
-                <div class="day-header">
-                    <h3>Jueves</h3>
-                </div>
-                <div class="meals">
-                    <div class="meal">
-                        <div class="meal-time">🌅 Desayuno</div>
-                        <div class="meal-content">Infusión suave + tostadas de pan blanco</div>
-                    </div>
-                    <div class="meal">
-                        <div class="meal-time">☕ Colación Mañana</div>
-                        <div class="meal-content">Gelatina</div>
-                    </div>
-                    <div class="meal">
-                        <div class="meal-time">🍽️ Almuerzo</div>
-                        <div class="meal-content">Churrasquito de cerdo magro + puré de papa</div>
-                    </div>
-                    <div class="meal">
-                        <div class="meal-time">🫖 Merienda</div>
-                        <div class="meal-content">Té claro + 2 galletitas de agua</div>
-                    </div>
-                    <div class="meal">
-                        <div class="meal-time">🍮 Colación Tarde</div>
-                        <div class="meal-content">Gelatina</div>
-                    </div>
-                    <div class="meal">
-                        <div class="meal-time">🌙 Cena</div>
-                        <div class="meal-content">Pechuga a la plancha + puré de calabaza</div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Viernes -->
-            <div class="day-card">
-                <div class="day-header">
-                    <h3>Viernes</h3>
-                </div>
-                <div class="meals">
-                    <div class="meal">
-                        <div class="meal-time">🌅 Desayuno</div>
-                        <div class="meal-content">Té claro + 2 galletitas de agua</div>
-                    </div>
-                    <div class="meal">
-                        <div class="meal-time">☕ Colación Mañana</div>
-                        <div class="meal-content">1 banana madura</div>
-                    </div>
-                    <div class="meal">
-                        <div class="meal-time">🍽️ Almuerzo</div>
-                        <div class="meal-content">Filete de merluza + arroz blanco</div>
-                    </div>
-                    <div class="meal">
-                        <div class="meal-time">🫖 Merienda</div>
-                        <div class="meal-content">Té suave + tostadas de pan blanco</div>
-                    </div>
-                    <div class="meal">
-                        <div class="meal-time">🍌 Colación Tarde</div>
-                        <div class="meal-content">1 banana madura</div>
-                    </div>
-                    <div class="meal">
-                        <div class="meal-time">🌙 Cena</div>
-                        <div class="meal-content">Pollo hervido o a la plancha + zanahoria hervida</div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Sábado -->
-            <div class="day-card">
-                <div class="day-header">
-                    <h3>Sábado</h3>
-                </div>
-                <div class="meals">
-                    <div class="meal">
-                        <div class="meal-time">🌅 Desayuno</div>
-                        <div class="meal-content">Infusión suave + tostadas de pan blanco</div>
-                    </div>
-                    <div class="meal">
-                        <div class="meal-time">☕ Colación Mañana</div>
-                        <div class="meal-content">Gelatina</div>
-                    </div>
-                    <div class="meal">
-                        <div class="meal-time">🍽️ Almuerzo</div>
-                        <div class="meal-content">Zapallito relleno con carne picada magra y arroz</div>
-                    </div>
-                    <div class="meal">
-                        <div class="meal-time">🫖 Merienda</div>
-                        <div class="meal-content">Té claro + 2 galletitas de agua</div>
-                    </div>
-                    <div class="meal">
-                        <div class="meal-time">🍮 Colación Tarde</div>
-                        <div class="meal-content">Gelatina</div>
-                    </div>
-                    <div class="meal">
-                        <div class="meal-time">🌙 Cena</div>
-                        <div class="meal-content">Omelette suave + puré de papa</div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Domingo -->
-            <div class="day-card">
-                <div class="day-header">
-                    <h3>Domingo</h3>
-                </div>
-                <div class="meals">
-                    <div class="meal">
-                        <div class="meal-time">🌅 Desayuno</div>
-                        <div class="meal-content">Té claro + 2 galletitas de agua</div>
-                    </div>
-                    <div class="meal">
-                        <div class="meal-time">☕ Colación Mañana</div>
-                        <div class="meal-content">1 banana madura</div>
-                    </div>
-                    <div class="meal">
-                        <div class="meal-time">🍽️ Almuerzo</div>
-                        <div class="meal-content">Pollo al horno + calabaza y papas al horno (sin cáscara)</div>
-                    </div>
-                    <div class="meal">
-                        <div class="meal-time">🫖 Merienda</div>
-                        <div class="meal-content">Té suave + tostadas de pan blanco</div>
-                    </div>
-                    <div class="meal">
-                        <div class="meal-time">🍌 Colación Tarde</div>
-                        <div class="meal-content">1 banana madura</div>
-                    </div>
-                    <div class="meal">
-                        <div class="meal-time">🌙 Cena</div>
-                        <div class="meal-content">Atún al natural con arroz blanco y zanahoria hervida</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Consejos y Tips -->
-    <div class="tips-section">
-        <h2>💡 Consejos Prácticos</h2>
-        <div class="tips-grid">
-            <div class="tip">
-                <strong>🥄 Cocciones</strong>
-                Prefiere vapor, horno suave u hervido. Evita frituras, salteados con mucho aceite y carbón.
-            </div>
-            <div class="tip">
-                <strong>💧 Hidratación</strong>
-                Bebe agua natural tibia entre comidas. Mínimo 8 vasos diarios. Evita bebidas heladas.
-            </div>
-            <div class="tip">
-                <strong>🕐 Horarios</strong>
-                Come en horarios regulares. No ayunes más de 3-4 horas. Cenas 2-3 horas antes de dormir.
-            </div>
-            <div class="tip">
-                <strong>🍴 Masticación</strong>
-                Come lentamente, mastica bien (20+ veces). Tu estómago no tiene dientes, ayuda con la digestión.
-            </div>
-            <div class="tip">
-                <strong>🌡️ Temperatura</strong>
-                Prefiere alimentos tibiamente templados. Evita extremos de temperatura (muy caliente o muy frío).
-            </div>
-            <div class="tip">
-                <strong>⚖️ Porciones</strong>
-                Porciones moderadas. No llenes demasiado el estómago. Es mejor más comidas pequeñas que pocas grandes.
-            </div>
-        </div>
-    </div>
-
-    <!-- Lista de Compras -->
-    <div class="shopping-section">
-        <h2>🛒 Lista de Compras Semanal</h2>
-        <div class="shopping-grid">
-            <div class="shopping-category">
-                <h3>🥫 Almacén</h3>
-                <ul>
-                    <li>Arroz blanco (grano largo)</li>
-                    <li>Pasta blanca</li>
-                    <li>Pan blanco (fresco)</li>
-                    <li>Galletas de agua sin sal</li>
-                    <li>Galletitas de arroz</li>
-                    <li>Atún al natural (3-4 latas)</li>
-                    <li>Té claro (bolsitas)</li>
-                    <li>Té de manzanilla</li>
-                    <li>Gelatina (varios sabores)</li>
-                    <li>Aceite de oliva (poco uso)</li>
-                    <li>Sal (poca cantidad)</li>
-                </ul>
-            </div>
-            <div class="shopping-category">
-                <h3>🍗 Frescos (Carnicería)</h3>
-                <ul>
-                    <li>Pechuga de pollo (800g)</li>
-                    <li>Filete de merluza (600g)</li>
-                    <li>Huevos (docena)</li>
-                    <li>Carne picada magra (cerdo/vaca)</li>
-                    <li>Pollo entero o en piezas</li>
-                </ul>
-            </div>
-            <div class="shopping-category">
-                <h3>🥕 Verdulería</h3>
-                <ul>
-                    <li>Papa blanca (2kg)</li>
-                    <li>Calabaza/Zapallo (1 pieza)</li>
-                    <li>Zapallito italiano (2-3)</li>
-                    <li>Zanahoria (1kg)</li>
-                    <li>Cebolla blanca (poco uso)</li>
-                    <li>Banana madura (1 racimo)</li>
-                    <li>Manzana (roja, 4-5)</li>
-                </ul>
-            </div>
-            <div class="shopping-category">
-                <h3>🧀 Lácteos</h3>
-                <ul>
-                    <li>Queso Por Salut (light)</li>
-                    <li>Leche descremada (opcional)</li>
-                    <li>Yogur natural sin azúcar (opcional)</li>
-                </ul>
-            </div>
-        </div>
-    </div>
-
-    <!-- Footer -->
-    <footer>
-        <p>📋 Plan personalizado para digestión liviana</p>
-        <p>Consulta con tu médico o nutricionista antes de cambios significativos en tu dieta</p>
-        <p style="margin-top: 20px;">
-            <a href="/">← Volver al Panel Principal</a>
-        </p>
-    </footer>
 </div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
 </body>
 </html>
