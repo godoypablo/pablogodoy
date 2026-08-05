@@ -1170,18 +1170,50 @@ CONSEJOS IMPORTANTES:
 ✓ Porciones moderadas
 ✓ Servir tibio, no muy caliente ni frío`;
 
-    navigator.clipboard.writeText(texto).then(() => {
-        const btn = event.target.closest('button');
-        const textOriginal = btn.innerHTML;
-        btn.innerHTML = '<i class="bi bi-check-circle"></i> ¡Copiado!';
-        btn.style.backgroundColor = '#28a745';
-        setTimeout(() => {
-            btn.innerHTML = textOriginal;
-            btn.style.backgroundColor = 'var(--color-primary)';
-        }, 2000);
-    }).catch(() => {
-        alert('No se pudo copiar. Intenta seleccionar y copiar manualmente.');
-    });
+    const btn = document.querySelector('[onclick="copiarAlTexto()"]');
+
+    // Intentar con Clipboard API (navegadores modernos)
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(texto).then(() => {
+            mostrarConfirmacion(btn);
+        }).catch(() => {
+            copiarFallback(texto, btn);
+        });
+    } else {
+        copiarFallback(texto, btn);
+    }
+}
+
+function copiarFallback(texto, btn) {
+    // Método alternativo para navegadores antiguos
+    const textarea = document.createElement('textarea');
+    textarea.value = texto;
+    textarea.style.position = 'fixed';
+    textarea.style.opacity = '0';
+    document.body.appendChild(textarea);
+
+    try {
+        textarea.select();
+        document.execCommand('copy');
+        mostrarConfirmacion(btn);
+    } catch (err) {
+        alert('No se pudo copiar. Por favor, selecciona el texto manualmente y copia con Ctrl+C');
+    } finally {
+        document.body.removeChild(textarea);
+    }
+}
+
+function mostrarConfirmacion(btn) {
+    const textOriginal = btn.innerHTML;
+    btn.innerHTML = '<i class="bi bi-check-circle"></i> ¡Copiado!';
+    btn.style.backgroundColor = '#28a745';
+    btn.disabled = true;
+
+    setTimeout(() => {
+        btn.innerHTML = textOriginal;
+        btn.style.backgroundColor = 'var(--color-primary)';
+        btn.disabled = false;
+    }, 2500);
 }
 </script>
 
