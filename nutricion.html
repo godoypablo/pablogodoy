@@ -272,6 +272,9 @@
         <li class="nav-item" role="presentation">
             <button class="nav-link" id="compras-tab" data-bs-toggle="tab" data-bs-target="#compras" type="button" role="tab">🛒 Compras</button>
         </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="almuerzos-tab" data-bs-toggle="tab" data-bs-target="#almuerzos" type="button" role="tab">📋 Almuerzos</button>
+        </li>
     </ul>
 
     <div class="tab-content">
@@ -921,10 +924,106 @@
                 </div>
             </div>
         </div>
+
+        <!-- ALMUERZOS PARA COMPARTIR -->
+        <div class="tab-pane fade" id="almuerzos" role="tabpanel">
+            <div class="p-3 p-md-4">
+                <h3 class="mb-3" style="color: var(--color-primary); font-weight: 700;">📋 Almuerzos - Semana 1</h3>
+                <p class="text-muted small">Copiar y enviar por WhatsApp a tu mamá</p>
+
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-body" style="background: white; border-radius: 12px; border-left: 5px solid var(--color-accent);">
+                        <p class="mb-0" style="font-size: 0.95rem; line-height: 2; color: #333; font-family: 'Courier New', monospace;">
+                            <strong>ALMUERZOS SEMANA 1</strong><br><br>
+
+                            🔹 <strong>Lunes</strong><br>
+                            Pechuga a la plancha + puré de calabaza (sin cáscara)<br><br>
+
+                            🔹 <strong>Martes</strong><br>
+                            Arroz blanco bien cocido con pollo desmenuzado<br><br>
+
+                            🔹 <strong>Miércoles</strong><br>
+                            Pollo al horno (sin piel) + zanahoria hervida<br><br>
+
+                            🔹 <strong>Jueves</strong><br>
+                            Churrasquito de cerdo magro + puré de papa<br><br>
+
+                            🔹 <strong>Viernes</strong><br>
+                            Filete de merluza + arroz blanco<br><br>
+
+                            🔹 <strong>Sábado</strong><br>
+                            Zapallito relleno con carne picada magra y arroz<br><br>
+
+                            🔹 <strong>Domingo</strong><br>
+                            Pollo al horno + calabaza y papas al horno (sin cáscara)
+                        </p>
+                    </div>
+                </div>
+
+                <div class="alert" style="background-color: #fff3cd; border: none; border-radius: 12px;">
+                    <strong style="color: #856404;">💡 Consejos para tu mamá:</strong>
+                    <ul style="margin-bottom: 0; margin-top: 10px; color: #856404;">
+                        <li>Todas las cocciones deben ser suaves (al horno, vapor, hervido)</li>
+                        <li>Evitar frituras y aceites en exceso</li>
+                        <li>Las verduras bien cocidas/blandas</li>
+                        <li>Las carnes sin piel (pollo) y magras (cerdo/vaca)</li>
+                        <li>Porciones moderadas</li>
+                        <li>Sirve tibio, no muy caliente ni frío</li>
+                    </ul>
+                </div>
+
+                <button class="btn btn-primary w-100 mt-3" onclick="copiarAlTexto()" style="background-color: var(--color-primary); border: none; border-radius: 8px;">
+                    <i class="bi bi-clipboard"></i> Copiar para WhatsApp
+                </button>
+            </div>
+        </div>
     </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+function copiarAlTexto() {
+    const texto = `ALMUERZOS SEMANA 1
+
+🔹 Lunes
+Pechuga a la plancha + puré de calabaza (sin cáscara)
+
+🔹 Martes
+Arroz blanco bien cocido con pollo desmenuzado
+
+🔹 Miércoles
+Pollo al horno (sin piel) + zanahoria hervida
+
+🔹 Jueves
+Churrasquito de cerdo magro + puré de papa
+
+🔹 Viernes
+Filete de merluza + arroz blanco
+
+🔹 Sábado
+Zapallito relleno con carne picada magra y arroz
+
+🔹 Domingo
+Pollo al horno + calabaza y papas al horno (sin cáscara)
+
+---
+Todas las cocciones suaves (al horno, vapor, hervido)
+Verduras bien cocidas, carnes sin piel, porciones moderadas`;
+
+    navigator.clipboard.writeText(texto).then(() => {
+        const btn = event.target.closest('button');
+        const textOriginal = btn.innerHTML;
+        btn.innerHTML = '<i class="bi bi-check-circle"></i> ¡Copiado!';
+        btn.style.backgroundColor = '#28a745';
+        setTimeout(() => {
+            btn.innerHTML = textOriginal;
+            btn.style.backgroundColor = 'var(--color-primary)';
+        }, 2000);
+    }).catch(() => {
+        alert('No se pudo copiar. Intenta seleccionar y copiar manualmente.');
+    });
+}
+</script>
 
 </body>
 </html>
