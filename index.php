@@ -91,7 +91,7 @@
 
         <div class="col-md-6 col-lg-4">
             <a href="nutricion.html" class="card h-100 border-0 shadow-sm dashboard-card p-4 text-center">
-                <div class="icon-box color-nutricion"><i class="bi bi-leaf"></i></div>
+                <div class="icon-box color-nutricion"><i class="bi bi-apple"></i></div>
                 <h3 class="h5 fw-bold">Nutrición</h3>
                 <p class="text-secondary small">Plan de Alimentación Personalizado</p>
             </a>
