@@ -29,6 +29,7 @@
         .color-linux { color: #87cf3e; }  /* Verde Mint */
         .color-github { color: #24292e; }
         .color-sigedo { color: #006BA6; } /* Azul TCER SIGEDO */
+        .color-nutricion { color: #a8d8e8; } /* Azul suave - Nutrición */
     </style>
 </head>
 <body>
@@ -85,6 +86,14 @@
                 <div class="icon-box color-sigedo"><i class="bi bi-file-earmark-text"></i></div>
                 <h3 class="h5 fw-bold">SIGEDO</h3>
                 <p class="text-secondary small">Gestión Electrónica de Documentos</p>
+            </a>
+        </div>
+
+        <div class="col-md-6 col-lg-4">
+            <a href="nutricion.html" class="card h-100 border-0 shadow-sm dashboard-card p-4 text-center">
+                <div class="icon-box color-nutricion"><i class="bi bi-leaf"></i></div>
+                <h3 class="h5 fw-bold">Nutrición</h3>
+                <p class="text-secondary small">Plan de Alimentación Personalizado</p>
             </a>
         </div>
     </div>
