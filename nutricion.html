@@ -244,6 +244,68 @@
             background: var(--color-accent);
             border-radius: 2px;
         }
+
+        /* TARJETAS DE ENTRENAMIENTO */
+        .workout-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            border-left: 5px solid var(--color-accent);
+            overflow: hidden;
+        }
+
+        .workout-header {
+            background: linear-gradient(135deg, #f0f7f5 0%, #e8f4f1 100%);
+            padding: 16px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .workout-header h4 {
+            color: var(--color-primary);
+            font-weight: 700;
+            margin-bottom: 4px;
+            font-size: 1rem;
+        }
+
+        .workout-body {
+            padding: 16px;
+        }
+
+        .exercise {
+            margin-bottom: 14px;
+            padding-bottom: 14px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .exercise:last-child {
+            margin-bottom: 0;
+            padding-bottom: 0;
+            border-bottom: none;
+        }
+
+        .exercise strong {
+            color: var(--color-primary);
+            display: block;
+            margin-bottom: 4px;
+            font-size: 0.95rem;
+        }
+
+        .exercise p {
+            margin: 0;
+            font-size: 0.85rem;
+            color: #666;
+            line-height: 1.5;
+        }
+
+        .alert ul {
+            margin: 0;
+            padding-left: 20px;
+        }
+
+        .alert li {
+            margin-bottom: 6px;
+            font-size: 0.9rem;
+        }
     </style>
 </head>
 <body>
@@ -286,6 +348,9 @@
         </li>
         <li class="nav-item" role="presentation">
             <button class="nav-link" id="almuerzos-tab" data-bs-toggle="tab" data-bs-target="#almuerzos" type="button" role="tab">📋 Almuerzos</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="entrenamiento-tab" data-bs-toggle="tab" data-bs-target="#entrenamiento" type="button" role="tab">🏋️ Entrenamiento</button>
         </li>
     </ul>
 
@@ -1420,6 +1485,190 @@
                 <button class="btn btn-primary w-100 mt-3" onclick="copiarAlTexto()" style="background-color: var(--color-primary); border: none; border-radius: 8px; padding: 10px; font-weight: 600;">
                     <i class="bi bi-clipboard"></i> Copiar para WhatsApp
                 </button>
+            </div>
+        </div>
+
+        <!-- PLAN DE ENTRENAMIENTO -->
+        <div class="tab-pane fade" id="entrenamiento" role="tabpanel">
+            <div class="p-3 p-md-4">
+                <h3 class="mb-3" style="color: var(--color-primary); font-weight: 700;">🏋️ Plan de Entrenamiento Adaptado (4 Días)</h3>
+                <p class="text-muted small">Optimizado para programadores con postura en PC</p>
+
+                <!-- LUNES -->
+                <div class="workout-card mb-4">
+                    <div class="workout-header">
+                        <h4>📅 LUNES - Torso (Enfoque Fuerza y Postura)</h4>
+                        <p class="text-muted small mb-0">Abre el pecho y fortalece la espalda alta (contrarrestar postura de tipeo)</p>
+                    </div>
+                    <div class="workout-body">
+                        <div class="exercise">
+                            <strong>🔹 Jalones al pecho en polea (Espalda)</strong>
+                            <p>3-4 series de 10 reps • Controlá la bajada</p>
+                        </div>
+                        <div class="exercise">
+                            <strong>🔹 Press de banca (Pecho)</strong>
+                            <p>3-4 series de 10 reps • Cuidá que los hombros no se vayan hacia adelante</p>
+                        </div>
+                        <div class="exercise">
+                            <strong>🔹 Remo sentado en polea baja (Espalda alta/Postura)</strong>
+                            <p>3 series de 12 reps • ⭐ Crucial para contrarrestar la postura</p>
+                        </div>
+                        <div class="exercise">
+                            <strong>🔹 Cinta en gimnasio</strong>
+                            <p>20-30 minutos a ritmo moderado (5.5)</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- MARTES -->
+                <div class="workout-card mb-4">
+                    <div class="workout-header">
+                        <h4>📅 MARTES - Piernas y Zona Media</h4>
+                        <p class="text-muted small mb-0">Mayor impacto metabólico • Quemar glucosa eficientemente</p>
+                    </div>
+                    <div class="workout-body">
+                        <div class="exercise">
+                            <strong>🔹 Prensa de piernas a 45° / Sentadilla en máquina (Cuádriceps/Glúteos)</strong>
+                            <p>3-4 series de 10 reps</p>
+                        </div>
+                        <div class="exercise">
+                            <strong>🔹 Camilla de Isquiotibiales (Posterior)</strong>
+                            <p>3-4 series de 10 reps</p>
+                        </div>
+                        <div class="exercise">
+                            <strong>🔹 Extensiones de Cuádriceps en máquina</strong>
+                            <p>3 series de 12 reps</p>
+                        </div>
+                        <div class="exercise">
+                            <strong>🔹 Plancha abdominal (Core)</strong>
+                            <p>3 series manteniendo 20-30 seg • ⭐ Protege zona lumbar de tantas horas de silla</p>
+                        </div>
+                        <div class="exercise">
+                            <strong>🔹 Cinta en gimnasio</strong>
+                            <p>20 minutos a ritmo moderado (5.5)</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- MIÉRCOLES -->
+                <div class="workout-card mb-4" style="background: #f9f9f9; border-left-color: #ff9800;">
+                    <div class="workout-header">
+                        <h4>📅 MIÉRCOLES - Descanso Total ⭐</h4>
+                        <p class="text-muted small mb-0">Clave para recuperarse y que los músculos crezcan</p>
+                    </div>
+                </div>
+
+                <!-- JUEVES -->
+                <div class="workout-card mb-4">
+                    <div class="workout-header">
+                        <h4>📅 JUEVES - Torso (Estímulo Variado)</h4>
+                        <p class="text-muted small mb-0">Diferente al lunes para evitar meseta muscular</p>
+                    </div>
+                    <div class="workout-body">
+                        <div class="exercise">
+                            <strong>🔹 Press inclinado con mancuernas/máquina (Pecho)</strong>
+                            <p>3-4 series de 10 reps</p>
+                        </div>
+                        <div class="exercise">
+                            <strong>🔹 Remo con mancuerna a una mano/máquina (Espalda)</strong>
+                            <p>3-4 series de 10 reps</p>
+                        </div>
+                        <div class="exercise">
+                            <strong>🔹 Vuelos laterales con mancuernas (Hombros)</strong>
+                            <p>3 series de 12 reps • Peso ligero, enfocado en movilidad</p>
+                        </div>
+                        <div class="exercise">
+                            <strong>🔹 Cinta en gimnasio</strong>
+                            <p>20-30 minutos a ritmo moderado (5.5)</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- VIERNES -->
+                <div class="workout-card mb-4">
+                    <div class="workout-header">
+                        <h4>📅 VIERNES - Piernas y Brazos/Core</h4>
+                        <p class="text-muted small mb-0">Cierre fuerte de semana</p>
+                    </div>
+                    <div class="workout-body">
+                        <div class="exercise">
+                            <strong>🔹 Sillón de Cuádriceps</strong>
+                            <p>3-4 series de 12 reps</p>
+                        </div>
+                        <div class="exercise">
+                            <strong>🔹 Camilla de Isquiotibiales</strong>
+                            <p>3-4 series de 12 reps</p>
+                        </div>
+                        <div class="exercise">
+                            <strong>🔹 Bíceps con mancuernas + Extensiones de Tríceps en polea (Supereserie)</strong>
+                            <p>3 series de 12 reps • Uno tras otro para ganar eficiencia</p>
+                        </div>
+                        <div class="exercise">
+                            <strong>🔹 Plancha abdominal</strong>
+                            <p>3 series de 20-30 seg</p>
+                        </div>
+                        <div class="exercise">
+                            <strong>🔹 Cinta en gimnasio</strong>
+                            <p>20 minutos a ritmo moderado (5.5)</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ESTRATEGIA ANTI-SEDENTARISMO -->
+                <div class="alert mt-4" style="background-color: #e3f2fd; border-left: 5px solid #1976d2; color: #0d47a1;">
+                    <h5 style="color: #1565c0; font-weight: 700; margin-bottom: 12px;">💻 Estrategia "Anti-Sedentarismo" para Programadores</h5>
+                    <p><strong>Problema:</strong> Una hora al día en gimnasio no compensa 8-10 horas seguidas sentado. El movimiento constante es clave para optimizar glucosa.</p>
+
+                    <div style="margin-top: 12px;">
+                        <p style="font-weight: 600; margin-bottom: 8px;">✓ Caminatas cortas post-comida (CLAVE):</p>
+                        <ul style="margin-left: 20px; margin-bottom: 12px;">
+                            <li>Programá alarma para levantarte 5-10 min después de almorzar o cenar</li>
+                            <li>Caminata ligera por la manzana o la casa</li>
+                            <li>⭐ Reduce drásticamente picos de glucosa en sangre</li>
+                            <li>Alivia el trabajo del páncreas y el hígado</li>
+                        </ul>
+                    </div>
+
+                    <div>
+                        <p style="font-weight: 600; margin-bottom: 8px;">✓ Pausas activas cada 2 horas:</p>
+                        <ul style="margin-left: 20px;">
+                            <li>Levantate por 2 minutos</li>
+                            <li>Estira flexores de cadera (se acortan al estar sentado)</li>
+                            <li>Mové los hombros hacia atrás</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- PAUTAS DE PROGRESIÓN -->
+                <div class="alert mt-3" style="background-color: #f3e5f5; border-left: 5px solid #7b1fa2; color: #4a148c;">
+                    <h5 style="color: #6a1b9a; font-weight: 700; margin-bottom: 12px;">📋 Pautas de Progresión Segura</h5>
+
+                    <div style="margin-bottom: 12px;">
+                        <p style="font-weight: 600; margin-bottom: 8px;">⚠️ Primeras 2 semanas = Reconocimiento:</p>
+                        <ul style="margin-left: 20px; margin-bottom: 12px;">
+                            <li>NO busques llegar al fallo muscular</li>
+                            <li>Quedate siempre con la sensación de poder hacer 2-3 reps más</li>
+                            <li>Objetivo: Dominar la técnica, no la intensidad</li>
+                        </ul>
+                    </div>
+
+                    <div style="margin-bottom: 12px;">
+                        <p style="font-weight: 600; margin-bottom: 8px;">💧 Hidratación:</p>
+                        <ul style="margin-left: 20px; margin-bottom: 12px;">
+                            <li>Botella de agua siempre en el escritorio y en el gimnasio</li>
+                            <li>El hígado necesita hidratación para procesar toxinas y metabolizar grasas</li>
+                        </ul>
+                    </div>
+
+                    <div>
+                        <p style="font-weight: 600; margin-bottom: 8px;">👀 Monitoreo:</p>
+                        <ul style="margin-left: 20px;">
+                            <li>Mantené al profesor del gimnasio informado sobre cómo responde tu cuerpo</li>
+                            <li>⭐ Prioridad: Espalda baja y rodillas</li>
+                            <li>Corregir posturas a tiempo evita lesiones crónicas</li>
+                        </ul>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
