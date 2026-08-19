@@ -553,6 +553,134 @@ hipoteca/
 
 ---
 
+### 7. Gym - Rutina de Entrenamientos
+
+**Objetivo:** Rutina de gimnasia profesional con 3 entrenamientos semanales (Lunes, Miércoles, Viernes) con imágenes de ejercicios y guía de recomendaciones.
+
+**Ubicación:** `/home/pablog/git/PabloGodoy/gym.html`  
+**Acceso:** `https://www.pablogodoy.com.ar/gym.html`
+
+#### Características Principales
+
+✅ **Diseño Responsivo Profesional**
+- Header limpio con fondo blanco y borde rojo
+- Tabs interactivos en móvil (sin scroll innecesario)
+- Grid adaptativo para desktop (3 días juntos)
+
+✅ **3 Días de Entrenamiento**
+- **Lunes:** Pecho & Espalda (7 ejercicios)
+- **Miércoles:** Piernas & Cuadríceps (6 ejercicios)
+- **Viernes:** Hombros & Brazos (7 ejercicios)
+
+✅ **19 Imágenes de Ejercicios**
+- Cada ejercicio con foto profesional recortada
+- Fondo blanco puro para mejor visualización
+- Dimensiones optimizadas: 220px altura, object-fit: contain
+
+✅ **Cards de Ejercicios**
+- Nombre del ejercicio
+- Equipamiento necesario (badges con colores)
+- Descripción breve de cada movimiento
+- Efecto hover suave y elegante
+
+✅ **Sección de Recomendaciones**
+- Calentar antes de entrenar
+- Mantener buena hidratación
+- Alimentación balanceada
+- Descanso y recuperación
+- Progresión gradual
+- Forma correcta prioritaria
+
+#### Estructura de Archivos
+
+```
+/home/pablog/git/PabloGodoy/
+
+gym.html                      ← Página principal (profesional)
+index.php                     ← Panel principal (actualizado con tarjeta Gym)
+
+gym-images/                   ← 19 imágenes de ejercicios
+├── press_banca_con_barra.png
+├── remo_con_barra.png
+├── press_inclinado_con_mancuernas.png
+├── remo_con_mancuerna.png
+├── aperturas_en_maquina.png
+├── jalon_al_pecho_con_agarre_supino.png
+├── face_pulls.png
+├── sentadilla_con_barra.png
+├── peso_muerto_rumano.png
+├── prensa_inclinada.png
+├── curl_femoral_acostado.png
+├── extension_de_cuadriceps.png
+├── elevacion_de_talones_en_maquina.png
+├── press_militar_con_barra.png
+├── elevaciones_laterales_con_mancuernas.png
+├── curl_con_barra.png
+├── fondos_en_maquina.png
+├── curl_martillo_con_mancuernas.png
+└── extension_de_triceps_en_polea.png
+```
+
+#### Tecnología y Estilos
+
+| Aspecto | Detalle |
+|---------|---------|
+| **Framework** | Bootstrap 5.3.0 (responsividad) |
+| **Tipografía** | Inter (Google Fonts) |
+| **Colores** | Rojo vibrante (#ff6b6b), blanco, grises |
+| **Grid** | CSS Grid adaptativo (300px mín. en desktop, 1 columna en móvil) |
+| **Animaciones** | Smooth transitions, hover effects, slide-in animations |
+| **Tabs en Móvil** | JavaScript vanilla para cambio de días sin scroll |
+
+#### Estilo Visual
+
+**Header:**
+- Fondo blanco con borde rojo inferior
+- Título grande (3.2rem) sin emoji
+- Subtitle en mayúsculas: "ENTRENAMIENTO COMPLETO"
+
+**Cards de Ejercicios:**
+- Borde superior de 3px con gradiente rojo
+- Sombra sutil (0 2px 8px rgba)
+- Hover: elevación (-8px) con sombra aumentada
+- Imagen 220px con fondo blanco
+- Contenido con padding generoso (1.75rem)
+
+**Responsividad:**
+- **Desktop:** Muestra 3 días simultáneamente
+- **Móvil (<768px):** 
+  - Tabs para cambiar entre días
+  - Solo muestra un día a la vez
+  - 1 columna de ejercicios
+  - Sin scroll innecesario
+
+#### Cambios Recientes (2026-08-19)
+
+**Versión 1.0 - Release Inicial:**
+- ✅ Creación de gym.html con diseño profesional
+- ✅ Extracción y procesamiento de 19 imágenes
+- ✅ Integración en index.php (nueva tarjeta "Gym")
+- ✅ Optimización de imágenes: fondo blanco, objeto-fit: contain
+- ✅ Mejora de responsividad: tabs interactivos para móvil
+- ✅ Rediseño visual: header limpio, colores profesionales
+
+**Última actualización:** 2026-08-19 / Agosto
+
+#### Uso en el Servidor
+
+Simplemente ejecuta en el hosting:
+
+```bash
+git pull
+```
+
+Los cambios incluyen:
+- `gym.html` (página completa)
+- `index.php` (actualizado con tarjeta)
+- `gym-images/` (carpeta con 19 imágenes)
+
+---
+
 ---
 
 ## 🎯 Resumen Ejecutivo
@@ -564,34 +692,33 @@ Este documento centraliza:
 4. **Viaje Planificado:** Toda la información del viaje a NZ-AUS 2027
 5. **SIGEDO:** Sistema de gestión electrónica de documentos para TCER
 6. **Crédito Hipotecario:** Gestor de 120 cuotas en UVAs (integrado en Cifra)
+7. **Gym:** Rutina profesional de entrenamientos (Lunes, Miércoles, Viernes)
 
 ---
 
-## 🏗️ Cambios Recientes (2026-07-21)
+## 🏗️ Cambios Recientes (2026-08-19)
 
-### Cuotas Hipotecarias - Implementación Completa ✅
+### Gym - Rutina de Entrenamientos ✅ NUEVO
 
-**Integración en Cifra:**
-- ✅ Página `hipoteca.php` con autenticación de Cifra
-- ✅ API `api/hipoteca_api.php` protegida
-- ✅ Enlace en menú de Cifra → "Cuotas Hipotecarias"
-- ✅ Base de datos MariaDB en `gastos_personales.cuotas_hipoteca`
+**Implementación Completa:**
+- ✅ Página `gym.html` con diseño profesional
+- ✅ 19 imágenes de ejercicios (recortadas y optimizadas)
+- ✅ Tarjeta "Gym" agregada en `index.php`
+- ✅ Responsividad completa (desktop + móvil con tabs)
 
-**Funcionalidades:**
-- ✅ Tabla de 120 cuotas con estado (PAGADA/IMPAGA)
-- ✅ Checkbox para cambiar estado (auto guarda fecha_pago)
-- ✅ Editar valor_uva por cuota individual (clic en la celda)
-- ✅ Total en pesos calculado automáticamente (total_uva × valor_uva)
-- ✅ Estadísticas en tiempo real
+**Características:**
+- ✅ 3 días de entrenamiento (Lunes, Miércoles, Viernes)
+- ✅ 20 ejercicios totales con imágenes profesionales
+- ✅ Tabs interactivos en móvil (sin scroll innecesario)
+- ✅ Cards elegantes con hover effects
+- ✅ Sección de recomendaciones con 6 consejos
+- ✅ Diseño moderno: header blanco, bordes rojos, tipografía Inter
 
-**Valores de UVA:**
-- ✅ Mar-Jun 2026: $1,025.50 (pagadas)
-- ✅ Jul 2026: $2,020.51 (actualizado)
-- ✅ Ago 2026+: $0.00 (pendiente actualizar mensualmente)
+**Estilos Implementados:**
+- ✅ CSS Grid responsivo (300px mín. desktop, 1 col móvil)
+- ✅ Animaciones suaves (slideInUp, hover transforms)
+- ✅ Paleta profesional: rojo (#ff6b6b), blanco, grises
+- ✅ Badges de equipamiento con colores
+- ✅ JavaScript vanilla para tabs sin dependencias
 
-**Actualización mensual:**
-- Ingresa valor en https://ikiwi.net.ar/
-- Haz clic en celda "Valor UVA" en hipoteca.php
-- Se recalcula automáticamente
-
-**Última actualización:** 2026-07-21 / 21:00 ARS
+**Última actualización:** 2026-08-19 / Agosto
