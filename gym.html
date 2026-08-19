@@ -9,207 +9,344 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
             font-family: 'Inter', sans-serif;
-            background: linear-gradient(135deg, #1a2a3a 0%, #16213e 100%);
-            color: #333;
+            background: #f8f9fa;
+            color: #2c3e50;
             min-height: 100vh;
+            line-height: 1.6;
         }
 
         header {
-            background: linear-gradient(135deg, #1a2a3a 0%, #0f1419 100%);
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
             color: white;
-            padding: 2rem 0;
-            margin-bottom: 2rem;
-            border-bottom: 3px solid #4ecdc4;
+            padding: 3rem 0;
+            margin-bottom: 3rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 300px;
+            height: 300px;
+            background: radial-gradient(circle, rgba(255, 107, 107, 0.1) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+
+        header .container {
+            position: relative;
+            z-index: 1;
         }
 
         header h1 {
-            font-weight: 700;
-            font-size: 2.5rem;
+            font-weight: 800;
+            font-size: 2.8rem;
             margin-bottom: 0.5rem;
+            letter-spacing: -0.5px;
         }
 
         header .subtitle {
-            color: #4ecdc4;
+            color: #ff6b6b;
             font-weight: 600;
-            letter-spacing: 1px;
-            font-size: 0.95rem;
+            letter-spacing: 2px;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+        }
+
+        .back-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: white;
+            text-decoration: none;
+            font-weight: 600;
+            padding: 0.75rem 1.5rem;
+            margin-bottom: 2rem;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .back-button:hover {
+            background: rgba(255, 107, 107, 0.2);
+            border-color: #ff6b6b;
+            color: #ff6b6b;
+            transform: translateX(-2px);
         }
 
         .day-section {
-            margin-bottom: 3rem;
+            margin-bottom: 4rem;
+            animation: slideInUp 0.6s ease-out;
+        }
+
+        @keyframes slideInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         .day-header {
-            background: linear-gradient(90deg, #ff6b6b 0%, #ff8787 100%);
+            background: linear-gradient(135deg, #ff6b6b 0%, #ff5252 100%);
             color: white;
-            padding: 1rem 1.5rem;
-            border-radius: 10px 10px 0 0;
+            padding: 1.25rem 2rem;
+            border-radius: 12px 12px 0 0;
             font-weight: 700;
-            font-size: 1.3rem;
+            font-size: 1.25rem;
             display: flex;
             align-items: center;
-            gap: 0.75rem;
+            gap: 1rem;
+            box-shadow: 0 4px 15px rgba(255, 107, 107, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .day-header::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 4px;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.3);
         }
 
         .day-header i {
-            font-size: 1.5rem;
+            font-size: 1.3rem;
         }
 
         .exercises-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            gap: 1.5rem;
-            margin-top: 1.5rem;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+            padding: 0 0 2rem 0;
         }
 
         .exercise-card {
             background: white;
-            border-radius: 12px;
+            border-radius: 14px;
             overflow: hidden;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-            transition: all 0.3s ease;
-            border-left: 4px solid #ff6b6b;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
             display: flex;
             flex-direction: column;
-            gap: 0;
+            height: 100%;
+            border: 1px solid rgba(0, 0, 0, 0.05);
+            position: relative;
+        }
+
+        .exercise-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #ff6b6b, #ff5252);
         }
 
         .exercise-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 8px 20px rgba(255, 107, 107, 0.2);
+            transform: translateY(-8px);
+            box-shadow: 0 12px 32px rgba(255, 107, 107, 0.15);
         }
 
         .exercise-image {
             width: 100%;
-            height: 200px;
+            height: 220px;
             object-fit: contain;
-            background: #ffffff;
-            padding: 0.75rem;
+            background: linear-gradient(135deg, #f5f5f5 0%, #efefef 100%);
+            padding: 1rem;
             box-sizing: border-box;
+            transition: background 0.3s ease;
+        }
+
+        .exercise-card:hover .exercise-image {
+            background: linear-gradient(135deg, #f0f0f0 0%, #e5e5e5 100%);
         }
 
         .exercise-content {
-            padding: 1.5rem;
+            padding: 1.75rem;
             display: flex;
             flex-direction: column;
-            gap: 0.75rem;
+            gap: 0.9rem;
             flex-grow: 1;
         }
 
         .exercise-name {
             font-weight: 700;
-            font-size: 1.1rem;
-            color: #1a2a3a;
+            font-size: 1.05rem;
+            color: #1a1a2e;
             margin: 0;
+            line-height: 1.3;
         }
 
         .exercise-equipment {
-            font-size: 0.85rem;
+            font-size: 0.8rem;
             color: #666;
             display: flex;
-            align-items: center;
+            flex-wrap: wrap;
             gap: 0.5rem;
+            align-items: center;
         }
 
         .equipment-badge {
             display: inline-block;
-            background: #f0f0f0;
-            padding: 0.25rem 0.75rem;
+            background: linear-gradient(135deg, #ff6b6b 0%, #ff5252 100%);
+            padding: 0.35rem 0.85rem;
             border-radius: 20px;
-            font-size: 0.75rem;
-            font-weight: 600;
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: white;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .exercise-card p {
+            font-size: 0.9rem;
             color: #666;
+            margin: 0;
+            line-height: 1.5;
         }
 
         /* Colores por tipo de ejercicio */
-        .exercise-chest { border-left-color: #ff6b6b; }
-        .exercise-back { border-left-color: #4ecdc4; }
-        .exercise-legs { border-left-color: #95e1d3; }
-        .exercise-shoulders { border-left-color: #ffa502; }
-        .exercise-arms { border-left-color: #a8d8ea; }
+        .exercise-chest::before { background: linear-gradient(90deg, #ff6b6b, #ff5252); }
+        .exercise-back::before { background: linear-gradient(90deg, #4ecdc4, #45b7b0); }
+        .exercise-legs::before { background: linear-gradient(90deg, #95e1d3, #7dd8c7); }
+        .exercise-shoulders::before { background: linear-gradient(90deg, #ffa502, #ff9500); }
+        .exercise-arms::before { background: linear-gradient(90deg, #a8d8ea, #7fc8e0); }
 
         .recommendations {
             background: white;
-            border-radius: 12px;
-            padding: 2rem;
-            margin-top: 3rem;
+            border-radius: 14px;
+            padding: 2.5rem;
+            margin-top: 4rem;
             margin-bottom: 3rem;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            border: 1px solid rgba(0, 0, 0, 0.05);
         }
 
         .recommendations h3 {
-            color: #1a2a3a;
-            font-weight: 700;
-            margin-bottom: 1.5rem;
+            color: #1a1a2e;
+            font-weight: 800;
+            margin-bottom: 2rem;
             display: flex;
             align-items: center;
-            gap: 0.75rem;
+            gap: 1rem;
+            font-size: 1.4rem;
         }
 
         .recommendations-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 1.5rem;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 2rem;
         }
 
         .rec-item {
             display: flex;
-            gap: 1rem;
+            gap: 1.25rem;
             align-items: flex-start;
+            padding: 1.5rem;
+            background: linear-gradient(135deg, rgba(255, 107, 107, 0.05) 0%, rgba(255, 107, 107, 0.02) 100%);
+            border-radius: 10px;
+            border-left: 3px solid #ff6b6b;
+            transition: all 0.3s ease;
+        }
+
+        .rec-item:hover {
+            background: linear-gradient(135deg, rgba(255, 107, 107, 0.1) 0%, rgba(255, 107, 107, 0.05) 100%);
+            transform: translateX(4px);
         }
 
         .rec-icon {
-            font-size: 1.5rem;
+            font-size: 1.8rem;
             color: #ff6b6b;
             flex-shrink: 0;
+            margin-top: 0.2rem;
         }
 
         .rec-text {
             font-size: 0.95rem;
             color: #555;
-            line-height: 1.5;
+            line-height: 1.6;
         }
 
         .rec-text strong {
-            color: #1a2a3a;
+            color: #1a1a2e;
             display: block;
-            margin-bottom: 0.25rem;
+            margin-bottom: 0.35rem;
+            font-weight: 700;
         }
 
-        .back-button {
-            display: inline-block;
-            margin-bottom: 2rem;
-            color: white;
-            text-decoration: none;
+        footer {
+            text-align: center;
+            padding: 3rem 0;
+            border-top: 1px solid rgba(0, 0, 0, 0.05);
+            margin-top: 4rem;
+        }
+
+        footer p {
+            margin: 0.5rem 0;
             font-weight: 600;
-            transition: color 0.3s ease;
+            color: #2c3e50;
         }
 
-        .back-button:hover {
-            color: #4ecdc4;
-        }
-
-        .back-button i {
-            margin-right: 0.5rem;
+        footer .footer-subtitle {
+            color: #ff6b6b;
+            font-size: 0.9rem;
+            font-weight: 600;
         }
 
         @media (max-width: 768px) {
+            header {
+                padding: 2rem 0;
+                margin-bottom: 2rem;
+            }
+
             header h1 {
                 font-size: 2rem;
             }
 
             header .subtitle {
-                font-size: 0.85rem;
+                font-size: 0.8rem;
+                letter-spacing: 1px;
             }
 
             .exercises-grid {
                 grid-template-columns: 1fr;
+                gap: 1.5rem;
             }
 
             .recommendations-grid {
                 grid-template-columns: 1fr;
+            }
+
+            .day-header {
+                padding: 1rem 1.5rem;
+                font-size: 1.1rem;
+            }
+
+            .exercise-image {
+                height: 180px;
+            }
+
+            .recommendations {
+                padding: 1.5rem;
             }
         }
     </style>
@@ -531,9 +668,9 @@
         </div>
     </div>
 
-    <footer style="text-align: center; color: white; margin-top: 3rem; padding-bottom: 2rem;">
-        <p style="font-weight: 600; margin-bottom: 0.5rem;">💪 DISCIPLINA HOY, RESULTADOS SIEMPRE</p>
-        <p style="font-size: 0.9rem; color: #4ecdc4;">Última actualización: Agosto 2026</p>
+    <footer>
+        <p>💪 DISCIPLINA HOY, RESULTADOS SIEMPRE</p>
+        <p class="footer-subtitle">Última actualización: Agosto 2026</p>
     </footer>
 </div>
 
