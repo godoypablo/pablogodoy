@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rutina de Gimnasio - Pablo Godoy</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #1a2a3a 0%, #16213e 100%);
+            color: #333;
+            min-height: 100vh;
+        }
+
+        header {
+            background: linear-gradient(135deg, #1a2a3a 0%, #0f1419 100%);
+            color: white;
+            padding: 2rem 0;
+            margin-bottom: 2rem;
+            border-bottom: 3px solid #4ecdc4;
+        }
+
+        header h1 {
+            font-weight: 700;
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        header .subtitle {
+            color: #4ecdc4;
+            font-weight: 600;
+            letter-spacing: 1px;
+            font-size: 0.95rem;
+        }
+
+        .day-section {
+            margin-bottom: 3rem;
+        }
+
+        .day-header {
+            background: linear-gradient(90deg, #ff6b6b 0%, #ff8787 100%);
+            color: white;
+            padding: 1rem 1.5rem;
+            border-radius: 10px 10px 0 0;
+            font-weight: 700;
+            font-size: 1.3rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .day-header i {
+            font-size: 1.5rem;
+        }
+
+        .exercises-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-top: 1.5rem;
+        }
+
+        .exercise-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            border-left: 4px solid #ff6b6b;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .exercise-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 20px rgba(255, 107, 107, 0.2);
+        }
+
+        .exercise-icon {
+            font-size: 2rem;
+            color: #ff6b6b;
+        }
+
+        .exercise-name {
+            font-weight: 700;
+            font-size: 1.1rem;
+            color: #1a2a3a;
+            margin: 0;
+        }
+
+        .exercise-equipment {
+            font-size: 0.85rem;
+            color: #666;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .equipment-badge {
+            display: inline-block;
+            background: #f0f0f0;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #666;
+        }
+
+        /* Colores por tipo de ejercicio */
+        .exercise-chest { border-left-color: #ff6b6b; }
+        .exercise-back { border-left-color: #4ecdc4; }
+        .exercise-legs { border-left-color: #95e1d3; }
+        .exercise-shoulders { border-left-color: #ffa502; }
+        .exercise-arms { border-left-color: #a8d8ea; }
+
+        .recommendations {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            margin-top: 3rem;
+            margin-bottom: 3rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .recommendations h3 {
+            color: #1a2a3a;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .recommendations-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .rec-item {
+            display: flex;
+            gap: 1rem;
+            align-items: flex-start;
+        }
+
+        .rec-icon {
+            font-size: 1.5rem;
+            color: #ff6b6b;
+            flex-shrink: 0;
+        }
+
+        .rec-text {
+            font-size: 0.95rem;
+            color: #555;
+            line-height: 1.5;
+        }
+
+        .rec-text strong {
+            color: #1a2a3a;
+            display: block;
+            margin-bottom: 0.25rem;
+        }
+
+        .back-button {
+            display: inline-block;
+            margin-bottom: 2rem;
+            color: white;
+            text-decoration: none;
+            font-weight: 600;
+            transition: color 0.3s ease;
+        }
+
+        .back-button:hover {
+            color: #4ecdc4;
+        }
+
+        .back-button i {
+            margin-right: 0.5rem;
+        }
+
+        @media (max-width: 768px) {
+            header h1 {
+                font-size: 2rem;
+            }
+
+            header .subtitle {
+                font-size: 0.85rem;
+            }
+
+            .exercises-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .recommendations-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container py-4">
+    <a href="index.php" class="back-button">
+        <i class="bi bi-arrow-left"></i> Volver
+    </a>
+
+    <header>
+        <div class="container">
+            <h1>💪 Rutina de Gimnasio</h1>
+            <p class="subtitle">FUERZA • MÚSCULO • BIENESTAR</p>
+        </div>
+    </header>
+
+    <!-- LUNES -->
+    <div class="day-section">
+        <div class="day-header">
+            <i class="bi bi-calendar-check"></i> Lunes - Pecho & Espalda
+        </div>
+        <div class="exercises-grid">
+            <div class="exercise-card exercise-chest">
+                <div class="exercise-icon"><i class="bi bi-person-arms-up"></i></div>
+                <h4 class="exercise-name">Press Banca con Barra</h4>
+                <p class="exercise-equipment">
+                    <span class="equipment-badge">Barras</span>
+                    <span class="equipment-badge">Banco</span>
+                </p>
+                <p style="font-size: 0.9rem; color: #666; margin: 0;">Ejercicio fundamental para construir fuerza y masa en pecho.</p>
+            </div>
+
+            <div class="exercise-card exercise-back">
+                <div class="exercise-icon"><i class="bi bi-arrow-counterclockwise"></i></div>
+                <h4 class="exercise-name">Remo con Barra</h4>
+                <p class="exercise-equipment">
+                    <span class="equipment-badge">Barras</span>
+                </p>
+                <p style="font-size: 0.9rem; color: #666; margin: 0;">Trabaja espalda media y musculatura del dorsal ancho.</p>
+            </div>
+
+            <div class="exercise-card exercise-chest">
+                <div class="exercise-icon"><i class="bi bi-person-arms-up"></i></div>
+                <h4 class="exercise-name">Press Inclinado con Mancuernas</h4>
+                <p class="exercise-equipment">
+                    <span class="equipment-badge">Mancuernas</span>
+                    <span class="equipment-badge">Banco</span>
+                </p>
+                <p style="font-size: 0.9rem; color: #666; margin: 0;">Enfatiza la porción superior del pecho.</p>
+            </div>
+
+            <div class="exercise-card exercise-back">
+                <div class="exercise-icon"><i class="bi bi-arrow-counterclockwise"></i></div>
+                <h4 class="exercise-name">Remo con Mancuerna</h4>
+                <p class="exercise-equipment">
+                    <span class="equipment-badge">Mancuernas</span>
+                </p>
+                <p style="font-size: 0.9rem; color: #666; margin: 0;">Trabajo unilateral para corregir desequilibrios.</p>
+            </div>
+
+            <div class="exercise-card exercise-chest">
+                <div class="exercise-icon"><i class="bi bi-bezier2"></i></div>
+                <h4 class="exercise-name">Aperturas en Máquina</h4>
+                <p class="exercise-equipment">
+                    <span class="equipment-badge">Máquina</span>
+                </p>
+                <p style="font-size: 0.9rem; color: #666; margin: 0;">Aislamiento puro para terminar el pecho.</p>
+            </div>
+
+            <div class="exercise-card exercise-back">
+                <div class="exercise-icon"><i class="bi bi-arrow-down-up"></i></div>
+                <h4 class="exercise-name">Jalón al Pecho con Agarre Supino</h4>
+                <p class="exercise-equipment">
+                    <span class="equipment-badge">Máquina</span>
+                </p>
+                <p style="font-size: 0.9rem; color: #666; margin: 0;">Excelente para espalda baja y brazos.</p>
+            </div>
+
+            <div class="exercise-card exercise-back">
+                <div class="exercise-icon"><i class="bi bi-arrow-down"></i></div>
+                <h4 class="exercise-name">Face Pulls</h4>
+                <p class="exercise-equipment">
+                    <span class="equipment-badge">Polea</span>
+                </p>
+                <p style="font-size: 0.9rem; color: #666; margin: 0;">Fortalece espalda posterior y evita lesiones.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- MIÉRCOLES -->
+    <div class="day-section">
+        <div class="day-header">
+            <i class="bi bi-calendar-check"></i> Miércoles - Piernas & Cuadríceps
+        </div>
+        <div class="exercises-grid">
+            <div class="exercise-card exercise-legs">
+                <div class="exercise-icon"><i class="bi bi-person-standing"></i></div>
+                <h4 class="exercise-name">Sentadilla con Barra</h4>
+                <p class="exercise-equipment">
+                    <span class="equipment-badge">Barras</span>
+                    <span class="equipment-badge">Rack</span>
+                </p>
+                <p style="font-size: 0.9rem; color: #666; margin: 0;">El rey de los ejercicios de piernas, trabaja todo.</p>
+            </div>
+
+            <div class="exercise-card exercise-legs">
+                <div class="exercise-icon"><i class="bi bi-arrow-down-up"></i></div>
+                <h4 class="exercise-name">Peso Muerto Rumano</h4>
+                <p class="exercise-equipment">
+                    <span class="equipment-badge">Barras</span>
+                </p>
+                <p style="font-size: 0.9rem; color: #666; margin: 0;">Fortalece glúteos y posterior del muslo.</p>
+            </div>
+
+            <div class="exercise-card exercise-legs">
+                <div class="exercise-icon"><i class="bi bi-person-standing"></i></div>
+                <h4 class="exercise-name">Prensa Inclinada</h4>
+                <p class="exercise-equipment">
+                    <span class="equipment-badge">Máquina</span>
+                </p>
+                <p style="font-size: 0.9rem; color: #666; margin: 0;">Alternativa segura para cuadríceps e isquios.</p>
+            </div>
+
+            <div class="exercise-card exercise-legs">
+                <div class="exercise-icon"><i class="bi bi-arrow-down"></i></div>
+                <h4 class="exercise-name">Curl Femoral Acostado</h4>
+                <p class="exercise-equipment">
+                    <span class="equipment-badge">Máquina</span>
+                </p>
+                <p style="font-size: 0.9rem; color: #666; margin: 0;">Aislamiento para los isquiotibiales.</p>
+            </div>
+
+            <div class="exercise-card exercise-legs">
+                <div class="exercise-icon"><i class="bi bi-arrow-up"></i></div>
+                <h4 class="exercise-name">Extensión de Cuadríceps</h4>
+                <p class="exercise-equipment">
+                    <span class="equipment-badge">Máquina</span>
+                </p>
+                <p style="font-size: 0.9rem; color: #666; margin: 0;">Aislamiento puro para el cuadríceps.</p>
+            </div>
+
+            <div class="exercise-card exercise-legs">
+                <div class="exercise-icon"><i class="bi bi-arrow-up"></i></div>
+                <h4 class="exercise-name">Elevación de Talones en Máquina</h4>
+                <p class="exercise-equipment">
+                    <span class="equipment-badge">Máquina</span>
+                </p>
+                <p style="font-size: 0.9rem; color: #666; margin: 0;">Fortalece pantorrillas y estabilidad.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- VIERNES -->
+    <div class="day-section">
+        <div class="day-header">
+            <i class="bi bi-calendar-check"></i> Viernes - Hombros & Brazos
+        </div>
+        <div class="exercises-grid">
+            <div class="exercise-card exercise-shoulders">
+                <div class="exercise-icon"><i class="bi bi-arrow-up"></i></div>
+                <h4 class="exercise-name">Press Militar con Barra</h4>
+                <p class="exercise-equipment">
+                    <span class="equipment-badge">Barras</span>
+                </p>
+                <p style="font-size: 0.9rem; color: #666; margin: 0;">Ejercicio fundamental para hombros y core.</p>
+            </div>
+
+            <div class="exercise-card exercise-shoulders">
+                <div class="exercise-icon"><i class="bi bi-arrow-up-right"></i></div>
+                <h4 class="exercise-name">Elevaciones Laterales con Mancuernas</h4>
+                <p class="exercise-equipment">
+                    <span class="equipment-badge">Mancuernas</span>
+                </p>
+                <p style="font-size: 0.9rem; color: #666; margin: 0;">Aislamiento para los deltoides laterales.</p>
+            </div>
+
+            <div class="exercise-card exercise-back">
+                <div class="exercise-icon"><i class="bi bi-arrow-down"></i></div>
+                <h4 class="exercise-name">Face Pulls</h4>
+                <p class="exercise-equipment">
+                    <span class="equipment-badge">Polea</span>
+                </p>
+                <p style="font-size: 0.9rem; color: #666; margin: 0;">Salud de hombro y espalda posterior.</p>
+            </div>
+
+            <div class="exercise-card exercise-arms">
+                <div class="exercise-icon"><i class="bi bi-arrow-up-down"></i></div>
+                <h4 class="exercise-name">Curl con Barra</h4>
+                <p class="exercise-equipment">
+                    <span class="equipment-badge">Barras</span>
+                </p>
+                <p style="font-size: 0.9rem; color: #666; margin: 0;">Ejercicio clásico para bíceps.</p>
+            </div>
+
+            <div class="exercise-card exercise-arms">
+                <div class="exercise-icon"><i class="bi bi-arrow-down"></i></div>
+                <h4 class="exercise-name">Fondos en Máquina</h4>
+                <p class="exercise-equipment">
+                    <span class="equipment-badge">Máquina</span>
+                </p>
+                <p style="font-size: 0.9rem; color: #666; margin: 0;">Desarrollo de tríceps con seguridad.</p>
+            </div>
+
+            <div class="exercise-card exercise-arms">
+                <div class="exercise-icon"><i class="bi bi-arrow-up-down"></i></div>
+                <h4 class="exercise-name">Curl Martillo con Mancuernas</h4>
+                <p class="exercise-equipment">
+                    <span class="equipment-badge">Mancuernas</span>
+                </p>
+                <p style="font-size: 0.9rem; color: #666; margin: 0;">Trabaja bíceps y braquial.</p>
+            </div>
+
+            <div class="exercise-card exercise-arms">
+                <div class="exercise-icon"><i class="bi bi-arrow-down"></i></div>
+                <h4 class="exercise-name">Extensión de Tríceps en Polea</h4>
+                <p class="exercise-equipment">
+                    <span class="equipment-badge">Polea</span>
+                </p>
+                <p style="font-size: 0.9rem; color: #666; margin: 0;">Aislamiento final para los tríceps.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- RECOMENDACIONES -->
+    <div class="recommendations">
+        <h3>
+            <i class="bi bi-clipboard-check"></i> Recomendaciones Importantes
+        </h3>
+        <div class="recommendations-grid">
+            <div class="rec-item">
+                <div class="rec-icon"><i class="bi bi-fire"></i></div>
+                <div class="rec-text">
+                    <strong>Calienta siempre antes de entrenar</strong>
+                    Realiza 5-10 minutos de cardio ligero y estiramiento dinámico para preparar músculos y articulaciones.
+                </div>
+            </div>
+
+            <div class="rec-item">
+                <div class="rec-icon"><i class="bi bi-droplet-fill"></i></div>
+                <div class="rec-text">
+                    <strong>Mantén una buena hidratación</strong>
+                    Bebe agua constantemente durante el entrenamiento. La hidratación es clave para el rendimiento.
+                </div>
+            </div>
+
+            <div class="rec-item">
+                <div class="rec-icon"><i class="bi bi-cup-straw"></i></div>
+                <div class="rec-text">
+                    <strong>Alimentación balanceada</strong>
+                    Consume proteína, carbohidratos complejos y grasas saludables para maximizar resultados.
+                </div>
+            </div>
+
+            <div class="rec-item">
+                <div class="rec-icon"><i class="bi bi-heart-pulse"></i></div>
+                <div class="rec-text">
+                    <strong>Descansa y respeta los tiempos de recuperación</strong>
+                    El descanso es tan importante como el entrenamiento. Duerme 7-9 horas diarias.
+                </div>
+            </div>
+
+            <div class="rec-item">
+                <div class="rec-icon"><i class="bi bi-graph-up"></i></div>
+                <div class="rec-text">
+                    <strong>Progresión gradual</strong>
+                    Aumenta peso o repeticiones semana a semana. La consistencia es más importante que la intensidad.
+                </div>
+            </div>
+
+            <div class="rec-item">
+                <div class="rec-icon"><i class="bi bi-activity"></i></div>
+                <div class="rec-text">
+                    <strong>Forma correcta es prioritaria</strong>
+                    Prioriza la técnica sobre el peso. Una forma incorrecta puede causar lesiones graves.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer style="text-align: center; color: white; margin-top: 3rem; padding-bottom: 2rem;">
+        <p style="font-weight: 600; margin-bottom: 0.5rem;">💪 DISCIPLINA HOY, RESULTADOS SIEMPRE</p>
+        <p style="font-size: 0.9rem; color: #4ecdc4;">Última actualización: Agosto 2026</p>
+    </footer>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

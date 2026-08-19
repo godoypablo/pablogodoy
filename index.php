@@ -30,6 +30,7 @@
         .color-github { color: #24292e; }
         .color-sigedo { color: #006BA6; } /* Azul TCER SIGEDO */
         .color-nutricion { color: #a8d8e8; } /* Azul suave - Nutrición */
+        .color-gym { color: #ff6b6b; } /* Rojo vibrante - Gym */
     </style>
 </head>
 <body>
@@ -94,6 +95,14 @@
                 <div class="icon-box color-nutricion"><i class="bi bi-apple"></i></div>
                 <h3 class="h5 fw-bold">Nutrición</h3>
                 <p class="text-secondary small">Plan de Alimentación Personalizado</p>
+            </a>
+        </div>
+
+        <div class="col-md-6 col-lg-4">
+            <a href="gym.html" class="card h-100 border-0 shadow-sm dashboard-card p-4 text-center">
+                <div class="icon-box color-gym"><i class="bi bi-person-arms-up"></i></div>
+                <h3 class="h5 fw-bold">Gym</h3>
+                <p class="text-secondary small">Rutina de Entrenamientos</p>
             </a>
         </div>
     </div>
