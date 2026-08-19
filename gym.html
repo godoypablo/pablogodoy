@@ -67,13 +67,13 @@
         .exercise-card {
             background: white;
             border-radius: 12px;
-            padding: 1.5rem;
+            overflow: hidden;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
             transition: all 0.3s ease;
             border-left: 4px solid #ff6b6b;
             display: flex;
             flex-direction: column;
-            gap: 0.75rem;
+            gap: 0;
         }
 
         .exercise-card:hover {
@@ -81,9 +81,19 @@
             box-shadow: 0 8px 20px rgba(255, 107, 107, 0.2);
         }
 
-        .exercise-icon {
-            font-size: 2rem;
-            color: #ff6b6b;
+        .exercise-image {
+            width: 100%;
+            height: 180px;
+            object-fit: cover;
+            background: #f0f0f0;
+        }
+
+        .exercise-content {
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            flex-grow: 1;
         }
 
         .exercise-name {
@@ -223,68 +233,82 @@
         </div>
         <div class="exercises-grid">
             <div class="exercise-card exercise-chest">
-                <div class="exercise-icon"><i class="bi bi-person-arms-up"></i></div>
-                <h4 class="exercise-name">Press Banca con Barra</h4>
-                <p class="exercise-equipment">
-                    <span class="equipment-badge">Barras</span>
-                    <span class="equipment-badge">Banco</span>
-                </p>
-                <p style="font-size: 0.9rem; color: #666; margin: 0;">Ejercicio fundamental para construir fuerza y masa en pecho.</p>
+                <img src="gym-images/lunes_01_press_banca_con_barra.png" alt="Press Banca con Barra" class="exercise-image">
+                <div class="exercise-content">
+                    <h4 class="exercise-name">Press Banca con Barra</h4>
+                    <p class="exercise-equipment">
+                        <span class="equipment-badge">Barras</span>
+                        <span class="equipment-badge">Banco</span>
+                    </p>
+                    <p style="font-size: 0.9rem; color: #666; margin: 0;">Ejercicio fundamental para construir fuerza y masa en pecho.</p>
+                </div>
             </div>
 
             <div class="exercise-card exercise-back">
-                <div class="exercise-icon"><i class="bi bi-arrow-counterclockwise"></i></div>
-                <h4 class="exercise-name">Remo con Barra</h4>
-                <p class="exercise-equipment">
-                    <span class="equipment-badge">Barras</span>
-                </p>
-                <p style="font-size: 0.9rem; color: #666; margin: 0;">Trabaja espalda media y musculatura del dorsal ancho.</p>
+                <img src="gym-images/lunes_02_remo_con_barra.png" alt="Remo con Barra" class="exercise-image">
+                <div class="exercise-content">
+                    <h4 class="exercise-name">Remo con Barra</h4>
+                    <p class="exercise-equipment">
+                        <span class="equipment-badge">Barras</span>
+                    </p>
+                    <p style="font-size: 0.9rem; color: #666; margin: 0;">Trabaja espalda media y musculatura del dorsal ancho.</p>
+                </div>
             </div>
 
             <div class="exercise-card exercise-chest">
-                <div class="exercise-icon"><i class="bi bi-person-arms-up"></i></div>
-                <h4 class="exercise-name">Press Inclinado con Mancuernas</h4>
-                <p class="exercise-equipment">
-                    <span class="equipment-badge">Mancuernas</span>
-                    <span class="equipment-badge">Banco</span>
-                </p>
-                <p style="font-size: 0.9rem; color: #666; margin: 0;">Enfatiza la porción superior del pecho.</p>
+                <img src="gym-images/lunes_03_press_inclinado_con_mancuernas.png" alt="Press Inclinado con Mancuernas" class="exercise-image">
+                <div class="exercise-content">
+                    <h4 class="exercise-name">Press Inclinado con Mancuernas</h4>
+                    <p class="exercise-equipment">
+                        <span class="equipment-badge">Mancuernas</span>
+                        <span class="equipment-badge">Banco</span>
+                    </p>
+                    <p style="font-size: 0.9rem; color: #666; margin: 0;">Enfatiza la porción superior del pecho.</p>
+                </div>
             </div>
 
             <div class="exercise-card exercise-back">
-                <div class="exercise-icon"><i class="bi bi-arrow-counterclockwise"></i></div>
-                <h4 class="exercise-name">Remo con Mancuerna</h4>
-                <p class="exercise-equipment">
-                    <span class="equipment-badge">Mancuernas</span>
-                </p>
-                <p style="font-size: 0.9rem; color: #666; margin: 0;">Trabajo unilateral para corregir desequilibrios.</p>
+                <img src="gym-images/lunes_04_remo_con_mancuerna.png" alt="Remo con Mancuerna" class="exercise-image">
+                <div class="exercise-content">
+                    <h4 class="exercise-name">Remo con Mancuerna</h4>
+                    <p class="exercise-equipment">
+                        <span class="equipment-badge">Mancuernas</span>
+                    </p>
+                    <p style="font-size: 0.9rem; color: #666; margin: 0;">Trabajo unilateral para corregir desequilibrios.</p>
+                </div>
             </div>
 
             <div class="exercise-card exercise-chest">
-                <div class="exercise-icon"><i class="bi bi-bezier2"></i></div>
-                <h4 class="exercise-name">Aperturas en Máquina</h4>
-                <p class="exercise-equipment">
-                    <span class="equipment-badge">Máquina</span>
-                </p>
-                <p style="font-size: 0.9rem; color: #666; margin: 0;">Aislamiento puro para terminar el pecho.</p>
+                <img src="gym-images/lunes_05_aperturas_en_maquina.png" alt="Aperturas en Máquina" class="exercise-image">
+                <div class="exercise-content">
+                    <h4 class="exercise-name">Aperturas en Máquina</h4>
+                    <p class="exercise-equipment">
+                        <span class="equipment-badge">Máquina</span>
+                    </p>
+                    <p style="font-size: 0.9rem; color: #666; margin: 0;">Aislamiento puro para terminar el pecho.</p>
+                </div>
             </div>
 
             <div class="exercise-card exercise-back">
-                <div class="exercise-icon"><i class="bi bi-arrow-down-up"></i></div>
-                <h4 class="exercise-name">Jalón al Pecho con Agarre Supino</h4>
-                <p class="exercise-equipment">
-                    <span class="equipment-badge">Máquina</span>
-                </p>
-                <p style="font-size: 0.9rem; color: #666; margin: 0;">Excelente para espalda baja y brazos.</p>
+                <img src="gym-images/lunes_06_jalon_al_pecho.png" alt="Jalón al Pecho con Agarre Supino" class="exercise-image">
+                <div class="exercise-content">
+                    <h4 class="exercise-name">Jalón al Pecho con Agarre Supino</h4>
+                    <p class="exercise-equipment">
+                        <span class="equipment-badge">Máquina</span>
+                    </p>
+                    <p style="font-size: 0.9rem; color: #666; margin: 0;">Excelente para espalda baja y brazos.</p>
+                </div>
             </div>
 
             <div class="exercise-card exercise-back">
-                <div class="exercise-icon"><i class="bi bi-arrow-down"></i></div>
-                <h4 class="exercise-name">Face Pulls</h4>
-                <p class="exercise-equipment">
-                    <span class="equipment-badge">Polea</span>
-                </p>
-                <p style="font-size: 0.9rem; color: #666; margin: 0;">Fortalece espalda posterior y evita lesiones.</p>
+                <img src="gym-images/lunes_07_face_pulls.png" alt="Face Pulls" class="exercise-image">
+                <div class="exercise-content">
+                    <h4 class="exercise-name">Face Pulls</h4>
+                    <p class="exercise-equipment">
+                        <span class="equipment-badge">Polea</span>
+                    </p>
+                    <p style="font-size: 0.9rem; color: #666; margin: 0;">Fortalece espalda posterior y evita lesiones.</p>
+                </div>
             </div>
         </div>
     </div>
@@ -296,58 +320,70 @@
         </div>
         <div class="exercises-grid">
             <div class="exercise-card exercise-legs">
-                <div class="exercise-icon"><i class="bi bi-person-standing"></i></div>
-                <h4 class="exercise-name">Sentadilla con Barra</h4>
-                <p class="exercise-equipment">
-                    <span class="equipment-badge">Barras</span>
-                    <span class="equipment-badge">Rack</span>
-                </p>
-                <p style="font-size: 0.9rem; color: #666; margin: 0;">El rey de los ejercicios de piernas, trabaja todo.</p>
+                <img src="gym-images/miercoles_01_sentadilla_con_barra.png" alt="Sentadilla con Barra" class="exercise-image">
+                <div class="exercise-content">
+                    <h4 class="exercise-name">Sentadilla con Barra</h4>
+                    <p class="exercise-equipment">
+                        <span class="equipment-badge">Barras</span>
+                        <span class="equipment-badge">Rack</span>
+                    </p>
+                    <p style="font-size: 0.9rem; color: #666; margin: 0;">El rey de los ejercicios de piernas, trabaja todo.</p>
+                </div>
             </div>
 
             <div class="exercise-card exercise-legs">
-                <div class="exercise-icon"><i class="bi bi-arrow-down-up"></i></div>
-                <h4 class="exercise-name">Peso Muerto Rumano</h4>
-                <p class="exercise-equipment">
-                    <span class="equipment-badge">Barras</span>
-                </p>
-                <p style="font-size: 0.9rem; color: #666; margin: 0;">Fortalece glúteos y posterior del muslo.</p>
+                <img src="gym-images/miercoles_02_peso_muerto_rumano.png" alt="Peso Muerto Rumano" class="exercise-image">
+                <div class="exercise-content">
+                    <h4 class="exercise-name">Peso Muerto Rumano</h4>
+                    <p class="exercise-equipment">
+                        <span class="equipment-badge">Barras</span>
+                    </p>
+                    <p style="font-size: 0.9rem; color: #666; margin: 0;">Fortalece glúteos y posterior del muslo.</p>
+                </div>
             </div>
 
             <div class="exercise-card exercise-legs">
-                <div class="exercise-icon"><i class="bi bi-person-standing"></i></div>
-                <h4 class="exercise-name">Prensa Inclinada</h4>
-                <p class="exercise-equipment">
-                    <span class="equipment-badge">Máquina</span>
-                </p>
-                <p style="font-size: 0.9rem; color: #666; margin: 0;">Alternativa segura para cuadríceps e isquios.</p>
+                <img src="gym-images/miercoles_03_prensa_inclinada.png" alt="Prensa Inclinada" class="exercise-image">
+                <div class="exercise-content">
+                    <h4 class="exercise-name">Prensa Inclinada</h4>
+                    <p class="exercise-equipment">
+                        <span class="equipment-badge">Máquina</span>
+                    </p>
+                    <p style="font-size: 0.9rem; color: #666; margin: 0;">Alternativa segura para cuadríceps e isquios.</p>
+                </div>
             </div>
 
             <div class="exercise-card exercise-legs">
-                <div class="exercise-icon"><i class="bi bi-arrow-down"></i></div>
-                <h4 class="exercise-name">Curl Femoral Acostado</h4>
-                <p class="exercise-equipment">
-                    <span class="equipment-badge">Máquina</span>
-                </p>
-                <p style="font-size: 0.9rem; color: #666; margin: 0;">Aislamiento para los isquiotibiales.</p>
+                <img src="gym-images/miercoles_04_curl_femoral.png" alt="Curl Femoral Acostado" class="exercise-image">
+                <div class="exercise-content">
+                    <h4 class="exercise-name">Curl Femoral Acostado</h4>
+                    <p class="exercise-equipment">
+                        <span class="equipment-badge">Máquina</span>
+                    </p>
+                    <p style="font-size: 0.9rem; color: #666; margin: 0;">Aislamiento para los isquiotibiales.</p>
+                </div>
             </div>
 
             <div class="exercise-card exercise-legs">
-                <div class="exercise-icon"><i class="bi bi-arrow-up"></i></div>
-                <h4 class="exercise-name">Extensión de Cuadríceps</h4>
-                <p class="exercise-equipment">
-                    <span class="equipment-badge">Máquina</span>
-                </p>
-                <p style="font-size: 0.9rem; color: #666; margin: 0;">Aislamiento puro para el cuadríceps.</p>
+                <img src="gym-images/miercoles_05_extension_de_cuadriceps.png" alt="Extensión de Cuadríceps" class="exercise-image">
+                <div class="exercise-content">
+                    <h4 class="exercise-name">Extensión de Cuadríceps</h4>
+                    <p class="exercise-equipment">
+                        <span class="equipment-badge">Máquina</span>
+                    </p>
+                    <p style="font-size: 0.9rem; color: #666; margin: 0;">Aislamiento puro para el cuadríceps.</p>
+                </div>
             </div>
 
             <div class="exercise-card exercise-legs">
-                <div class="exercise-icon"><i class="bi bi-arrow-up"></i></div>
-                <h4 class="exercise-name">Elevación de Talones en Máquina</h4>
-                <p class="exercise-equipment">
-                    <span class="equipment-badge">Máquina</span>
-                </p>
-                <p style="font-size: 0.9rem; color: #666; margin: 0;">Fortalece pantorrillas y estabilidad.</p>
+                <img src="gym-images/miercoles_06_elevacion_de_talones.png" alt="Elevación de Talones en Máquina" class="exercise-image">
+                <div class="exercise-content">
+                    <h4 class="exercise-name">Elevación de Talones en Máquina</h4>
+                    <p class="exercise-equipment">
+                        <span class="equipment-badge">Máquina</span>
+                    </p>
+                    <p style="font-size: 0.9rem; color: #666; margin: 0;">Fortalece pantorrillas y estabilidad.</p>
+                </div>
             </div>
         </div>
     </div>
@@ -359,66 +395,80 @@
         </div>
         <div class="exercises-grid">
             <div class="exercise-card exercise-shoulders">
-                <div class="exercise-icon"><i class="bi bi-arrow-up"></i></div>
-                <h4 class="exercise-name">Press Militar con Barra</h4>
-                <p class="exercise-equipment">
-                    <span class="equipment-badge">Barras</span>
-                </p>
-                <p style="font-size: 0.9rem; color: #666; margin: 0;">Ejercicio fundamental para hombros y core.</p>
+                <img src="gym-images/viernes_01_press_militar.png" alt="Press Militar con Barra" class="exercise-image">
+                <div class="exercise-content">
+                    <h4 class="exercise-name">Press Militar con Barra</h4>
+                    <p class="exercise-equipment">
+                        <span class="equipment-badge">Barras</span>
+                    </p>
+                    <p style="font-size: 0.9rem; color: #666; margin: 0;">Ejercicio fundamental para hombros y core.</p>
+                </div>
             </div>
 
             <div class="exercise-card exercise-shoulders">
-                <div class="exercise-icon"><i class="bi bi-arrow-up-right"></i></div>
-                <h4 class="exercise-name">Elevaciones Laterales con Mancuernas</h4>
-                <p class="exercise-equipment">
-                    <span class="equipment-badge">Mancuernas</span>
-                </p>
-                <p style="font-size: 0.9rem; color: #666; margin: 0;">Aislamiento para los deltoides laterales.</p>
+                <img src="gym-images/viernes_02_elevaciones_laterales.png" alt="Elevaciones Laterales con Mancuernas" class="exercise-image">
+                <div class="exercise-content">
+                    <h4 class="exercise-name">Elevaciones Laterales con Mancuernas</h4>
+                    <p class="exercise-equipment">
+                        <span class="equipment-badge">Mancuernas</span>
+                    </p>
+                    <p style="font-size: 0.9rem; color: #666; margin: 0;">Aislamiento para los deltoides laterales.</p>
+                </div>
             </div>
 
             <div class="exercise-card exercise-back">
-                <div class="exercise-icon"><i class="bi bi-arrow-down"></i></div>
-                <h4 class="exercise-name">Face Pulls</h4>
-                <p class="exercise-equipment">
-                    <span class="equipment-badge">Polea</span>
-                </p>
-                <p style="font-size: 0.9rem; color: #666; margin: 0;">Salud de hombro y espalda posterior.</p>
+                <img src="gym-images/viernes_03_face_pulls.png" alt="Face Pulls" class="exercise-image">
+                <div class="exercise-content">
+                    <h4 class="exercise-name">Face Pulls</h4>
+                    <p class="exercise-equipment">
+                        <span class="equipment-badge">Polea</span>
+                    </p>
+                    <p style="font-size: 0.9rem; color: #666; margin: 0;">Salud de hombro y espalda posterior.</p>
+                </div>
             </div>
 
             <div class="exercise-card exercise-arms">
-                <div class="exercise-icon"><i class="bi bi-arrow-up-down"></i></div>
-                <h4 class="exercise-name">Curl con Barra</h4>
-                <p class="exercise-equipment">
-                    <span class="equipment-badge">Barras</span>
-                </p>
-                <p style="font-size: 0.9rem; color: #666; margin: 0;">Ejercicio clásico para bíceps.</p>
+                <img src="gym-images/viernes_04_curl_con_barra.png" alt="Curl con Barra" class="exercise-image">
+                <div class="exercise-content">
+                    <h4 class="exercise-name">Curl con Barra</h4>
+                    <p class="exercise-equipment">
+                        <span class="equipment-badge">Barras</span>
+                    </p>
+                    <p style="font-size: 0.9rem; color: #666; margin: 0;">Ejercicio clásico para bíceps.</p>
+                </div>
             </div>
 
             <div class="exercise-card exercise-arms">
-                <div class="exercise-icon"><i class="bi bi-arrow-down"></i></div>
-                <h4 class="exercise-name">Fondos en Máquina</h4>
-                <p class="exercise-equipment">
-                    <span class="equipment-badge">Máquina</span>
-                </p>
-                <p style="font-size: 0.9rem; color: #666; margin: 0;">Desarrollo de tríceps con seguridad.</p>
+                <img src="gym-images/viernes_05_fondos_en_maquina.png" alt="Fondos en Máquina" class="exercise-image">
+                <div class="exercise-content">
+                    <h4 class="exercise-name">Fondos en Máquina</h4>
+                    <p class="exercise-equipment">
+                        <span class="equipment-badge">Máquina</span>
+                    </p>
+                    <p style="font-size: 0.9rem; color: #666; margin: 0;">Desarrollo de tríceps con seguridad.</p>
+                </div>
             </div>
 
             <div class="exercise-card exercise-arms">
-                <div class="exercise-icon"><i class="bi bi-arrow-up-down"></i></div>
-                <h4 class="exercise-name">Curl Martillo con Mancuernas</h4>
-                <p class="exercise-equipment">
-                    <span class="equipment-badge">Mancuernas</span>
-                </p>
-                <p style="font-size: 0.9rem; color: #666; margin: 0;">Trabaja bíceps y braquial.</p>
+                <img src="gym-images/viernes_06_curl_martillo.png" alt="Curl Martillo con Mancuernas" class="exercise-image">
+                <div class="exercise-content">
+                    <h4 class="exercise-name">Curl Martillo con Mancuernas</h4>
+                    <p class="exercise-equipment">
+                        <span class="equipment-badge">Mancuernas</span>
+                    </p>
+                    <p style="font-size: 0.9rem; color: #666; margin: 0;">Trabaja bíceps y braquial.</p>
+                </div>
             </div>
 
             <div class="exercise-card exercise-arms">
-                <div class="exercise-icon"><i class="bi bi-arrow-down"></i></div>
-                <h4 class="exercise-name">Extensión de Tríceps en Polea</h4>
-                <p class="exercise-equipment">
-                    <span class="equipment-badge">Polea</span>
-                </p>
-                <p style="font-size: 0.9rem; color: #666; margin: 0;">Aislamiento final para los tríceps.</p>
+                <img src="gym-images/viernes_07_extension_de_triceps.png" alt="Extensión de Tríceps en Polea" class="exercise-image">
+                <div class="exercise-content">
+                    <h4 class="exercise-name">Extensión de Tríceps en Polea</h4>
+                    <p class="exercise-equipment">
+                        <span class="equipment-badge">Polea</span>
+                    </p>
+                    <p style="font-size: 0.9rem; color: #666; margin: 0;">Aislamiento final para los tríceps.</p>
+                </div>
             </div>
         </div>
     </div>
