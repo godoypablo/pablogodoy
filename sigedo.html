@@ -180,6 +180,345 @@
             font-size: 0.85em;
             margin: 3px;
         }
+
+        /* ===== Badges de estado (tab Rendiciones) ===== */
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.78em;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            white-space: nowrap;
+            border: 1px solid transparent;
+        }
+        .status-pending  { background: #fff4e0; color: #9a5b00; border-color: #f0d5a8; }
+        .status-reviewed { background: #e6f1f8; color: #005887; border-color: #b8d8ea; }
+        .status-approved { background: #e4f5ee; color: #06694f; border-color: #b0e0cf; }
+
+        /* ===== MAPA DEL MENÚ RENDICIONES ===== */
+        .mapa-hero {
+            background: linear-gradient(135deg, #f0f6fa 0%, #ffffff 100%);
+            border: 1px solid #dbe7ef;
+            border-left: 5px solid #006BA6;
+            border-radius: 12px;
+            padding: 28px 30px;
+            margin-bottom: 35px;
+        }
+        .mapa-kicker {
+            font-size: 0.72em;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+            color: #6b8494;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+        .mapa-hero h3 { font-weight: 800; color: #123a52; margin-bottom: 12px; }
+        .mapa-hero p  { color: #4a5b66; margin-bottom: 0; line-height: 1.75; }
+
+        /* Navegación interna del mapa (pills) */
+        .mapa-nav {
+            position: sticky;
+            top: 0;
+            z-index: 20;
+            background: rgba(255,255,255,0.97);
+            backdrop-filter: blur(6px);
+            border-bottom: 1px solid #e3ebf0;
+            padding: 12px 0;
+            margin-bottom: 30px;
+            gap: 8px;
+        }
+        .mapa-nav .nav-link {
+            color: #55707f;
+            background: #f2f6f9;
+            border: 1px solid #e0e9ef;
+            border-radius: 30px;
+            font-size: 0.88em;
+            font-weight: 600;
+            padding: 8px 16px;
+            transition: all 0.18s ease;
+        }
+        .mapa-nav .nav-link:hover {
+            background: #e2eef5;
+            color: #006BA6;
+            border-color: #b8d8ea;
+        }
+        .mapa-nav .nav-link.active {
+            background: #006BA6;
+            color: #fff;
+            border-color: #006BA6;
+            box-shadow: 0 3px 10px rgba(0,107,166,0.28);
+        }
+
+        /* Los paneles internos no repiten la caja blanca del tab padre */
+        .mapa-paneles {
+            background: transparent;
+            padding: 0;
+            box-shadow: none;
+            border-radius: 0;
+        }
+
+        /* Cabecera de cada acceso */
+        .mapa-route {
+            display: inline-block;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85em;
+            color: #006BA6;
+            background: #eef5f9;
+            border: 1px solid #cfe3ee;
+            border-radius: 6px;
+            padding: 4px 12px;
+            margin-bottom: 12px;
+        }
+        .mapa-titulo {
+            font-size: 1.9em;
+            font-weight: 800;
+            color: #123a52;
+            margin-bottom: 12px;
+        }
+        .mapa-lead {
+            color: #4a5b66;
+            line-height: 1.8;
+            font-size: 1.02em;
+            margin-bottom: 22px;
+        }
+
+        /* Roles */
+        .roles-linea {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 28px;
+            padding: 14px 16px;
+            background: #fafcfd;
+            border: 1px dashed #d5e3ec;
+            border-radius: 10px;
+        }
+        .roles-label {
+            font-size: 0.7em;
+            letter-spacing: 0.16em;
+            text-transform: uppercase;
+            color: #7a8f9c;
+            font-weight: 700;
+            margin-right: 4px;
+        }
+        .role-chip {
+            font-family: 'Courier New', monospace;
+            font-size: 0.8em;
+            font-weight: 700;
+            color: #2c4a5c;
+            background: #fff;
+            border: 1px solid #c9dbe6;
+            border-radius: 5px;
+            padding: 5px 11px;
+        }
+        .role-chip.externo { color: #06694f; border-color: #b0e0cf; background: #f2fbf7; }
+
+        /* Encabezado de bloque dentro de una sección */
+        .mapa-subtitulo {
+            font-size: 0.75em;
+            letter-spacing: 0.16em;
+            text-transform: uppercase;
+            color: #6b8494;
+            font-weight: 700;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #e3ebf0;
+            margin: 35px 0 18px;
+        }
+
+        /* Tabla de capas */
+        .tabla-capas {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.92em;
+            border-radius: 0;
+        }
+        .tabla-capas thead th {
+            font-size: 0.7em;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            color: #6b8494;
+            background: #f6f9fb;
+            font-weight: 700;
+            padding: 12px 14px;
+            border-bottom: 2px solid #dde8ee;
+            text-align: left;
+        }
+        .tabla-capas td {
+            padding: 16px 14px;
+            border-bottom: 1px solid #eef3f6;
+            vertical-align: top;
+            line-height: 1.65;
+        }
+        .tabla-capas tbody tr:hover { background: #fafcfd; }
+        .tabla-capas .col-capa  { width: 15%; min-width: 130px; }
+        .tabla-capas .col-arch  { width: 52%; }
+        .tabla-capas .col-nota  { width: 33%; color: #5c6d78; font-size: 0.95em; }
+
+        /* Etiqueta de capa, con color propio por capa */
+        .capa-tag {
+            display: inline-block;
+            font-size: 0.7em;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            font-weight: 800;
+            padding: 5px 10px;
+            border-radius: 5px;
+            border-left: 3px solid;
+            white-space: nowrap;
+        }
+        .capa-web      { color: #005887; background: #eaf3f9; border-color: #006BA6; }
+        .capa-apoyo    { color: #3d6c85; background: #f1f7fa; border-color: #7fb0cb; }
+        .capa-servicio { color: #06694f; background: #eaf7f2; border-color: #0d8a6a; }
+        .capa-dao      { color: #8a4f0d; background: #fdf3e8; border-color: #c1701a; }
+        .capa-modelo   { color: #5b3785; background: #f4effa; border-color: #7b4fa8; }
+        .capa-common   { color: #4a5560; background: #f2f4f6; border-color: #5a6570; }
+        .capa-reportes { color: #8c1526; background: #fbecee; border-color: #A6192E; }
+
+        /* Rutas y archivos monoespaciados */
+        .ruta {
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            color: #7a8f9c;
+            display: block;
+            margin-bottom: 4px;
+        }
+        .arch {
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            color: #2c4a5c;
+            display: block;
+        }
+        .arch.tenue { color: #8296a2; }
+        .lineas {
+            font-family: 'Courier New', monospace;
+            font-size: 0.85em;
+            color: #A6192E;
+            background: #fbecee;
+            border-radius: 4px;
+            padding: 1px 7px;
+            white-space: nowrap;
+        }
+        .mapa-seccion code {
+            font-size: 0.88em;
+            color: #005887;
+            background: #eef5f9;
+            border-radius: 4px;
+            padding: 1px 6px;
+        }
+
+        /* Notas destacadas */
+        .nota-clave {
+            border-radius: 10px;
+            padding: 20px 22px;
+            margin: 28px 0;
+            line-height: 1.75;
+            font-size: 0.96em;
+        }
+        .nota-clave strong:first-child { display: block; margin-bottom: 6px; font-size: 1.05em; }
+        .nota-info  { background: #eef5f9; border-left: 5px solid #006BA6; color: #2c4a5c; }
+        .nota-alerta{ background: #fdf6e8; border-left: 5px solid #d69420; color: #6b4c10; }
+        .nota-riesgo{ background: #fbecee; border-left: 5px solid #A6192E; color: #7a1a29; }
+
+        /* Cadena / jerarquía numerada */
+        .cadena { list-style: none; padding: 0; margin: 0 0 10px; counter-reset: paso; }
+        .cadena li {
+            position: relative;
+            counter-increment: paso;
+            padding: 14px 18px 14px 58px;
+            margin-bottom: 10px;
+            background: #fafcfd;
+            border: 1px solid #e3ebf0;
+            border-radius: 10px;
+            line-height: 1.6;
+            color: #3f5765;
+        }
+        .cadena li::before {
+            content: counter(paso);
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: #006BA6;
+            color: #fff;
+            font-size: 0.85em;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .cadena li strong { color: #123a52; font-family: 'Courier New', monospace; }
+
+        /* Tarjetas de acceso (índice visual) */
+        .acceso-card {
+            display: block;
+            height: 100%;
+            background: #fff;
+            border: 1px solid #e3ebf0;
+            border-top: 3px solid #006BA6;
+            border-radius: 10px;
+            padding: 20px;
+            text-decoration: none;
+            transition: transform 0.18s ease, box-shadow 0.18s ease;
+        }
+        .acceso-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 20px rgba(0,107,166,0.12);
+            text-decoration: none;
+        }
+        .acceso-card .nro {
+            font-size: 0.72em;
+            font-weight: 800;
+            letter-spacing: 0.12em;
+            color: #9db4c1;
+        }
+        .acceso-card .nombre { display: block; font-weight: 700; color: #123a52; margin: 6px 0; font-size: 1.05em; }
+        .acceso-card .desc   { display: block; color: #61727e; font-size: 0.88em; line-height: 1.55; }
+        .acceso-card .peso {
+            display: block;
+            margin-top: 12px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.78em;
+            color: #7a8f9c;
+            overflow-wrap: anywhere;
+        }
+        .arch, .ruta { overflow-wrap: anywhere; }
+
+        /* Checklist de registro */
+        .registro-item {
+            background: #fff;
+            border: 1px solid #e3ebf0;
+            border-left: 4px solid #0d8a6a;
+            border-radius: 10px;
+            padding: 18px 20px;
+            margin-bottom: 14px;
+            line-height: 1.7;
+            color: #4a5b66;
+        }
+        .registro-item strong { color: #123a52; }
+
+        /* Enlace cruzado entre tabs */
+        .link-cruzado {
+            display: inline-block;
+            margin-top: 8px;
+            font-size: 0.85em;
+            font-weight: 600;
+            color: #006BA6;
+            text-decoration: none;
+        }
+        .link-cruzado:hover { text-decoration: underline; color: #005887; }
+
+        @media (max-width: 768px) {
+            .mapa-titulo { font-size: 1.45em; }
+            .mapa-nav { padding: 10px 0; }
+            .mapa-nav .nav-link { font-size: 0.8em; padding: 6px 12px; }
+            .tabla-capas { font-size: 0.85em; }
+            .tabla-capas td { padding: 12px 10px; }
+        }
     </style>
 </head>
 <body>
@@ -222,6 +561,11 @@
         <li class="nav-item" role="presentation">
             <button class="nav-link" id="dependencias-tab" data-bs-toggle="tab" data-bs-target="#dependencias" type="button" role="tab">
                 <i class="bi bi-collection"></i> Rendiciones
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="mapa-tab" data-bs-toggle="tab" data-bs-target="#mapa" type="button" role="tab">
+                <i class="bi bi-diagram-3"></i> Mapa del Menú
             </button>
         </li>
     </ul>
@@ -1363,7 +1707,7 @@ ServicioDocumento servicio = new ServicioDocumento();
                             <div class="code-block">
 public interface DocumentoDAO {
     Documento findById(Long id);
-    List<Documento> findAll();
+    List&lt;Documento&gt; findAll();
     void save(Documento d);
     void delete(Long id);
 }
@@ -1579,6 +1923,14 @@ Documento {           DOCUMENTO
                     <li>📊 Generar reportes y estadísticas</li>
                     <li>🔐 Mantener un registro auditable</li>
                 </ul>
+
+                <div class="nota-clave nota-info">
+                    <strong>🧭 Esta pestaña explica el <em>qué</em>; el Mapa del Menú explica el <em>dónde</em></strong>
+                    Si necesitás tocar el código de alguna de estas pantallas, en
+                    <a href="#" class="link-cruzado" data-mapa-seccion="#m-base" style="margin:0;">Mapa del Menú →</a>
+                    están los cinco accesos con sus archivos en las cuatro capas (web, servicio, DAO, modelo),
+                    los roles de cada uno y los archivos donde hay que registrar cada alta.
+                </div>
             </div>
 
             <!-- SECCIÓN 2: PANTALLAS PRINCIPALES -->
@@ -1591,6 +1943,8 @@ Documento {           DOCUMENTO
                             <p>Define la estructura y campos de los anexos que presentan las instituciones.</p>
                             <span class="topic-badge">Admin</span>
                             <span class="topic-badge">Admin Dependencia</span>
+                            <br><a href="#" class="link-cruzado" data-mapa-seccion="#m-anexo">
+                                <i class="bi bi-diagram-3"></i> Ver archivos por capa en el Mapa del Menú →</a>
                         </div>
                     </div>
                     <div class="col-md-6 mb-3">
@@ -1599,28 +1953,39 @@ Documento {           DOCUMENTO
                             <p>Catálogos de códigos de ingresos, egresos y categorías válidas.</p>
                             <span class="topic-badge">Admin</span>
                             <span class="topic-badge">Auditor</span>
+                            <br><a href="#" class="link-cruzado" data-mapa-seccion="#m-nomen">
+                                <i class="bi bi-diagram-3"></i> Ver archivos por capa en el Mapa del Menú →</a>
                         </div>
                     </div>
                     <div class="col-md-6 mb-3">
                         <div class="feature-box">
                             <strong>🎨 Maqueta Rendición</strong>
-                            <p>Define qué anexos son obligatorios y periodos de rendición.</p>
+                            <p>Define qué anexos son obligatorios y periodos de rendición.
+                               En el menú figura como <em>«Configuracion Rendiciones»</em>.</p>
                             <span class="topic-badge">Admin</span>
+                            <br><a href="#" class="link-cruzado" data-mapa-seccion="#m-config">
+                                <i class="bi bi-diagram-3"></i> Ver archivos por capa en el Mapa del Menú →</a>
                         </div>
                     </div>
                     <div class="col-md-6 mb-3">
                         <div class="feature-box">
                             <strong>🏛️ Por Institución</strong>
-                            <p>Instituciones ven y descargan sus rendiciones. Admins ven todas.</p>
+                            <p>Instituciones ven y descargan sus rendiciones. Admins ven todas.
+                               Es además la <em>home</em> del cuentadante externo.</p>
                             <span class="topic-badge">Cuentadante Externo</span>
                             <span class="topic-badge">Admin</span>
+                            <br><a href="#" class="link-cruzado" data-mapa-seccion="#m-institucion">
+                                <i class="bi bi-diagram-3"></i> Ver archivos por capa en el Mapa del Menú →</a>
                         </div>
                     </div>
                     <div class="col-md-6 mb-3">
                         <div class="feature-box">
                             <strong>💰 Planilla Movimientos</strong>
-                            <p>Registro detallado de ingresos y egresos de efectivo.</p>
+                            <p>Registro detallado de ingresos y egresos de efectivo, con inventario de bienes.
+                               Se llega desde el menú y también como anexo de una rendición.</p>
                             <span class="topic-badge">Admin (Juntas Gobierno)</span>
+                            <br><a href="#" class="link-cruzado" data-mapa-seccion="#m-juntas">
+                                <i class="bi bi-diagram-3"></i> Ver archivos por capa en el Mapa del Menú →</a>
                         </div>
                     </div>
                 </div>
@@ -1879,6 +2244,882 @@ Documento {           DOCUMENTO
                 </ul>
             </div>
         </div>
+
+        <!-- TAB 7: MAPA DEL MENÚ RENDICIONES -->
+        <div class="tab-pane fade" id="mapa" role="tabpanel">
+
+            <div class="mapa-hero">
+                <div class="mapa-kicker">SIGEDO · TCER · Módulo Rendiciones Electrónicas</div>
+                <h3>Mapa del menú Rendiciones</h3>
+                <p>
+                    Los cinco accesos del menú <em>Rendiciones</em>, con los archivos que toca cada uno en
+                    las cuatro capas del proyecto: <strong>web</strong> (Wicket), <strong>servicio</strong>,
+                    <strong>DAO</strong> y <strong>modelo</strong>. Todas las rutas son relativas a la raíz del repo.
+                </p>
+            </div>
+
+            <!-- Índice visual de los 5 accesos -->
+            <div class="row g-3 mb-4">
+                <div class="col-md-6 col-lg-4">
+                    <a class="acceso-card" href="#m-anexo">
+                        <span class="nro">ACCESO 1</span>
+                        <span class="nombre">Configuración Anexo</span>
+                        <span class="desc">El catálogo de anexos y el campo <code>paginaDeCarga</code> que decide qué pantalla se abre.</span>
+                        <span class="peso">PaginaMaquetaAnexo.java · 1383 líneas</span>
+                    </a>
+                </div>
+                <div class="col-md-6 col-lg-4">
+                    <a class="acceso-card" href="#m-nomen">
+                        <span class="nro">ACCESO 2</span>
+                        <span class="nombre">Nomenclaturas</span>
+                        <span class="desc">ABM del clasificador jerárquico por rubro. La pantalla más acotada de las cinco.</span>
+                        <span class="peso">PaginaNomenclaturas.java · 1269 líneas</span>
+                    </a>
+                </div>
+                <div class="col-md-6 col-lg-4">
+                    <a class="acceso-card" href="#m-config">
+                        <span class="nro">ACCESO 3</span>
+                        <span class="nombre">Configuración Rendiciones</span>
+                        <span class="desc">La maqueta de rendición por tipo de institución e ingreso. La clase más pesada.</span>
+                        <span class="peso">PaginaMaquetaRendicionElec.java · 2742 líneas</span>
+                    </a>
+                </div>
+                <div class="col-md-6 col-lg-4">
+                    <a class="acceso-card" href="#m-institucion">
+                        <span class="nro">ACCESO 4</span>
+                        <span class="nombre">Por Institución</span>
+                        <span class="desc">La pantalla operativa y la home del cuentadante externo. Puerta a la carga de anexos.</span>
+                        <span class="peso">PaginaRendicionesPorInstitucionVistaExterna.java · 2799 líneas</span>
+                    </a>
+                </div>
+                <div class="col-md-6 col-lg-4">
+                    <a class="acceso-card" href="#m-juntas">
+                        <span class="nro">ACCESO 5</span>
+                        <span class="nombre">Juntas de Gobierno</span>
+                        <span class="desc">Submenú con un solo ítem: Planilla de Movimientos, que además es un anexo cargable.</span>
+                        <span class="peso">PaginaPlanillaMovimientos + 5 componentes</span>
+                    </a>
+                </div>
+                <div class="col-md-6 col-lg-4">
+                    <a class="acceso-card" href="#m-registro" style="border-top-color: #0d8a6a;">
+                        <span class="nro">TRANSVERSAL</span>
+                        <span class="nombre">Dónde se registra todo</span>
+                        <span class="desc">En SIGEDO nada se descubre solo: los archivos donde hay que dar de alta a mano.</span>
+                        <span class="peso">WicketApplication · spring-*.xml · persistence.xml</span>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Sub-navegación del mapa -->
+            <ul class="nav mapa-nav" role="tablist">
+                <li class="nav-item"><button class="nav-link active" data-bs-toggle="pill" data-bs-target="#m-base" type="button">Base común</button></li>
+                <li class="nav-item"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#m-anexo" type="button">Configuración Anexo</button></li>
+                <li class="nav-item"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#m-nomen" type="button">Nomenclaturas</button></li>
+                <li class="nav-item"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#m-config" type="button">Configuración Rendiciones</button></li>
+                <li class="nav-item"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#m-institucion" type="button">Por Institución</button></li>
+                <li class="nav-item"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#m-juntas" type="button">Juntas de Gobierno</button></li>
+                <li class="nav-item"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#m-registro" type="button">Dónde se registra todo</button></li>
+            </ul>
+
+            <div class="tab-content mapa-paneles">
+
+                <!-- ===== BASE COMÚN ===== -->
+                <div class="tab-pane fade show active mapa-seccion" id="m-base" role="tabpanel">
+                    <div class="mapa-route">web/src/main/java/ar/gob/tcer/web/</div>
+                    <div class="mapa-titulo">La base común a los cinco</div>
+                    <p class="mapa-lead">
+                        Antes de las pantallas: el menú y el registro de páginas viven en dos archivos, y cualquier
+                        cambio de acceso, URL o rol pasa por ellos.
+                    </p>
+
+                    <div class="table-scroll">
+                        <table class="tabla-capas">
+                            <thead>
+                                <tr>
+                                    <th class="col-capa">Archivo</th>
+                                    <th style="width: 20%;">Líneas de interés</th>
+                                    <th class="col-nota">Qué define</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><span class="arch">templates/<br>Template.java</span></td>
+                                    <td><span class="lineas">582–667</span></td>
+                                    <td class="col-nota">
+                                        <code>inicializarMenuRendiciones()</code> arma los cuatro links y el submenú;
+                                        <code>inicializarSubMenuJuntasGobierno()</code> arma Planilla de Movimientos.
+                                        Acá está el <code>setVisible</code> del menú entero y el
+                                        <code>SecurityUtil.setAuthorization</code> de cada link.
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><span class="arch">templates/<br>Template.html</span></td>
+                                    <td><span class="lineas">143–161</span></td>
+                                    <td class="col-nota">
+                                        El markup del dropdown <code>rendicionesElectronicasMenu</code> y del submenú
+                                        <code>juntasGobiernoSubMenu</code>.
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><span class="arch">templates/<br>Template.properties</span></td>
+                                    <td><span class="lineas">54–62</span></td>
+                                    <td class="col-nota">
+                                        Los textos: <code>rendicionesElectronicas</code>, <code>configuracionAnexo</code>,
+                                        <code>nomenclaturas</code>, <code>rendicionLabel</code> (= «Configuracion Rendiciones»),
+                                        <code>porInstitucion</code>, <code>juntasDeGobierno</code>, <code>planillaMovimiento</code>.
+                                        <strong>Archivo en ISO-8859, no UTF-8.</strong>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><span class="arch">WicketApplication.java</span></td>
+                                    <td>
+                                        <span class="lineas">343–350</span><br>
+                                        <span class="lineas">531–539</span><br>
+                                        <span class="lineas">711–721</span>
+                                    </td>
+                                    <td class="col-nota">
+                                        Tres bloques distintos: los <code>mountPage</code> (URL), los
+                                        <code>MetaDataRoleAuthorizationStrategy.authorize</code> (rol de la página) y el
+                                        mapa <code>paginasParaAnexoRequerimiento</code>, que resuelve por nombre qué
+                                        página abre cada anexo.
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <span class="arch">templates/<br>NavbarExterno.java</span>
+                                        <span class="arch tenue">.html · .properties</span>
+                                    </td>
+                                    <td>—</td>
+                                    <td class="col-nota">
+                                        Barra alternativa al <code>Template</code>: la usan las pantallas del cuentadante
+                                        externo (Por Institución y Planilla de Movimientos).
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="nota-clave nota-info">
+                        <strong>🔑 Visibilidad del menú</strong>
+                        El menú completo sólo se muestra si el usuario tiene <code>CUENTADANTE_EXTERNO</code>,
+                        <code>ADMINISTRADOR</code> o <code>AUDITOR_RENDICION_ELECTRONICA</code>
+                        (<code>Template.java:587</code>). Dentro de él, cada link filtra otra vez por rol, así que
+                        un mismo usuario puede ver el menú y no ver todos los ítems.
+                    </div>
+                </div>
+
+                <!-- ===== CONFIGURACIÓN ANEXO ===== -->
+                <div class="tab-pane fade mapa-seccion" id="m-anexo" role="tabpanel">
+                    <div class="mapa-route">/tcer/app/MaquetaAnexo</div>
+                    <div class="mapa-titulo">Configuración Anexo</div>
+                    <p class="mapa-lead">
+                        Define el catálogo de anexos: nombre, tipo, nomenclaturas que usa, requisitos de presentación
+                        y — clave para todo el módulo — el campo <code>paginaDeCarga</code>, que decide qué pantalla
+                        se abre cuando el cuentadante carga ese anexo.
+                    </p>
+
+                    <div class="roles-linea">
+                        <span class="roles-label">Roles</span>
+                        <span class="role-chip">ADMINISTRADOR</span>
+                        <span class="role-chip">ADMINISTRADOR_DEPENDENCIA</span>
+                        <span class="role-chip">AUDITOR_RENDICION_ELECTRONICA</span>
+                    </div>
+
+                    <div class="mapa-subtitulo">Archivos por capa</div>
+                    <div class="table-scroll">
+                        <table class="tabla-capas">
+                            <thead>
+                                <tr><th class="col-capa">Capa</th><th class="col-arch">Archivos</th><th class="col-nota">Nota</th></tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><span class="capa-tag capa-web">Web</span></td>
+                                    <td>
+                                        <span class="ruta">web/…/web/rendicionElectronica/maquetaAnexo/</span>
+                                        <span class="arch">PaginaMaquetaAnexo.java · <strong>1383 líneas</strong></span>
+                                        <span class="arch">PaginaMaquetaAnexo.html</span>
+                                        <span class="arch">PaginaMaquetaAnexo.properties</span>
+                                    </td>
+                                    <td class="col-nota">
+                                        Página única, extiende <code>Template</code>. Toda la pantalla (búsqueda, alta,
+                                        edición, asociación de nomenclaturas) está en esa clase.
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><span class="capa-tag capa-apoyo">Web · Apoyo</span></td>
+                                    <td>
+                                        <span class="arch">web/common/ProcesoLento</span>
+                                        <span class="arch">web/common/dialogoModal/PaginaDialogoModal</span>
+                                        <span class="arch">web/common/dialogoModal/PaginaDialogoModalMensajeError</span>
+                                        <span class="arch">web/common/dialogoModal/DialogoModalImportarAnexo</span>
+                                        <span class="arch">web/common/dialogoModal/ModalButton</span>
+                                        <span class="arch">web/institucion/notificacion/DialogModalDetalleMaquetaAnexo</span>
+                                    </td>
+                                    <td class="col-nota">
+                                        Componentes compartidos con otras pantallas: tocarlos impacta fuera del módulo.
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><span class="capa-tag capa-servicio">Servicio</span></td>
+                                    <td>
+                                        <span class="arch">ServicioMaquetaAnexo · Impl</span>
+                                        <span class="arch">ServicioNomenclatura · Impl</span>
+                                        <span class="arch tenue">servicio.entidadQuerys · servicio.usuario</span>
+                                    </td>
+                                    <td class="col-nota">
+                                        Beans <code>servicio.maquetaAnexo</code> y <code>servicio.nomenclatura</code>
+                                        (<code>spring-service.xml:1004, 1015</code>).
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><span class="capa-tag capa-dao">DAO</span></td>
+                                    <td>
+                                        <span class="arch">MaquetaAnexoDAO · DAOImpl</span>
+                                        <span class="arch">NomenclaturaDAO · DAOImpl</span>
+                                    </td>
+                                    <td class="col-nota">
+                                        Beans <code>maquetaAnexo.dao</code> y <code>nomenclatura.dao</code>
+                                        (<code>spring-dao.xml:256, 259</code>).
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><span class="capa-tag capa-modelo">Modelo</span></td>
+                                    <td>
+                                        <span class="arch">MaquetaAnexo → MAQUETA_ANEXO</span>
+                                        <span class="arch">Nomenclatura → NOMENCLATURA</span>
+                                        <span class="arch">MaquetaRequerimiento</span>
+                                        <span class="arch tenue">entidadBusqueda/EntidadCtrlQuerysMaquetaAnexo</span>
+                                        <span class="arch tenue">entidadBusqueda/EntidadCtrlQuerysNomenclatura</span>
+                                        <span class="arch tenue">entidadBusqueda/EntidadCtrlQuerysMaquetaRequerimiento</span>
+                                    </td>
+                                    <td class="col-nota">
+                                        Los <code>EntidadCtrlQuerys*</code> son las grillas de búsqueda: definen columnas,
+                                        filtros y orden.
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><span class="capa-tag capa-common">Common</span></td>
+                                    <td>
+                                        <span class="arch">common/rendicionElectronica/MaquetaAnexoDTO</span>
+                                        <span class="arch">common/rendicionElectronica/TipoAnexo</span>
+                                        <span class="arch">common/rendicionElectronica/TipoRubro</span>
+                                    </td>
+                                    <td class="col-nota">
+                                        <code>MaquetaAnexoDTO</code> es el modelo del formulario; la entidad no se
+                                        edita directo.
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="nota-clave nota-alerta">
+                        <strong>🧩 El campo que conecta todo</strong>
+                        <code>MaquetaAnexo.paginaDeCarga</code> guarda un nombre de página
+                        (<code>"PaginaAnexoBalance"</code>, <code>"PaginaPlanillaMovimientos"</code>, …).
+                        En tiempo de ejecución, <code>PaginaRendicionElectronica.java:636</code> lo pasa por
+                        <code>WicketApplication.getPaginasParaAnexoRequerimiento()</code> y abre la clase
+                        correspondiente. Por eso las páginas de anexo no aparecen referenciadas en ningún
+                        <code>setResponsePage</code>: <strong>el grep no las encuentra, el mapa sí.</strong>
+                    </div>
+                </div>
+
+                <!-- ===== NOMENCLATURAS ===== -->
+                <div class="tab-pane fade mapa-seccion" id="m-nomen" role="tabpanel">
+                    <div class="mapa-route">/tcer/app/Nomenclaturas</div>
+                    <div class="mapa-titulo">Nomenclaturas</div>
+                    <p class="mapa-lead">
+                        ABM del clasificador jerárquico por rubro (código, concepto, nivel, obligatorio, activo).
+                        Es la pantalla más acotada de las cinco: una sola entidad, un solo servicio de negocio.
+                    </p>
+
+                    <div class="roles-linea">
+                        <span class="roles-label">Roles</span>
+                        <span class="role-chip">ADMINISTRADOR</span>
+                        <span class="role-chip">ADMINISTRADOR_DEPENDENCIA</span>
+                        <span class="role-chip">AUDITOR_RENDICION_ELECTRONICA</span>
+                    </div>
+
+                    <div class="mapa-subtitulo">Archivos por capa</div>
+                    <div class="table-scroll">
+                        <table class="tabla-capas">
+                            <thead>
+                                <tr><th class="col-capa">Capa</th><th class="col-arch">Archivos</th><th class="col-nota">Nota</th></tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><span class="capa-tag capa-web">Web</span></td>
+                                    <td>
+                                        <span class="ruta">web/…/web/rendicionElectronica/nomenclatura/</span>
+                                        <span class="arch">PaginaNomenclaturas.java · <strong>1269 líneas</strong></span>
+                                        <span class="arch">PaginaNomenclaturas.html</span>
+                                        <span class="arch">PaginaNomenclaturas.properties</span>
+                                    </td>
+                                    <td class="col-nota">
+                                        Máquina de estados interna con el enum <code>EstadoNomenclatura</code>
+                                        (SIN_MODO / EDITAR / NUEVA / BAJA / HABILITAR).
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><span class="capa-tag capa-apoyo">Web · Apoyo</span></td>
+                                    <td>
+                                        <span class="arch">web/common/dataTable/DataTableBehavior</span>
+                                        <span class="arch">web/common/dialogoModal/PaginaDialogoModal</span>
+                                        <span class="arch">web/common/dialogoModal/PaginaDialogoModalMensajeError</span>
+                                        <span class="arch">web/common/dialogoModal/ModalButton</span>
+                                        <span class="arch">web/common/ProcesoLento</span>
+                                    </td>
+                                    <td class="col-nota">—</td>
+                                </tr>
+                                <tr>
+                                    <td><span class="capa-tag capa-servicio">Servicio</span></td>
+                                    <td>
+                                        <span class="arch">ServicioNomenclatura · Impl</span>
+                                        <span class="arch tenue">servicio.entidadQuerys · servicio.usuario</span>
+                                    </td>
+                                    <td class="col-nota">
+                                        Mismo bean que consume Configuración Anexo: los cambios de firma repercuten
+                                        en las dos pantallas.
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><span class="capa-tag capa-dao">DAO</span></td>
+                                    <td><span class="arch">NomenclaturaDAO · DAOImpl</span></td>
+                                    <td class="col-nota"><code>nomenclatura.dao</code>.</td>
+                                </tr>
+                                <tr>
+                                    <td><span class="capa-tag capa-modelo">Modelo</span></td>
+                                    <td>
+                                        <span class="arch">Nomenclatura → NOMENCLATURA</span>
+                                        <span class="arch tenue">entidadBusqueda/EntidadCtrlQuerysNomenclatura</span>
+                                    </td>
+                                    <td class="col-nota">
+                                        Campos: <code>tipoRubro</code>, <code>nivel</code>, <code>codigo</code>,
+                                        <code>concepto</code>, <code>obligatorio</code>, <code>activo</code>,
+                                        y la relación inversa <code>maquetas</code>.
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><span class="capa-tag capa-common">Common</span></td>
+                                    <td>
+                                        <span class="arch">common/rendicionElectronica/NomenclaturaDTO</span>
+                                        <span class="arch">common/rendicionElectronica/TipoRubro</span>
+                                        <span class="arch">common/busqueda/dto/BusquedaNomenclaturaDTO</span>
+                                    </td>
+                                    <td class="col-nota">—</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- ===== CONFIGURACIÓN RENDICIONES ===== -->
+                <div class="tab-pane fade mapa-seccion" id="m-config" role="tabpanel">
+                    <div class="mapa-route">/tcer/app/MaquetaRendicionElectronica</div>
+                    <div class="mapa-titulo">Configuración Rendiciones</div>
+                    <p class="mapa-lead">
+                        La pantalla de configuración más grande del módulo (<strong>2742 líneas</strong>). Define la
+                        maqueta de rendición por tipo de institución y tipo de ingreso: ejercicios, cierre, plazos de
+                        presentación, requerimientos y las instituciones alcanzadas.
+                    </p>
+
+                    <div class="roles-linea">
+                        <span class="roles-label">Roles</span>
+                        <span class="role-chip">ADMINISTRADOR</span>
+                        <span class="role-chip">ADMINISTRADOR_DEPENDENCIA</span>
+                        <span class="role-chip">AUDITOR_RENDICION_ELECTRONICA</span>
+                    </div>
+
+                    <div class="mapa-subtitulo">La jerarquía que edita</div>
+                    <ol class="cadena">
+                        <li><strong>MaquetaRendicionElectronica</strong> — tipo de institución + tipo de ingreso + vigencia por ejercicios</li>
+                        <li><strong>MaquetaRequerimiento</strong> — períodos, plazos, presentación parcial</li>
+                        <li><strong>MaquetaAnexo</strong> — se seleccionan las definidas en Configuración Anexo</li>
+                        <li><strong>Nomenclatura</strong> — cuando el anexo declara <code>defineNomenclaturaUsada</code></li>
+                    </ol>
+
+                    <div class="mapa-subtitulo">Archivos por capa</div>
+                    <div class="table-scroll">
+                        <table class="tabla-capas">
+                            <thead>
+                                <tr><th class="col-capa">Capa</th><th class="col-arch">Archivos</th><th class="col-nota">Nota</th></tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><span class="capa-tag capa-web">Web</span></td>
+                                    <td>
+                                        <span class="ruta">web/…/web/rendicionElectronica/maquetaRendicionElec/</span>
+                                        <span class="arch">PaginaMaquetaRendicionElec.java · <strong>2742 líneas</strong></span>
+                                        <span class="arch">PaginaMaquetaRendicionElec.html</span>
+                                        <span class="arch">PaginaMaquetaRendicionElec.properties</span>
+                                    </td>
+                                    <td class="col-nota">
+                                        Extiende <code>Template</code>. Es la clase más pesada del paquete.
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><span class="capa-tag capa-apoyo">Web · Apoyo</span></td>
+                                    <td>
+                                        <span class="arch">web/common/ProcesoLento</span>
+                                        <span class="arch">web/common/SlimSelectBehavior</span>
+                                        <span class="arch">web/common/dataTable/DataTableBehavior</span>
+                                        <span class="arch">web/common/itemsPorPagina/ItemsPorPagina</span>
+                                        <span class="arch">web/common/dialogoModal/PaginaDialogoModal</span>
+                                        <span class="arch">web/utils/DatePickerHelper · DatePickerMode</span>
+                                        <span class="arch">web/utils/BehaviorPreventDigitosNoNumericos</span>
+                                    </td>
+                                    <td class="col-nota">
+                                        Selección múltiple de instituciones vía <code>SlimSelectBehavior</code>.
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><span class="capa-tag capa-servicio">Servicio</span></td>
+                                    <td>
+                                        <span class="arch">ServicioMaquetaRendicionElectronica →<br>ServicioMaquetaRendicionElecImpl</span>
+                                        <span class="arch">ServicioMaquetaRequerimiento · Impl</span>
+                                        <span class="arch">ServicioMaquetaAnexo · Impl</span>
+                                        <span class="arch">ServicioRendicionElectronica · Impl</span>
+                                        <span class="arch tenue">servicio.institucion · servicio.tipoInstitucion · servicio.tipoIngreso · servicio.entidadQuerys · servicio.usuario</span>
+                                    </td>
+                                    <td class="col-nota">
+                                        <strong>Ojo con el nombre:</strong> la interfaz dice
+                                        <code>…RendicionElectronica</code> y el impl <code>…RendicionElec</code>.
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><span class="capa-tag capa-dao">DAO</span></td>
+                                    <td>
+                                        <span class="arch">MaquetaRendicionElectronicaDAO · DAOImpl</span>
+                                        <span class="arch">MaquetaRequerimientoDAO · DAOImpl</span>
+                                        <span class="arch">MaquetaAnexoDAO · DAOImpl</span>
+                                        <span class="arch">RendicionElectronicaDAO · DAOImpl</span>
+                                    </td>
+                                    <td class="col-nota">
+                                        <code>maquetaRendicion.dao</code>, <code>maquetaRequerimiento.dao</code>
+                                        (<code>spring-dao.xml:268, 274</code>).
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><span class="capa-tag capa-modelo">Modelo</span></td>
+                                    <td>
+                                        <span class="arch">MaquetaRendicionElectronica → MAQUETA_RENDICION_ELECTRONICA</span>
+                                        <span class="arch">MaquetaRequerimiento → MAQUETA_REQUERIMIENTO</span>
+                                        <span class="arch">MaquetaAnexo</span>
+                                        <span class="arch">institucion/Institucion · TipoInstitucion</span>
+                                        <span class="arch">documento/TipoIngreso</span>
+                                        <span class="arch tenue">entidadBusqueda/EntidadCtrlQuerysMaquetaRendicion</span>
+                                        <span class="arch tenue">entidadBusqueda/EntidadCtrlQuerysMaquetaAnexo</span>
+                                    </td>
+                                    <td class="col-nota">—</td>
+                                </tr>
+                                <tr>
+                                    <td><span class="capa-tag capa-common">Common</span></td>
+                                    <td>
+                                        <span class="arch">common/institucion/TipoPeriodo · UtilidadesParaPeriodos · TipoInstitucionDTO</span>
+                                        <span class="arch">common/documento/ClasificacionTipoInstitucion</span>
+                                        <span class="arch">common/utils/FechaUtil · UtilidadesConString · UtilidadesConObjetos</span>
+                                    </td>
+                                    <td class="col-nota">
+                                        <code>UtilidadesParaPeriodos</code> resuelve el armado de períodos habilitados.
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- ===== POR INSTITUCIÓN ===== -->
+                <div class="tab-pane fade mapa-seccion" id="m-institucion" role="tabpanel">
+                    <div class="mapa-route">/tcer/app/RendicionExternos</div>
+                    <div class="mapa-titulo">Por Institución</div>
+                    <p class="mapa-lead">
+                        La pantalla operativa del módulo y la más transversal: lista las rendiciones de una institución,
+                        su situación renditiva, ordenanzas modificadoras y autoridades, y es la puerta de entrada a la
+                        carga de anexos. También es <strong>la home del cuentadante externo</strong>
+                        (<code>WicketApplication.java:139</code>), no sólo un ítem de menú.
+                    </p>
+
+                    <div class="roles-linea">
+                        <span class="roles-label">Roles</span>
+                        <span class="role-chip">ADMINISTRADOR</span>
+                        <span class="role-chip">ADMINISTRADOR_DEPENDENCIA</span>
+                        <span class="role-chip">AUDITOR_RENDICION_ELECTRONICA</span>
+                        <span class="role-chip externo">CUENTADANTE_EXTERNO</span>
+                    </div>
+
+                    <div class="mapa-subtitulo">Cadena de navegación</div>
+                    <ol class="cadena">
+                        <li><strong>PaginaRendicionesPorInstitucionVistaExterna</strong> — institución, ejercicios, rendiciones</li>
+                        <li><strong>PaginaRendicionElectronica</strong> — requerimientos y anexos de una rendición</li>
+                        <li><strong>paginasParaAnexoRequerimiento</strong> — resuelve la página según <code>paginaDeCarga</code> del anexo</li>
+                        <li><strong>PaginaAnexo…</strong> — la pantalla concreta de carga del anexo</li>
+                    </ol>
+
+                    <div class="mapa-subtitulo">Archivos por capa</div>
+                    <div class="table-scroll">
+                        <table class="tabla-capas">
+                            <thead>
+                                <tr><th class="col-capa">Capa</th><th class="col-arch">Archivos</th><th class="col-nota">Nota</th></tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><span class="capa-tag capa-web">Web</span></td>
+                                    <td>
+                                        <span class="ruta">web/…/web/rendicionElectronica/porInstitucion/</span>
+                                        <span class="arch">PaginaRendicionesPorInstitucionVistaExterna.java · <strong>2799 líneas</strong></span>
+                                        <span class="arch">PaginaRendicionesPorInstitucionVistaExterna.html · .properties</span>
+                                        <span class="arch">PanelDetalleResponsable.java · .html</span>
+                                        <span class="arch">PanelFormCuenta.java · .html</span>
+                                    </td>
+                                    <td class="col-nota">
+                                        Los dos paneles no tienen <code>.properties</code>: los textos son literales o
+                                        vienen de la página.
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><span class="capa-tag capa-web">Web · Destino</span></td>
+                                    <td>
+                                        <span class="ruta">…/rendicionElectronica/porRendicion/</span>
+                                        <span class="arch">PaginaRendicionElectronica.java · .html · .properties · <strong>854 líneas</strong></span>
+                                    </td>
+                                    <td class="col-nota">
+                                        Hub de una rendición. Acá está la <span class="lineas">línea 636</span> que
+                                        resuelve la página de cada anexo.
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><span class="capa-tag capa-apoyo">Web · Apoyo</span></td>
+                                    <td>
+                                        <span class="arch">web/templates/NavbarExterno</span>
+                                        <span class="arch">web/common/ProcesoLento</span>
+                                        <span class="arch">web/common/formularios/OrdenanzasFormularioCrear</span>
+                                        <span class="arch">web/utils/AjaxDownload · SecurityUtil</span>
+                                        <span class="arch">web/utils/DatePickerHelper · DatePickerMode</span>
+                                        <span class="arch">web/utils/BehaviorPreventDigitosNoNumericos</span>
+                                    </td>
+                                    <td class="col-nota">
+                                        Usa <code>NavbarExterno</code>, no el <code>Template</code> completo.
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><span class="capa-tag capa-servicio">Servicio</span></td>
+                                    <td>
+                                        <span class="arch">ServicioRendicionElectronica · Impl</span>
+                                        <span class="arch">ServicioArchivoRendicionElectronica · Impl</span>
+                                        <span class="arch">ServicioOrdenanzaModificadora · Impl</span>
+                                        <span class="arch">ServicioOmisionRenditiva · servicio/documento/</span>
+                                        <span class="arch tenue">servicio.institucion · servicio.tipoInstitucion · servicio.autoridad · servicio.documento · servicio.reportes · servicio.entidadQuerys · servicio.usuario</span>
+                                    </td>
+                                    <td class="col-nota">
+                                        <strong>Once beans inyectados:</strong> es la pantalla con más dependencias del módulo.
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><span class="capa-tag capa-dao">DAO</span></td>
+                                    <td>
+                                        <span class="arch">RendicionElectronicaDAO · DAOImpl</span>
+                                        <span class="arch">ArchivoRendicionElectronicaDAO · DAOImpl</span>
+                                        <span class="arch">OrdenanzaModificadoraDAO · DAOImpl</span>
+                                        <span class="arch">ModificacionRegistroDAO · DAOImpl</span>
+                                    </td>
+                                    <td class="col-nota"><code>spring-dao.xml:280, 299, 302, 305</code>.</td>
+                                </tr>
+                                <tr>
+                                    <td><span class="capa-tag capa-modelo">Modelo</span></td>
+                                    <td>
+                                        <span class="arch">RendicionElectronica → RENDICION_ELECTRONICA</span>
+                                        <span class="arch">RequerimientoRendicion · EstadoRendicionElectronica</span>
+                                        <span class="arch">OrdenanzaModificadora · ArchivoOrdenanzaRendicionElectronica</span>
+                                        <span class="arch">ModificacionRegistro</span>
+                                        <span class="arch">institucion/Institucion · Autoridad · Domicilio · CargoExigibleInstitucion</span>
+                                        <span class="arch tenue">entidadBusqueda/EntidadCtrlQuerysRendicionElectronica</span>
+                                        <span class="arch tenue">entidadBusqueda/EntidadCtrlQuerysRequerimientoRendicion</span>
+                                        <span class="arch tenue">entidadBusqueda/EntidadCtrlQuerysInstituciones</span>
+                                        <span class="arch tenue">entidadBusqueda/EntidadCtrlQuerysOrdenanzaModificadora</span>
+                                    </td>
+                                    <td class="col-nota">—</td>
+                                </tr>
+                                <tr>
+                                    <td><span class="capa-tag capa-common">Common</span></td>
+                                    <td>
+                                        <span class="arch">common/busqueda/dto/EntidadReporteSituacionRenditivaDTO</span>
+                                        <span class="arch">common/busqueda/dto/FiltrosEntidadReporteDTO · OrdenanzaModificadoraDTO</span>
+                                        <span class="arch">common/institucion/InstitucionParaRendicionesDTO · Departamento · TipoCargoAutoridad</span>
+                                        <span class="arch">common/rendicionElectronica/TipoEstadoRendicionElectronica</span>
+                                        <span class="arch">common/rendicionElectronica/TipoEstadoRequerimientoRendicion · TipoOrdenanzaModificatoria</span>
+                                        <span class="arch">common/reportes/TipoExportacionArchivo</span>
+                                    </td>
+                                    <td class="col-nota">—</td>
+                                </tr>
+                                <tr>
+                                    <td><span class="capa-tag capa-reportes">Reportes</span></td>
+                                    <td>
+                                        <span class="ruta">web/src/main/webapp/reports/</span>
+                                        <span class="arch">ReporteAnexoAutoridades.jrxml</span>
+                                        <span class="arch">subReporteAnexoAutoridades.jrxml</span>
+                                    </td>
+                                    <td class="col-nota">
+                                        JasperReports invocado desde la propia página
+                                        (<span class="lineas">líneas 2735–2736</span>).
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="mapa-subtitulo">Las páginas de anexo que quedan aguas abajo</div>
+                    <p style="color: #5c6d78; line-height: 1.75;">
+                        Ninguna se abre con <code>setResponsePage</code> directo: todas se resuelven por el mapa de
+                        <code>WicketApplication</code>. Si se toca <code>paginaDeCarga</code>, se toca esta lista.
+                    </p>
+                    <div class="table-scroll">
+                        <table class="tabla-capas">
+                            <thead>
+                                <tr>
+                                    <th style="width: 30%;">Clave en el mapa</th>
+                                    <th style="width: 37%;">Clase</th>
+                                    <th class="col-nota">Servicios propios</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><span class="arch">PaginaAnexoBalance</span></td>
+                                    <td><span class="arch tenue">porRendicion/PaginaAnexoBalance</span></td>
+                                    <td class="col-nota">anexoRendicion, registroPlanillaMovimientos</td>
+                                </tr>
+                                <tr>
+                                    <td><span class="arch">PaginaAnexoCuentas</span></td>
+                                    <td><span class="arch tenue">porRendicion/PaginaAnexoCuentas</span></td>
+                                    <td class="col-nota">anexoRendicion, cuentaBancariaInstitucion, institucion</td>
+                                </tr>
+                                <tr>
+                                    <td><span class="arch">PaginaAnexoResponsable</span></td>
+                                    <td><span class="arch tenue">porRendicion/PaginaResponsableAnexo</span></td>
+                                    <td class="col-nota">anexoRendicion, anexoResponsable, autoridad, institucion</td>
+                                </tr>
+                                <tr>
+                                    <td><span class="arch">PaginaAnexoPresentacionInicialPtosDEF</span></td>
+                                    <td><span class="arch tenue">porRendicion/PaginaAnexoPresentacionInicialPtosDEF</span></td>
+                                    <td class="col-nota">anexoDEF, anexoRendicion, institucion · usa <code>DialogModalAuditorInternoAnexo</code></td>
+                                </tr>
+                                <tr>
+                                    <td><span class="arch">PaginaAnexoFondos</span></td>
+                                    <td><span class="arch tenue">porRendicion/PaginaAnexoFondos</span></td>
+                                    <td class="col-nota">anexoFondo, anexoRendicion, institucion</td>
+                                </tr>
+                                <tr>
+                                    <td><span class="arch">PaginaAnexoIngresos</span></td>
+                                    <td><span class="arch tenue">porRendicion/PaginaAnexoIngresos</span></td>
+                                    <td class="col-nota">anexoIngreso, anexoRendicion, cuentaBancariaInstitucion</td>
+                                </tr>
+                                <tr>
+                                    <td><span class="arch">PaginaLiquidacion</span></td>
+                                    <td><span class="arch tenue">porRendicion/PaginaAnexoLiquidacionCsv</span></td>
+                                    <td class="col-nota">anexoRendicion</td>
+                                </tr>
+                                <tr>
+                                    <td><span class="arch">PaginaAnexoDos</span></td>
+                                    <td><span class="arch tenue">paginasAnexos/paginaAnexoDos/PaginaAnexoDos</span></td>
+                                    <td class="col-nota">registroAnexo, anexoRendicion, maquetaAnexo, maquetaRendicion, rendicionElectronica…</td>
+                                </tr>
+                                <tr>
+                                    <td><span class="arch">PaginaPlanillaMovimientos</span></td>
+                                    <td><span class="arch tenue">planillaMovimientos/PaginaPlanillaMovimientos</span></td>
+                                    <td class="col-nota">
+                                        ver <a href="#m-juntas" class="link-cruzado" style="margin:0;">Juntas de Gobierno →</a>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><span class="arch">ListadoInventario</span></td>
+                                    <td><span class="arch tenue">planillaMovimientos/listaInventario/ListaInventario</span></td>
+                                    <td class="col-nota">anexoRendicion, registroPlanillaInventario</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="nota-clave nota-riesgo">
+                        <strong>⚠️ Una página fuera del circuito</strong>
+                        <code>porRendicion/PaginaRendicion.java</code> (684 líneas) no está montada ni en el mapa de
+                        anexos; su única referencia en todo el WAR es desde <code>PaginaAnexoDos</code>. Conviene
+                        confirmar si sigue viva antes de mantenerla en paralelo a
+                        <code>PaginaRendicionElectronica</code>.
+                    </div>
+                </div>
+
+                <!-- ===== JUNTAS DE GOBIERNO ===== -->
+                <div class="tab-pane fade mapa-seccion" id="m-juntas" role="tabpanel">
+                    <div class="mapa-route">/tcer/app/anexoIngresosGastos</div>
+                    <div class="mapa-titulo">Juntas de Gobierno → Planilla de Movimientos</div>
+                    <p class="mapa-lead">
+                        Submenú con un solo ítem. Planilla de ingresos y egresos con inventario de bienes, pensada para
+                        juntas de gobierno. Es también <strong>un anexo cargable</strong>: figura en
+                        <code>paginasParaAnexoRequerimiento</code>, así que se llega tanto desde el menú como desde
+                        una rendición.
+                    </p>
+
+                    <div class="roles-linea">
+                        <span class="roles-label">Rol del link</span>
+                        <span class="role-chip">ADMINISTRADOR</span>
+                    </div>
+
+                    <div class="mapa-subtitulo">Archivos por capa</div>
+                    <div class="table-scroll">
+                        <table class="tabla-capas">
+                            <thead>
+                                <tr><th class="col-capa">Capa</th><th class="col-arch">Archivos</th><th class="col-nota">Nota</th></tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><span class="capa-tag capa-web">Web</span></td>
+                                    <td>
+                                        <span class="ruta">web/…/web/rendicionElectronica/planillaMovimientos/</span>
+                                        <span class="arch">PaginaPlanillaMovimientos.java · .html · .properties</span>
+                                        <span class="arch">planillas/PlanillaIngreso.java · .html · .properties</span>
+                                        <span class="arch">planillas/PlanillaEgreso.java · .html · .properties</span>
+                                        <span class="arch">formulario/PaginaFormularioPlanillaMovimiento.java · .html · .properties</span>
+                                        <span class="arch">formulario/BienInventariableModalPanel.java · .html · .properties</span>
+                                        <span class="arch">listaInventario/ListaInventario.java · .html · .properties</span>
+                                    </td>
+                                    <td class="col-nota">
+                                        El único de los cinco accesos armado con <strong>varios componentes</strong>
+                                        en vez de una clase monolítica.
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><span class="capa-tag capa-apoyo">Web · Apoyo</span></td>
+                                    <td>
+                                        <span class="arch">web/templates/NavbarExterno</span>
+                                        <span class="arch">web/common/ProcesoLento · PaginaErrorInternoConMensaje</span>
+                                        <span class="arch">web/utils/AjaxDownload</span>
+                                        <span class="arch">web/utils/feedback/FeedbackPanelBootstrap5</span>
+                                    </td>
+                                    <td class="col-nota">—</td>
+                                </tr>
+                                <tr>
+                                    <td><span class="capa-tag capa-servicio">Servicio</span></td>
+                                    <td>
+                                        <span class="ruta">servicio/rendicionElectronica/planillaMovimientos/</span>
+                                        <span class="arch">ServicioRegistroPlanillaMovimientos · Impl</span>
+                                        <span class="arch">ServicioRegistroPlanillaInventario · Impl</span>
+                                        <span class="arch">ServicioMovimientoBienInventario · Impl</span>
+                                        <span class="arch">servicio/rendicionElectronica/ServicioAnexoRendicion · Impl</span>
+                                        <span class="arch tenue">servicio.usuario</span>
+                                    </td>
+                                    <td class="col-nota">
+                                        <code>spring-service.xml:1123, 1131, 1136</code>. Los tres primeros viven en su
+                                        propio subpaquete, no sueltos en <code>rendicionElectronica</code>.
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><span class="capa-tag capa-dao">DAO</span></td>
+                                    <td>
+                                        <span class="ruta">dao/rendicionElectronica/planillaMovimientos/</span>
+                                        <span class="arch">RegistroPlanillaMovimientosDAO · DAOImpl</span>
+                                        <span class="arch">RegistroPlanillaInventarioDAO · DAOImpl</span>
+                                        <span class="arch">MovimientoBienInventarioDAO · DAOImpl</span>
+                                    </td>
+                                    <td class="col-nota"><code>spring-dao.xml:308, 311, 314</code>.</td>
+                                </tr>
+                                <tr>
+                                    <td><span class="capa-tag capa-modelo">Modelo</span></td>
+                                    <td>
+                                        <span class="ruta">modelo/rendicionElectronica/planillaMovimientos/</span>
+                                        <span class="arch">RegistroPlanillaMovimientos · RegistroPlanillaInventario</span>
+                                        <span class="arch">EstadoBienInventariable</span>
+                                        <span class="arch">dto/InventarioAltaDTO · InventarioBajaDTO</span>
+                                        <span class="arch">dto/NuevoRegistroPlanillaMovimientoDTO · RegistroPlanillaMovimientoRequest</span>
+                                        <span class="arch">mapper/PlanillaMovimientosMapper · RegistroMovimientoMapper · ResumenInventarioMapper</span>
+                                        <span class="arch">AnexoRendicion → ANEXO_RENDICION</span>
+                                    </td>
+                                    <td class="col-nota">
+                                        Único submódulo con <strong>DTOs y mappers propios</strong> en <code>model</code>.
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><span class="capa-tag capa-common">Common</span></td>
+                                    <td>
+                                        <span class="arch">common/rendicionElectronica/juntasGobierno/RegistroMovimientoDTO</span>
+                                        <span class="arch">common/rendicionElectronica/planillaMovimientos/TipoRegistroPlanillaMovimientos</span>
+                                        <span class="arch">common/rendicionElectronica/TipoAnexo · TipoRubro</span>
+                                        <span class="arch">common/rendicionElectronica/TipoEstadoAnexoRequerimientoRendicion</span>
+                                        <span class="arch">common/rendicionElectronica/TipoEstadoRespuestaChequeoAnexoRendicion</span>
+                                    </td>
+                                    <td class="col-nota">—</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="nota-clave nota-alerta">
+                        <strong>📌 Parámetro fijo en el menú</strong>
+                        El link arma <code>PageParameters</code> con <code>idPlanillaMovimientos = 123456</code>
+                        literal (<code>Template.java:661</code>). Desde una rendición el id llega del anexo real;
+                        desde el menú, no. Vale confirmarlo antes de trabajar sobre esta pantalla.
+                    </div>
+                </div>
+
+                <!-- ===== DÓNDE SE REGISTRA TODO ===== -->
+                <div class="tab-pane fade mapa-seccion" id="m-registro" role="tabpanel">
+                    <div class="mapa-kicker">Cableado explícito · sin component scanning</div>
+                    <div class="mapa-titulo">Dónde se registra todo</div>
+                    <p class="mapa-lead">
+                        En SIGEDO nada se descubre solo. Al agregar una pantalla, un servicio, un DAO o una entidad
+                        en cualquiera de estos cinco circuitos hay que <strong>registrarlo a mano</strong> en estos
+                        archivos, o el arranque falla o el mapeo no existe.
+                    </p>
+
+                    <div class="registro-item">
+                        <strong>Página nueva</strong> — <code>WicketApplication.init()</code>:
+                        <code>mountPage(...)</code> para la URL,
+                        <code>MetaDataRoleAuthorizationStrategy.authorize(...)</code> para el rol, y
+                        <code>paginasParaAnexoRequerimiento.put(...)</code> si es una pantalla de carga de anexo.
+                        <strong>Los tres lugares, no uno.</strong>
+                    </div>
+                    <div class="registro-item">
+                        <strong>Ítem de menú</strong> — <code>Template.html</code> (markup),
+                        <code>Template.java</code> (link + <code>SecurityUtil.setAuthorization</code>) y
+                        <code>Template.properties</code> (texto).
+                    </div>
+                    <div class="registro-item">
+                        <strong>Servicio nuevo</strong> — <code>service-impl/src/main/resources/spring-service.xml</code>,
+                        id <code>servicio.xxx</code>, inyección por setter.
+                        <code>SpringServiceDependencyGraphTest</code> falla si el servicio nuevo entra en el conjunto
+                        de ciclos conocidos: hay que <strong>romper el ciclo, no ampliar la lista</strong>.
+                    </div>
+                    <div class="registro-item">
+                        <strong>DAO nuevo</strong> — <code>dao-impl/src/main/resources/spring-dao.xml</code>,
+                        id <code>xxx.dao</code>, <code>parent="dao.base"</code>.
+                    </div>
+                    <div class="registro-item">
+                        <strong>Entidad nueva</strong> — <code>dao-impl/src/main/resources/META-INF/persistence.xml</code>,
+                        unidad <code>tcer</code>, como <code>&lt;class&gt;</code>. El escaneo implícito está deshabilitado
+                        a propósito; hoy hay <strong>27 entradas</strong> del paquete <code>rendicionElectronica</code>.
+                        <code>HibernateMappingBootstrapTest</code> lo verifica.
+                    </div>
+                    <div class="registro-item">
+                        <strong>Grilla de búsqueda</strong> — una clase <code>EntidadCtrlQuerysXxx</code> en
+                        <code>model/…/modelo/entidadBusqueda/</code>, consumida vía <code>servicio.entidadQuerys</code>.
+                    </div>
+
+                    <div class="mapa-subtitulo">Documentación de negocio relacionada</div>
+                    <ul style="color: #4a5b66; line-height: 1.9;">
+                        <li><code>docs/acordada_310_rendicion_electronica.md</code> — el marco normativo del módulo.</li>
+                        <li><code>docs/Manual_Comisiones_Auditoria.md</code> — circuito de auditoría.</li>
+                        <li><code>scripts/*.sql</code> — datos y migraciones que acompañan features del módulo.</li>
+                    </ul>
+
+                    <div class="nota-clave nota-info">
+                        <strong>🧭 Cómo leer el módulo completo</strong>
+                        Los cinco accesos comparten <code>servicio.entidadQuerys</code>, <code>servicio.usuario</code>
+                        y el paquete <code>ar.gob.tcer.modelo.rendicionElectronica</code>. En la práctica:
+                        <strong>Configuración Anexo</strong> y <strong>Nomenclaturas</strong> definen el vocabulario,
+                        <strong>Configuración Rendiciones</strong> arma la maqueta, y <strong>Por Institución</strong>
+                        con <strong>Juntas de Gobierno</strong> son la operación sobre esa maqueta.
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Footer -->
@@ -1890,5 +3131,31 @@ Documento {           DOCUMENTO
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    // Las tarjetas de acceso y los enlaces cruzados del Mapa del Menú activan
+    // el pill correspondiente de .mapa-nav (Bootstrap sólo maneja los que están
+    // dentro del propio nav).
+    document.querySelectorAll('.acceso-card, .link-cruzado[href^="#m-"]').forEach(function (enlace) {
+        enlace.addEventListener('click', function (e) {
+            var boton = document.querySelector('.mapa-nav [data-bs-target="' + enlace.getAttribute('href') + '"]');
+            if (!boton) return;
+            e.preventDefault();
+            bootstrap.Tab.getOrCreateInstance(boton).show();
+            document.querySelector('.mapa-nav').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
+    });
+
+    // Los enlaces del tab Rendiciones que apuntan al Mapa abren primero ese tab.
+    document.querySelectorAll('[data-mapa-seccion]').forEach(function (enlace) {
+        enlace.addEventListener('click', function (e) {
+            e.preventDefault();
+            bootstrap.Tab.getOrCreateInstance(document.getElementById('mapa-tab')).show();
+            var destino = enlace.getAttribute('data-mapa-seccion');
+            var boton = document.querySelector('.mapa-nav [data-bs-target="' + destino + '"]');
+            if (boton) bootstrap.Tab.getOrCreateInstance(boton).show();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+    });
+</script>
 </body>
 </html>
