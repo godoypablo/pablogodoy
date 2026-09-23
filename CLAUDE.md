@@ -500,6 +500,15 @@ netstat -tulpn | grep 8090
 ✅ **Estadísticas en tiempo real**  
 ✅ **Historial de fecha_pago**  
 
+#### Grilla de Cuotas (hipoteca.php)
+
+**Columnas (tabla desktop, todas visibles con títulos centrados):**
+Nro | Estado | Fecha Vto | Capital (UVA) | Interés (UVA) | Total (UVA) | Valor UVA ($) | **Arca ($)** | Cuota Bco ($) | Fecha Pago
+
+- **Arca ($):** campo calculado en el frontend (no está en la BD) = `interés (UVA) × valor_uva`. Se muestra en verde (`.arca-valor`), con 2 decimales.
+- **Cuota Bco ($):** antes se llamaba "Total ($)" — es `total_uva × valor_uva`.
+- Las tarjetas mobile replican las mismas columnas (incluye Arca y Fecha Pago) para mantener paridad con la tabla.
+
 #### Valores de UVA (Actualización Mensual)
 
 **Conocidos:**
@@ -693,6 +702,21 @@ Este documento centraliza:
 5. **SIGEDO:** Sistema de gestión electrónica de documentos para TCER
 6. **Crédito Hipotecario:** Gestor de 120 cuotas en UVAs (integrado en Cifra)
 7. **Gym:** Rutina profesional de entrenamientos (Lunes, Miércoles, Viernes)
+
+---
+
+## 🏗️ Cambios Recientes (2026-09-22)
+
+### Crédito Hipotecario - Mejoras en Grilla ✅ NUEVO
+
+**Implementación Completa (`cifra/hipoteca.php`):**
+- ✅ Nueva columna calculada **Arca ($)** = interés (UVA) × valor_uva, en verde, 2 decimales
+- ✅ Columna "Total ($)" renombrada a **Cuota Bco ($)**
+- ✅ Títulos de columnas centrados en la tabla desktop
+- ✅ Todas las columnas visibles sin ocultamiento responsivo (Capital, Interés, Fecha Pago ya no se ocultan en desktop)
+- ✅ Tarjetas mobile actualizadas con las mismas columnas para mantener paridad
+
+**Última actualización:** 2026-09-22 / Septiembre
 
 ---
 

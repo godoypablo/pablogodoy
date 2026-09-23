@@ -43,6 +43,14 @@ define('APP_VERSION', '20260721-1');
             color: var(--bs-body-color);
         }
 
+        #tableContainer thead th {
+            text-align: center;
+        }
+
+        .arca-valor {
+            color: #10b981;
+        }
+
         td {
             padding: 0.75rem;
             font-size: 0.95rem;
@@ -360,12 +368,13 @@ define('APP_VERSION', '20260721-1');
                             <th class="nro-cuota">Nro</th>
                             <th>Estado</th>
                             <th>Fecha Vto</th>
-                            <th class="numero d-none d-md-table-header-cell">Capital (UVA)</th>
-                            <th class="numero d-none d-md-table-header-cell">Interés (UVA)</th>
+                            <th class="numero">Capital (UVA)</th>
+                            <th class="numero">Interés (UVA)</th>
                             <th class="numero">Total (UVA)</th>
                             <th class="numero">Valor UVA ($)</th>
-                            <th class="numero">Total ($)</th>
-                            <th class="d-none d-md-table-header-cell">Fecha Pago</th>
+                            <th class="numero">Arca ($)</th>
+                            <th class="numero">Cuota Bco ($)</th>
+                            <th>Fecha Pago</th>
                         </tr>
                     </thead>
                     <tbody id="cuotasTable">
@@ -444,7 +453,8 @@ define('APP_VERSION', '20260721-1');
                 const row = document.createElement('tr');
                 const estilo = cuota.estado === 'PAGADA' ? 'badge-pagada' : 'badge-impaga';
                 const checked = cuota.estado === 'PAGADA' ? 'checked' : '';
-                const fechaPago = cuota.fecha_pago ? cuota.fecha_pago : '-';
+                const arca = cuota.valor_uva ? parseFloat(cuota.interes) * parseFloat(cuota.valor_uva) : null;
+                const fechaPago = cuota.fecha_pago ? formatoFecha(cuota.fecha_pago) : '-';
 
                 row.innerHTML = `
                     <td class="nro-cuota">${cuota.nro_cuota}</td>
@@ -458,18 +468,21 @@ define('APP_VERSION', '20260721-1');
                         </div>
                     </td>
                     <td>${formatoFecha(cuota.fecha_vencimiento)}</td>
-                    <td class="numero d-none d-md-table-cell">${parseFloat(cuota.capital).toFixed(2)}</td>
-                    <td class="numero d-none d-md-table-cell">${parseFloat(cuota.interes).toFixed(2)}</td>
+                    <td class="numero">${parseFloat(cuota.capital).toFixed(2)}</td>
+                    <td class="numero">${parseFloat(cuota.interes).toFixed(2)}</td>
                     <td class="numero fw-600">${parseFloat(cuota.total_uva).toFixed(2)}</td>
                     <td class="valor-uva-cell numero">
                         <span class="valor-uva-display" onclick="editarValorUVA(${cuota.nro_cuota}, this)">
                             ${cuota.valor_uva ? '$' + parseFloat(cuota.valor_uva).toFixed(2) : '-'}
                         </span>
                     </td>
+                    <td class="numero arca-valor">
+                        ${arca !== null ? '$' + arca.toLocaleString('es-AR', {minimumFractionDigits: 2, maximumFractionDigits: 2}) : '-'}
+                    </td>
                     <td class="numero fw-600 text-primary">
                         ${cuota.total_pesos ? '$' + parseFloat(cuota.total_pesos).toLocaleString('es-AR', {minimumFractionDigits: 2}) : '$0.00'}
                     </td>
-                    <td class="small text-muted d-none d-md-table-cell">${fechaPago}</td>
+                    <td class="small text-muted">${fechaPago}</td>
                 `;
                 tbody.appendChild(row);
             });
@@ -483,7 +496,8 @@ define('APP_VERSION', '20260721-1');
                 const card = document.createElement('div');
                 const estilo = cuota.estado === 'PAGADA' ? 'badge-pagada' : 'badge-impaga';
                 const checked = cuota.estado === 'PAGADA' ? 'checked' : '';
-                const fechaPago = cuota.fecha_pago ? cuota.fecha_pago : '-';
+                const arca = cuota.valor_uva ? parseFloat(cuota.interes) * parseFloat(cuota.valor_uva) : null;
+                const fechaPago = cuota.fecha_pago ? formatoFecha(cuota.fecha_pago) : '-';
 
                 card.className = 'cuota-card';
                 card.innerHTML = `
@@ -498,6 +512,16 @@ define('APP_VERSION', '20260721-1');
                     </div>
 
                     <div class="cuota-card-row">
+                        <span class="cuota-card-label">Capital (UVA)</span>
+                        <span class="cuota-card-value">${parseFloat(cuota.capital).toFixed(2)}</span>
+                    </div>
+
+                    <div class="cuota-card-row">
+                        <span class="cuota-card-label">Interés (UVA)</span>
+                        <span class="cuota-card-value">${parseFloat(cuota.interes).toFixed(2)}</span>
+                    </div>
+
+                    <div class="cuota-card-row">
                         <span class="cuota-card-label">Total (UVA)</span>
                         <span class="cuota-card-value">${parseFloat(cuota.total_uva).toFixed(2)}</span>
                     </div>
@@ -507,6 +531,16 @@ define('APP_VERSION', '20260721-1');
                         <span class="cuota-card-valor-uva" onclick="editarValorUVA(${cuota.nro_cuota}, this)">
                             ${cuota.valor_uva ? '$' + parseFloat(cuota.valor_uva).toFixed(2) : '-'}
                         </span>
+                    </div>
+
+                    <div class="cuota-card-row">
+                        <span class="cuota-card-label">Arca</span>
+                        <span class="cuota-card-value arca-valor">${arca !== null ? '$' + arca.toLocaleString('es-AR', {minimumFractionDigits: 2, maximumFractionDigits: 2}) : '-'}</span>
+                    </div>
+
+                    <div class="cuota-card-row">
+                        <span class="cuota-card-label">Fecha Pago</span>
+                        <span class="cuota-card-value">${fechaPago}</span>
                     </div>
 
                     <div class="cuota-card-footer">
