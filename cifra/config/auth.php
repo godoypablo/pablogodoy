@@ -1,10 +1,17 @@
 <?php
 // ── Credenciales de acceso ───────────────────────────────────────
-// Para cambiar la contraseña, generá un nuevo hash con:
-//   php -r "echo password_hash('tu_nueva_password', PASSWORD_BCRYPT);"
-// y reemplazá AUTH_PASS_HASH.
+// Las credenciales reales viven en auth.local.php (NO se sube a Git).
+// Para crearlo: copiá auth.local.example.php → auth.local.php y completalo.
 
-define('AUTH_USER',      'pablo');
-define('AUTH_PASS_HASH', '$2y$10$.ldTXukl2CZ/p9apwG6wZeBfobLAXI9.jdxKJkm6hcABM2NGDRK0i'); // cifra1234
-define('AUTH_SECRET',    '4106126f20319f6b20cfcdb57e3f66215dde1617ddf84a8edcc842d5ec4569b1');
-define('REMEMBER_DAYS',  30);
+$__auth_local = __DIR__ . '/auth.local.php';
+if (!file_exists($__auth_local)) {
+    http_response_code(500);
+    error_log('[cifra] Falta config/auth.local.php');
+    exit('Configuración de acceso incompleta.');
+}
+require_once $__auth_local;
+unset($__auth_local);
+
+if (!defined('REMEMBER_DAYS'))     define('REMEMBER_DAYS', 30);
+if (!defined('LOGIN_MAX_INTENTOS')) define('LOGIN_MAX_INTENTOS', 5);
+if (!defined('LOGIN_BLOQUEO_SEG'))  define('LOGIN_BLOQUEO_SEG', 15 * 60);

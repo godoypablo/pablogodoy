@@ -1,0 +1,21 @@
+# ── pablogodoy.com.ar ──────────────────────────────────────────────
+
+# ── Bloquear archivos que no son para la web ──────────────────────
+# Documentación, SQL, scripts, backups, logs y archivos ocultos (.env, .gitignore…)
+RedirectMatch 404 (?i)\.(md|sql|sh|py|log|bak|ini|dist|lock)$
+RedirectMatch 404 \.example\.php$
+RedirectMatch 404 /\.(?!well-known/)
+
+# Carpetas internas: config, scripts de mantenimiento, tests, librerías y proyectos de IDE
+RedirectMatch 404 ^/(\.idea|\.claude|\.codegraph|\.git|nbproject)(/|$)
+RedirectMatch 404 ^/cifra/(config|scripts|tests|lib|docs)(/|$)
+RedirectMatch 404 ^/cifra/test_[^/]*$
+
+# ── Headers de seguridad ──────────────────────────────────────────
+<IfModule mod_headers.c>
+    Header always set Strict-Transport-Security "max-age=31536000"
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set X-Frame-Options "SAMEORIGIN"
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+    Header always set Permissions-Policy "camera=(), microphone=(), geolocation=()"
+</IfModule>

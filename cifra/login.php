@@ -3,18 +3,28 @@ require_once 'config/auth_check.php';
 cifra_start_session();
 
 $error = '';
+$next  = cifra_destino_seguro($_POST['next'] ?? $_GET['next'] ?? null);
+
+if (!empty($_SESSION['logged_in'])) {
+    header('Location: ' . $next);
+    exit;
+}
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $user = trim($_POST['usuario'] ?? '');
     $pass = $_POST['password'] ?? '';
     $remember = !empty($_POST['recordarme']);
 
-    if ($user === AUTH_USER && password_verify($pass, AUTH_PASS_HASH)) {
-        $_SESSION['logged_in'] = true;
+    if ($espera = cifra_login_bloqueado()) {
+        $error = 'Demasiados intentos fallidos. Probá de nuevo en ' . ceil($espera / 60) . ' minutos.';
+    } elseif (hash_equals(AUTH_USER, $user) && password_verify($pass, AUTH_PASS_HASH)) {
+        cifra_login_reset();
+        cifra_marcar_logueado();
         if ($remember) cifra_set_remember_cookie();
-        header('Location: index.php');
+        header('Location: ' . $next);
         exit;
     } else {
+        cifra_login_fallido();
         $error = 'Usuario o contraseña incorrectos.';
     }
 }
@@ -150,6 +160,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <?php endif; ?>
 
                 <form method="POST" autocomplete="on">
+                    <input type="hidden" name="next" value="<?= htmlspecialchars($next) ?>">
                     <!-- Usuario -->
                     <div class="mb-3">
                         <label for="usuario" class="form-label small fw-medium">Usuario</label>

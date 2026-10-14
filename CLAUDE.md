@@ -535,13 +535,24 @@ cifra/
 └── api/
     └── hipoteca_api.php     ← API REST (autenticada)
 
-hipoteca/
+cifra/scripts/hipoteca/      ← bloqueado a la web (.htaccess)
 ├── datos_cuotas.json        ← 120 cuotas (backup)
 ├── 00_alterar_tabla.sql     ← Estructura de BD
+├── 01_create_table.sql
 ├── 02_insert_cuotas.sql     ← Datos iniciales
 ├── actualizar_valor_uva_por_mes.sql ← Script actualización
 └── ACTUALIZAR_VALORES_UVA.md ← Guía mantenimiento
 ```
+
+La carpeta raíz `hipoteca/` (versión vieja sin login) fue eliminada el 2026-10-14.
+
+#### Seguridad del sitio (2026-10-14)
+
+- **Login único** (`cifra/config/auth_check.php`), reutilizable por el futuro `/panel/`. Credenciales en `cifra/config/auth.local.php` (**fuera de Git**; plantilla: `auth.local.example.php`).
+- Límite: 5 intentos fallidos / 15 min por IP · `session_regenerate_id` al loguear · cookies `Secure` · `login.php?next=/ruta` vuelve a la página pedida.
+- `.htaccess` raíz: bloquea `*.md`, `*.sql`, `*.sh`, `*.py`, dotfiles, `cifra/{config,scripts,tests,lib,docs}`, `cifra/test_*` + headers de seguridad (HSTS, nosniff, frame-options).
+- APIs: errores de BD se loguean con `error_log`, al cliente solo va un mensaje genérico (`cifra_error_publico()`).
+- **Nunca** abrir por navegador/curl scripts de `cifra/scripts/`: se ejecutan (ej. `regenerar_cuotas_cierre_id.php` borra y regenera cuotas). Correrlos solo por CLI.
 
 #### Flujo Típico de Uso
 

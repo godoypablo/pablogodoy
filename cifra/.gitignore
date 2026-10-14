@@ -28,3 +28,6 @@ temp/
 *.backup
 *.bak
 backup*.sql
+
+# Credenciales locales (nunca a Git)
+config/auth.local.php

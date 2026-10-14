@@ -1,11 +1,17 @@
 <?php
 require_once __DIR__ . '/auth.php';
 
+function cifra_es_https() {
+    return (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+        || (($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https');
+}
+
 function cifra_start_session() {
     if (session_status() === PHP_SESSION_NONE) {
         session_set_cookie_params([
             'lifetime' => 0,
             'path'     => '/',
+            'secure'   => cifra_es_https(),
             'httponly' => true,
             'samesite' => 'Lax',
         ]);
@@ -31,13 +37,74 @@ function cifra_set_remember_cookie() {
     setcookie('cifra_remember', $user . '|' . $expiry . '|' . $mac, [
         'expires'  => $expiry,
         'path'     => '/',
+        'secure'   => cifra_es_https(),
         'httponly' => true,
         'samesite' => 'Lax',
     ]);
 }
 
 function cifra_clear_remember_cookie() {
-    setcookie('cifra_remember', '', ['expires' => time() - 3600, 'path' => '/']);
+    setcookie('cifra_remember', '', [
+        'expires'  => time() - 3600,
+        'path'     => '/',
+        'secure'   => cifra_es_https(),
+        'httponly' => true,
+        'samesite' => 'Lax',
+    ]);
+}
+
+// Marca la sesión como autenticada (nuevo ID de sesión: evita fijación de sesión)
+function cifra_marcar_logueado() {
+    session_regenerate_id(true);
+    $_SESSION['logged_in'] = true;
+}
+
+// ── Límite de intentos de login (por IP) ─────────────────────────
+function cifra_intentos_archivo() {
+    $dir = sys_get_temp_dir() . '/cifra_login';
+    if (!is_dir($dir)) @mkdir($dir, 0700, true);
+    return $dir . '/' . hash('sha256', $_SERVER['REMOTE_ADDR'] ?? 'cli');
+}
+
+function cifra_intentos_leer() {
+    $f = cifra_intentos_archivo();
+    $data = is_file($f) ? json_decode((string)@file_get_contents($f), true) : null;
+    if (!is_array($data) || ($data['desde'] ?? 0) < time() - LOGIN_BLOQUEO_SEG) {
+        return ['desde' => time(), 'fallos' => 0];
+    }
+    return $data;
+}
+
+// Segundos que faltan para poder reintentar (0 = no bloqueado)
+function cifra_login_bloqueado() {
+    $d = cifra_intentos_leer();
+    if ($d['fallos'] < LOGIN_MAX_INTENTOS) return 0;
+    return max(0, $d['desde'] + LOGIN_BLOQUEO_SEG - time());
+}
+
+function cifra_login_fallido() {
+    $d = cifra_intentos_leer();
+    $d['fallos']++;
+    @file_put_contents(cifra_intentos_archivo(), json_encode($d), LOCK_EX);
+}
+
+function cifra_login_reset() {
+    @unlink(cifra_intentos_archivo());
+}
+
+// Solo permite redirigir a rutas internas del sitio
+function cifra_destino_seguro($next) {
+    if (is_string($next) && preg_match('#^/(?![/\\\\])#', $next)) return $next;
+    return '/cifra/index.php';
+}
+
+// Errores para el cliente: los de BD se ocultan (van al log), el resto se muestra
+function cifra_error_publico(Throwable $e) {
+    error_log('[cifra] ' . get_class($e) . ': ' . $e->getMessage() . ' @ ' . $e->getFile() . ':' . $e->getLine());
+    if ($e instanceof PDOException || $e instanceof mysqli_sql_exception) {
+        return 'Error interno de base de datos';
+    }
+    return 'Error: ' . $e->getMessage();
 }
 
 // Para páginas PHP: redirige a login si no está autenticado
@@ -45,10 +112,10 @@ function require_auth_or_redirect() {
     cifra_start_session();
     if (!empty($_SESSION['logged_in'])) return;
     if (cifra_validate_remember_cookie()) {
-        $_SESSION['logged_in'] = true;
+        cifra_marcar_logueado();
         return;
     }
-    header('Location: /login.php');
+    header('Location: /cifra/login.php?next=' . urlencode($_SERVER['REQUEST_URI'] ?? '/cifra/'));
     exit;
 }
 
@@ -57,7 +124,7 @@ function require_auth_or_401() {
     cifra_start_session();
     if (!empty($_SESSION['logged_in'])) return;
     if (cifra_validate_remember_cookie()) {
-        $_SESSION['logged_in'] = true;
+        cifra_marcar_logueado();
         return;
     }
     http_response_code(401);

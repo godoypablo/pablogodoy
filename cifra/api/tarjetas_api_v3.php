@@ -293,7 +293,7 @@ try {
 
         } catch (Exception $e) {
             $db->rollBack();
-            sendResponse(false, null, 'Error: ' . $e->getMessage(), 500);
+            sendResponse(false, null, cifra_error_publico($e), 500);
         }
     }
 
@@ -339,7 +339,7 @@ try {
             $vencimientos = TarjetasFinanciero::obtenerVencimientosConsolidados($tarjeta_id);
             sendResponse(true, $vencimientos);
         } catch (Exception $e) {
-            sendResponse(false, null, 'Error: ' . $e->getMessage(), 500);
+            sendResponse(false, null, cifra_error_publico($e), 500);
         }
     }
 
@@ -358,7 +358,7 @@ try {
             $proximo = TarjetasFinanciero::obtenerProximoVencimiento($tarjeta_id);
             sendResponse(true, $proximo);
         } catch (Exception $e) {
-            sendResponse(false, null, 'Error: ' . $e->getMessage(), 500);
+            sendResponse(false, null, cifra_error_publico($e), 500);
         }
     }
 
@@ -377,7 +377,7 @@ try {
             $disponible = TarjetasFinanciero::obtenerLimiteDisponible($tarjeta_id);
             sendResponse(true, $disponible);
         } catch (Exception $e) {
-            sendResponse(false, null, 'Error: ' . $e->getMessage(), 500);
+            sendResponse(false, null, cifra_error_publico($e), 500);
         }
     }
 
@@ -400,7 +400,7 @@ try {
                 sendResponse(false, null, 'No se pudo marcar la cuota', 500);
             }
         } catch (Exception $e) {
-            sendResponse(false, null, 'Error: ' . $e->getMessage(), 500);
+            sendResponse(false, null, cifra_error_publico($e), 500);
         }
     }
 
@@ -467,7 +467,7 @@ try {
                 sendResponse(false, null, 'No se pudo anular el movimiento', 500);
             }
         } catch (Exception $e) {
-            sendResponse(false, null, 'Error: ' . $e->getMessage(), 500);
+            sendResponse(false, null, cifra_error_publico($e), 500);
         }
     }
 
@@ -612,7 +612,7 @@ try {
             sendResponse(true, ['generados' => $generados], "Se generaron $generados cierres automáticamente");
 
         } catch (Exception $e) {
-            sendResponse(false, null, 'Error: ' . $e->getMessage(), 500);
+            sendResponse(false, null, cifra_error_publico($e), 500);
         }
     }
 
@@ -639,7 +639,7 @@ try {
             $resultado = TarjetasFinanciero::sincronizarConConcepto($tarjeta_id, $mes, $anio, $ajuste);
             sendResponse(true, $resultado, 'Concepto sincronizado');
         } catch (Exception $e) {
-            sendResponse(false, null, 'Error: ' . $e->getMessage(), 500);
+            sendResponse(false, null, cifra_error_publico($e), 500);
         }
     }
 
@@ -647,5 +647,5 @@ try {
     sendResponse(false, null, 'Acción no reconocida', 404);
 
 } catch (Exception $e) {
-    sendResponse(false, null, 'Error: ' . $e->getMessage(), 500);
+    sendResponse(false, null, cifra_error_publico($e), 500);
 }

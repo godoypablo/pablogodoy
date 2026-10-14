@@ -4,20 +4,14 @@ header('Content-Type: application/json; charset=utf-8');
 require_once '../config/auth_check.php';
 require_auth_or_401();
 
-// Intentar cargar database.php si existe
-if (file_exists('../config/database.php')) {
+try {
     require_once '../config/database.php';
     $db = Database::getInstance()->getConnection();
-} else {
-    // Fallback: conectar directamente
-    try {
-        $db = new PDO('mysql:host=localhost;dbname=gastos_personales;charset=utf8mb4', 'root', '');
-        $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-    } catch (PDOException $e) {
-        http_response_code(500);
-        echo json_encode(['success' => false, 'message' => 'Error de conexión a BD']);
-        exit;
-    }
+} catch (Throwable $e) {
+    error_log('[cifra] hipoteca_api: ' . $e->getMessage());
+    http_response_code(500);
+    echo json_encode(['success' => false, 'message' => 'Error de conexión a BD']);
+    exit;
 }
 
 $response = ['success' => false, 'message' => ''];
@@ -111,7 +105,7 @@ try {
     }
 } catch (Exception $e) {
     http_response_code(500);
-    $response['message'] = "Error: " . $e->getMessage();
+    $response['message'] = cifra_error_publico($e);
 }
 
 echo json_encode($response, JSON_UNESCAPED_UNICODE);

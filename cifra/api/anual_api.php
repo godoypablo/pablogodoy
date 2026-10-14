@@ -79,5 +79,5 @@ try {
     ]);
 
 } catch (Exception $e) {
-    sendResponse(false, null, 'Error: ' . $e->getMessage(), 500);
+    sendResponse(false, null, cifra_error_publico($e), 500);
 }
