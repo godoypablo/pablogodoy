@@ -15,3 +15,4 @@ unset($__auth_local);
 if (!defined('REMEMBER_DAYS'))     define('REMEMBER_DAYS', 30);
 if (!defined('LOGIN_MAX_INTENTOS')) define('LOGIN_MAX_INTENTOS', 5);
 if (!defined('LOGIN_BLOQUEO_SEG'))  define('LOGIN_BLOQUEO_SEG', 15 * 60);
+if (!defined('VIAJE_RECORDAR_DIAS')) define('VIAJE_RECORDAR_DIAS', 180);

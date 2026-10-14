@@ -1,3 +1,4 @@
+<?php require __DIR__ . '/../_auth.php'; ?>
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -524,7 +525,7 @@
 <body>
 
 <div class="container py-5">
-    <a href="/" class="back-btn"><i class="bi bi-arrow-left"></i> Volver al Panel</a>
+    <a href="/panel/" class="back-btn"><i class="bi bi-arrow-left"></i> Volver al Panel</a>
 
     <div class="header">
         <h1><i class="bi bi-book"></i> Tutorial SIGEDO</h1>
@@ -3126,7 +3127,7 @@ Documento {           DOCUMENTO
     <div style="text-align: center; margin-top: 60px; padding-top: 30px; border-top: 1px solid #ddd; color: #999;">
         <p><strong>📚 Tutorial Completo de SIGEDO</strong></p>
         <p>Todo en una página | Tabs para navegar | Acordeones para profundidad</p>
-        <p><a href="/" style="color: #006BA6; text-decoration: none;">← Volver al Panel</a></p>
+        <p><a href="/panel/" style="color: #006BA6; text-decoration: none;">← Volver al Panel</a></p>
     </div>
 </div>
 

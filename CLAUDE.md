@@ -552,6 +552,9 @@ La carpeta raíz `hipoteca/` (versión vieja sin login) fue eliminada el 2026-10
 - Límite: 5 intentos fallidos / 15 min por IP · `session_regenerate_id` al loguear · cookies `Secure` · `login.php?next=/ruta` vuelve a la página pedida.
 - `.htaccess` raíz: bloquea `*.md`, `*.sql`, `*.sh`, `*.py`, dotfiles, `cifra/{config,scripts,tests,lib,docs}`, `cifra/test_*` + headers de seguridad (HSTS, nosniff, frame-options).
 - APIs: errores de BD se loguean con `error_log`, al cliente solo va un mensaje genérico (`cifra_error_publico()`).
+- **Panel privado** (`/panel/`): `panel/index.php` + ayudamemorias en `panel/notas/*.php`; cada uno empieza con `require __DIR__ . '/../_auth.php'`. Las URLs viejas `/*.html` redirigen (301) a `/panel/notas/*.php`.
+- **Viaje** (`/viaje.php`, no se mueve para no romper la PWA del grupo): `viaje_require_acceso()` pide la clave del grupo (`VIAJE_PASS_HASH` en `auth.local.php`, cookie `viaje_acceso` 180 días). Logueado en Cifra entra directo. Pantalla: `cifra/config/viaje_acceso.php`.
+- **Portada** (`index.php`): transitoria "en construcción" hasta la landing; link "Acceso" → `/cifra/login.php?next=/panel/`.
 - **Nunca** abrir por navegador/curl scripts de `cifra/scripts/`: se ejecutan (ej. `regenerar_cuotas_cierre_id.php` borra y regenera cuotas). Correrlos solo por CLI.
 
 #### Flujo Típico de Uso

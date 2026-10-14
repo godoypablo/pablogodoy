@@ -134,7 +134,7 @@ $labelFiltro = $meses[(int)date('n') - 1] . ' ' . date('Y');
                             </a>
                         </li>
                         <li>
-                            <a class="dropdown-item d-flex align-items-center gap-2" href="logout.php">
+                            <a class="dropdown-item d-flex align-items-center gap-2" href="logout.php?volver=cifra">
                                 <i class="bi bi-box-arrow-right menu-icon"></i>
                                 Cerrar sesión
                             </a>

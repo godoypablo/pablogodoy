@@ -1,4 +1,8 @@
 <?php
+// ── ACCESO: clave del grupo (o login de Cifra) ────────
+require_once __DIR__ . '/cifra/config/auth_check.php';
+viaje_require_acceso();
+
 // ── FUNCIÓN PARA CALCULAR EDAD ────────────────────────
 function calcularEdad($fechaNacimiento) {
     try {

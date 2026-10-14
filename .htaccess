@@ -11,6 +11,9 @@ RedirectMatch 404 ^/(\.idea|\.claude|\.codegraph|\.git|nbproject)(/|$)
 RedirectMatch 404 ^/cifra/(config|scripts|tests|lib|docs)(/|$)
 RedirectMatch 404 ^/cifra/test_[^/]*$
 
+# ── URLs viejas del panel → panel privado (pide login) ────────────
+RedirectMatch 301 ^/(claudecode|linux|github|sigedo|nutricion|gym)\.html$ /panel/notas/$1.php
+
 # ── Headers de seguridad ──────────────────────────────────────────
 <IfModule mod_headers.c>
     Header always set Strict-Transport-Security "max-age=31536000"

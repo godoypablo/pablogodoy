@@ -107,6 +107,52 @@ function cifra_error_publico(Throwable $e) {
     return 'Error: ' . $e->getMessage();
 }
 
+// ── Acceso al viaje con clave compartida del grupo ───────────────
+// Cookie propia (no da acceso a Cifra ni al panel). Si estás logueado, entrás directo.
+function viaje_cookie_valida() {
+    if (empty($_COOKIE['viaje_acceso'])) return false;
+    $parts = explode('|', $_COOKIE['viaje_acceso']);
+    if (count($parts) !== 2) return false;
+    [$expiry, $mac] = $parts;
+    if ((int)$expiry < time()) return false;
+    return hash_equals(hash_hmac('sha256', 'viaje|' . $expiry, AUTH_SECRET), $mac);
+}
+
+// Muestra el formulario de clave y corta la ejecución si no hay acceso
+function viaje_require_acceso() {
+    cifra_start_session();
+    if (!empty($_SESSION['logged_in']) || viaje_cookie_valida()) return;
+    if (cifra_validate_remember_cookie()) {
+        cifra_marcar_logueado();
+        return;
+    }
+
+    $error = '';
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['viaje_clave'])) {
+        if ($espera = cifra_login_bloqueado()) {
+            $error = 'Demasiados intentos. Probá de nuevo en ' . ceil($espera / 60) . ' minutos.';
+        } elseif (defined('VIAJE_PASS_HASH') && password_verify($_POST['viaje_clave'], VIAJE_PASS_HASH)) {
+            cifra_login_reset();
+            $expiry = time() + VIAJE_RECORDAR_DIAS * 86400;
+            setcookie('viaje_acceso', $expiry . '|' . hash_hmac('sha256', 'viaje|' . $expiry, AUTH_SECRET), [
+                'expires'  => $expiry,
+                'path'     => '/',
+                'secure'   => cifra_es_https(),
+                'httponly' => true,
+                'samesite' => 'Lax',
+            ]);
+            header('Location: ' . strtok($_SERVER['REQUEST_URI'], '?'));
+            exit;
+        } else {
+            cifra_login_fallido();
+            $error = 'Clave incorrecta.';
+        }
+    }
+
+    require __DIR__ . '/viaje_acceso.php';
+    exit;
+}
+
 // Para páginas PHP: redirige a login si no está autenticado
 function require_auth_or_redirect() {
     cifra_start_session();

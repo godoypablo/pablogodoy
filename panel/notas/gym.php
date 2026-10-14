@@ -1,3 +1,4 @@
+<?php require __DIR__ . '/../_auth.php'; ?>
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -392,7 +393,7 @@
 <body>
 
 <div class="container py-4">
-    <a href="index.php" class="back-button">
+    <a href="/panel/" class="back-button">
         <i class="bi bi-arrow-left"></i> Volver
     </a>
 
@@ -417,7 +418,7 @@
         </div>
         <div class="exercises-grid">
             <div class="exercise-card exercise-chest">
-                <img src="gym-images/press_banca_con_barra.png" alt="Press Banca con Barra" class="exercise-image">
+                <img src="/gym-images/press_banca_con_barra.png" alt="Press Banca con Barra" class="exercise-image">
                 <div class="exercise-content">
                     <h4 class="exercise-name">Press Banca con Barra</h4>
                     <p class="exercise-equipment">
@@ -429,7 +430,7 @@
             </div>
 
             <div class="exercise-card exercise-back">
-                <img src="gym-images/remo_con_barra.png" alt="Remo con Barra" class="exercise-image">
+                <img src="/gym-images/remo_con_barra.png" alt="Remo con Barra" class="exercise-image">
                 <div class="exercise-content">
                     <h4 class="exercise-name">Remo con Barra</h4>
                     <p class="exercise-equipment">
@@ -440,7 +441,7 @@
             </div>
 
             <div class="exercise-card exercise-chest">
-                <img src="gym-images/press_inclinado_con_mancuernas.png" alt="Press Inclinado con Mancuernas" class="exercise-image">
+                <img src="/gym-images/press_inclinado_con_mancuernas.png" alt="Press Inclinado con Mancuernas" class="exercise-image">
                 <div class="exercise-content">
                     <h4 class="exercise-name">Press Inclinado con Mancuernas</h4>
                     <p class="exercise-equipment">
@@ -452,7 +453,7 @@
             </div>
 
             <div class="exercise-card exercise-back">
-                <img src="gym-images/remo_con_mancuerna.png" alt="Remo con Mancuerna" class="exercise-image">
+                <img src="/gym-images/remo_con_mancuerna.png" alt="Remo con Mancuerna" class="exercise-image">
                 <div class="exercise-content">
                     <h4 class="exercise-name">Remo con Mancuerna</h4>
                     <p class="exercise-equipment">
@@ -463,7 +464,7 @@
             </div>
 
             <div class="exercise-card exercise-chest">
-                <img src="gym-images/aperturas_en_maquina.png" alt="Aperturas en Máquina" class="exercise-image">
+                <img src="/gym-images/aperturas_en_maquina.png" alt="Aperturas en Máquina" class="exercise-image">
                 <div class="exercise-content">
                     <h4 class="exercise-name">Aperturas en Máquina</h4>
                     <p class="exercise-equipment">
@@ -474,7 +475,7 @@
             </div>
 
             <div class="exercise-card exercise-back">
-                <img src="gym-images/jalon_al_pecho_con_agarre_supino.png" alt="Jalón al Pecho con Agarre Supino" class="exercise-image">
+                <img src="/gym-images/jalon_al_pecho_con_agarre_supino.png" alt="Jalón al Pecho con Agarre Supino" class="exercise-image">
                 <div class="exercise-content">
                     <h4 class="exercise-name">Jalón al Pecho con Agarre Supino</h4>
                     <p class="exercise-equipment">
@@ -485,7 +486,7 @@
             </div>
 
             <div class="exercise-card exercise-back">
-                <img src="gym-images/face_pulls.png" alt="Face Pulls" class="exercise-image">
+                <img src="/gym-images/face_pulls.png" alt="Face Pulls" class="exercise-image">
                 <div class="exercise-content">
                     <h4 class="exercise-name">Face Pulls</h4>
                     <p class="exercise-equipment">
@@ -504,7 +505,7 @@
         </div>
         <div class="exercises-grid">
             <div class="exercise-card exercise-legs">
-                <img src="gym-images/sentadilla_con_barra.png" alt="Sentadilla con Barra" class="exercise-image">
+                <img src="/gym-images/sentadilla_con_barra.png" alt="Sentadilla con Barra" class="exercise-image">
                 <div class="exercise-content">
                     <h4 class="exercise-name">Sentadilla con Barra</h4>
                     <p class="exercise-equipment">
@@ -516,7 +517,7 @@
             </div>
 
             <div class="exercise-card exercise-legs">
-                <img src="gym-images/peso_muerto_rumano.png" alt="Peso Muerto Rumano" class="exercise-image">
+                <img src="/gym-images/peso_muerto_rumano.png" alt="Peso Muerto Rumano" class="exercise-image">
                 <div class="exercise-content">
                     <h4 class="exercise-name">Peso Muerto Rumano</h4>
                     <p class="exercise-equipment">
@@ -527,7 +528,7 @@
             </div>
 
             <div class="exercise-card exercise-legs">
-                <img src="gym-images/prensa_inclinada.png" alt="Prensa Inclinada" class="exercise-image">
+                <img src="/gym-images/prensa_inclinada.png" alt="Prensa Inclinada" class="exercise-image">
                 <div class="exercise-content">
                     <h4 class="exercise-name">Prensa Inclinada</h4>
                     <p class="exercise-equipment">
@@ -538,7 +539,7 @@
             </div>
 
             <div class="exercise-card exercise-legs">
-                <img src="gym-images/curl_femoral_acostado.png" alt="Curl Femoral Acostado" class="exercise-image">
+                <img src="/gym-images/curl_femoral_acostado.png" alt="Curl Femoral Acostado" class="exercise-image">
                 <div class="exercise-content">
                     <h4 class="exercise-name">Curl Femoral Acostado</h4>
                     <p class="exercise-equipment">
@@ -549,7 +550,7 @@
             </div>
 
             <div class="exercise-card exercise-legs">
-                <img src="gym-images/extension_de_cuadriceps.png" alt="Extensión de Cuadríceps" class="exercise-image">
+                <img src="/gym-images/extension_de_cuadriceps.png" alt="Extensión de Cuadríceps" class="exercise-image">
                 <div class="exercise-content">
                     <h4 class="exercise-name">Extensión de Cuadríceps</h4>
                     <p class="exercise-equipment">
@@ -560,7 +561,7 @@
             </div>
 
             <div class="exercise-card exercise-legs">
-                <img src="gym-images/elevacion_de_talones_en_maquina.png" alt="Elevación de Talones en Máquina" class="exercise-image">
+                <img src="/gym-images/elevacion_de_talones_en_maquina.png" alt="Elevación de Talones en Máquina" class="exercise-image">
                 <div class="exercise-content">
                     <h4 class="exercise-name">Elevación de Talones en Máquina</h4>
                     <p class="exercise-equipment">
@@ -579,7 +580,7 @@
         </div>
         <div class="exercises-grid">
             <div class="exercise-card exercise-shoulders">
-                <img src="gym-images/press_militar_con_barra.png" alt="Press Militar con Barra" class="exercise-image">
+                <img src="/gym-images/press_militar_con_barra.png" alt="Press Militar con Barra" class="exercise-image">
                 <div class="exercise-content">
                     <h4 class="exercise-name">Press Militar con Barra</h4>
                     <p class="exercise-equipment">
@@ -590,7 +591,7 @@
             </div>
 
             <div class="exercise-card exercise-shoulders">
-                <img src="gym-images/elevaciones_laterales_con_mancuernas.png" alt="Elevaciones Laterales con Mancuernas" class="exercise-image">
+                <img src="/gym-images/elevaciones_laterales_con_mancuernas.png" alt="Elevaciones Laterales con Mancuernas" class="exercise-image">
                 <div class="exercise-content">
                     <h4 class="exercise-name">Elevaciones Laterales con Mancuernas</h4>
                     <p class="exercise-equipment">
@@ -601,7 +602,7 @@
             </div>
 
             <div class="exercise-card exercise-back">
-                <img src="gym-images/face_pulls.png" alt="Face Pulls" class="exercise-image">
+                <img src="/gym-images/face_pulls.png" alt="Face Pulls" class="exercise-image">
                 <div class="exercise-content">
                     <h4 class="exercise-name">Face Pulls</h4>
                     <p class="exercise-equipment">
@@ -612,7 +613,7 @@
             </div>
 
             <div class="exercise-card exercise-arms">
-                <img src="gym-images/curl_con_barra.png" alt="Curl con Barra" class="exercise-image">
+                <img src="/gym-images/curl_con_barra.png" alt="Curl con Barra" class="exercise-image">
                 <div class="exercise-content">
                     <h4 class="exercise-name">Curl con Barra</h4>
                     <p class="exercise-equipment">
@@ -623,7 +624,7 @@
             </div>
 
             <div class="exercise-card exercise-arms">
-                <img src="gym-images/fondos_en_maquina.png" alt="Fondos en Máquina" class="exercise-image">
+                <img src="/gym-images/fondos_en_maquina.png" alt="Fondos en Máquina" class="exercise-image">
                 <div class="exercise-content">
                     <h4 class="exercise-name">Fondos en Máquina</h4>
                     <p class="exercise-equipment">
@@ -634,7 +635,7 @@
             </div>
 
             <div class="exercise-card exercise-arms">
-                <img src="gym-images/curl_martillo_con_mancuernas.png" alt="Curl Martillo con Mancuernas" class="exercise-image">
+                <img src="/gym-images/curl_martillo_con_mancuernas.png" alt="Curl Martillo con Mancuernas" class="exercise-image">
                 <div class="exercise-content">
                     <h4 class="exercise-name">Curl Martillo con Mancuernas</h4>
                     <p class="exercise-equipment">
@@ -645,7 +646,7 @@
             </div>
 
             <div class="exercise-card exercise-arms">
-                <img src="gym-images/extension_de_triceps_en_polea.png" alt="Extensión de Tríceps en Polea" class="exercise-image">
+                <img src="/gym-images/extension_de_triceps_en_polea.png" alt="Extensión de Tríceps en Polea" class="exercise-image">
                 <div class="exercise-content">
                     <h4 class="exercise-name">Extensión de Tríceps en Polea</h4>
                     <p class="exercise-equipment">

@@ -4,6 +4,7 @@ cifra_start_session();
 
 $error = '';
 $next  = cifra_destino_seguro($_POST['next'] ?? $_GET['next'] ?? null);
+$esCifra = strpos($next, '/cifra/') === 0;
 
 if (!empty($_SESSION['logged_in'])) {
     header('Location: ' . $next);
@@ -34,12 +35,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cifra — Iniciar sesión</title>
+    <title><?= $esCifra ? 'Cifra — Iniciar sesión' : 'Pablo Godoy — Acceso privado' ?></title>
+    <meta name="robots" content="noindex, nofollow">
     <script>
         const t = localStorage.getItem('cifra-theme');
         if (t) document.documentElement.setAttribute('data-bs-theme', t);
     </script>
-    <link rel="manifest" href="manifest.json">
+    <?php if ($esCifra): ?><link rel="manifest" href="manifest.json"><?php endif; ?>
     <meta name="theme-color" content="#1F2A37">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Montserrat:wght@600;700&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -68,6 +70,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             font-size: 2rem;
             font-weight: 700;
             letter-spacing: -0.5px;
+        }
+        .logo-pg {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 2.4rem;
+            height: 2.4rem;
+            margin-right: 0.5rem;
+            border-radius: 0.6rem;
+            background: #6366f1;
+            color: #fff;
+            font-size: 1.1rem;
+            vertical-align: middle;
         }
         .login-logo .logo-dot {
             color: #6366f1;
@@ -142,9 +157,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <!-- Logo -->
         <div class="text-center mb-4">
             <div class="login-logo mb-1">
+                <?php if ($esCifra): ?>
                 <i class="bi bi-bar-chart-fill" style="color:#6366f1;font-size:1.8rem;vertical-align:middle;margin-right:0.3rem"></i>Cifra<span class="logo-dot">.</span>
+                <?php else: ?>
+                <span class="logo-pg">PG</span>Pablo Godoy
+                <?php endif; ?>
             </div>
-            <p class="text-muted small mb-0">Control financiero personal</p>
+            <p class="text-muted small mb-0"><?= $esCifra ? 'Control financiero personal' : 'Acceso privado' ?></p>
         </div>
 
         <!-- Card -->
@@ -204,7 +223,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
         </div>
 
-        <div class="login-footer">Cifra &mdash; finanzas personales</div>
+        <div class="login-footer"><?= $esCifra ? 'Cifra &mdash; finanzas personales' : 'pablogodoy.com.ar' ?></div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>

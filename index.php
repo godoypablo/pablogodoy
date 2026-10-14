@@ -3,111 +3,66 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard Personal - Pablo Godoy</title>
+    <title>Pablo Godoy · Lic. en Sistemas</title>
+    <meta name="description" content="Pablo Godoy, Licenciado en Sistemas. Desarrollo web, apps para Android e iPhone, software a medida y consultoría informática. Sitio en construcción.">
     <link rel="icon" type="image/svg+xml" href="/favicon.svg">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Inter', sans-serif; background-color: #f4f7f6; }
-        .dashboard-card {
-            transition: transform 0.2s ease;
-            text-decoration: none;
-            color: #333;
-            border-radius: 15px;
+        :root { --texto: #1f2937; --suave: #6b7280; --acento: #2563eb; --fondo: #f8fafc; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--fondo);
+            color: var(--texto);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem 1rem;
+            text-align: center;
         }
-        .dashboard-card:hover {
-            transform: translateY(-8px);
-            color: #000;
-            box-shadow: 0 12px 24px rgba(0,0,0,0.1) !important;
+        .monograma {
+            width: 64px; height: 64px;
+            border-radius: 16px;
+            background: var(--texto);
+            color: #fff;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 700; font-size: 1.5rem; letter-spacing: -0.5px;
+            margin: 0 auto 1.5rem;
         }
-        .icon-box { font-size: 3rem; margin-bottom: 1rem; }
-        /* Colores representativos */
-        .color-cifra { color: #2ecc71; }
-        .color-viaje { color: #3498db; }
-        .color-claude { color: #d97757; } /* Tono arcilla de Claude */
-        .color-linux { color: #87cf3e; }  /* Verde Mint */
-        .color-github { color: #24292e; }
-        .color-sigedo { color: #006BA6; } /* Azul TCER SIGEDO */
-        .color-nutricion { color: #a8d8e8; } /* Azul suave - Nutrición */
-        .color-gym { color: #ff6b6b; } /* Rojo vibrante - Gym */
+        h1 { font-size: clamp(2rem, 6vw, 3rem); font-weight: 700; letter-spacing: -1px; }
+        .titulo { color: var(--suave); font-size: 1.1rem; margin-top: 0.25rem; }
+        .servicios { margin-top: 2rem; color: var(--texto); line-height: 1.8; }
+        .aviso {
+            display: inline-block;
+            margin-top: 2rem;
+            padding: 0.4rem 1rem;
+            border-radius: 999px;
+            background: #e0e7ff;
+            color: #3730a3;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+        footer { margin-top: 3rem; font-size: 0.8rem; color: var(--suave); }
+        footer a { color: var(--suave); }
     </style>
 </head>
 <body>
+    <div class="monograma">PG</div>
+    <h1>Pablo Godoy</h1>
+    <p class="titulo">Lic. en Sistemas</p>
 
-<div class="container py-5">
-    <header class="text-center mb-5">
-        <h1 class="fw-bold">Panel de Control</h1>
-        <p class="text-muted font-monospace">pablogodoy.com.ar</p>
-    </header>
+    <p class="servicios">
+        Desarrollo de sitios web · Apps Android e iPhone<br>
+        Software a medida · Consultoría informática
+    </p>
 
-    <div class="row g-4">
-        <div class="col-md-6 col-lg-4">
-            <a href="/cifra/login.php" class="card h-100 border-0 shadow-sm dashboard-card p-4 text-center">
-                <div class="icon-box color-cifra"><i class="bi bi-cash-stack"></i></div>
-                <h3 class="h5 fw-bold">Sistema Cifra</h3>
-                <p class="text-secondary small">Finanzas Personales</p>
-            </a>
-        </div>
+    <span class="aviso">Sitio en construcción</span>
 
-        <div class="col-md-6 col-lg-4">
-            <a href="/viaje.php" class="card h-100 border-0 shadow-sm dashboard-card p-4 text-center">
-                <div class="icon-box color-viaje"><i class="bi bi-airplane-engines"></i></div>
-                <h3 class="h5 fw-bold">Viaje NZL & AUS</h3>
-                <p class="text-secondary small">Documentación de Viaje</p>
-            </a>
-        </div>
-
-        <div class="col-md-6 col-lg-4">
-            <a href="claudecode.html" class="card h-100 border-0 shadow-sm dashboard-card p-4 text-center">
-                <div class="icon-box color-claude"><i class="bi bi-cpu"></i></div>
-                <h3 class="h5 fw-bold">Claude AI</h3>
-                <p class="text-secondary small">Asistente Claude Code</p>
-            </a>
-        </div>
-
-        <div class="col-md-6 col-lg-4">
-            <a href="linux.html" class="card h-100 border-0 shadow-sm dashboard-card p-4 text-center">
-                <div class="icon-box color-linux"><i class="bi bi-ubuntu"></i></div>
-                <h3 class="h5 fw-bold">Linux Mint</h3>
-                <p class="text-secondary small">Guías y Comandos</p>
-            </a>
-        </div>
-
-        <div class="col-md-6 col-lg-4">
-            <a href="github.html" class="card h-100 border-0 shadow-sm dashboard-card p-4 text-center">
-                <div class="icon-box color-github"><i class="bi bi-github"></i></div>
-                <h3 class="h5 fw-bold">GitHub</h3>
-                <p class="text-secondary small">Mis Repositorios</p>
-            </a>
-        </div>
-
-        <div class="col-md-6 col-lg-4">
-            <a href="sigedo.html" class="card h-100 border-0 shadow-sm dashboard-card p-4 text-center">
-                <div class="icon-box color-sigedo"><i class="bi bi-file-earmark-text"></i></div>
-                <h3 class="h5 fw-bold">SIGEDO</h3>
-                <p class="text-secondary small">Gestión Electrónica de Documentos</p>
-            </a>
-        </div>
-
-        <div class="col-md-6 col-lg-4">
-            <a href="nutricion.html" class="card h-100 border-0 shadow-sm dashboard-card p-4 text-center">
-                <div class="icon-box color-nutricion"><i class="bi bi-apple"></i></div>
-                <h3 class="h5 fw-bold">Nutrición</h3>
-                <p class="text-secondary small">Plan de Alimentación Personalizado</p>
-            </a>
-        </div>
-
-        <div class="col-md-6 col-lg-4">
-            <a href="gym.html" class="card h-100 border-0 shadow-sm dashboard-card p-4 text-center">
-                <div class="icon-box color-gym"><i class="bi bi-person-arms-up"></i></div>
-                <h3 class="h5 fw-bold">Gym</h3>
-                <p class="text-secondary small">Rutina de Entrenamientos</p>
-            </a>
-        </div>
-    </div>
-</div>
-
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <footer>
+        Mat. Prof. Coprocier Nº 495 · Entre Ríos, Argentina<br>
+        <a href="/cifra/login.php?next=%2Fpanel%2F" rel="nofollow">Acceso</a>
+    </footer>
 </body>
 </html>

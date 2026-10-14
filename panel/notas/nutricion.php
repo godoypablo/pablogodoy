@@ -1,3 +1,4 @@
+<?php require __DIR__ . '/../_auth.php'; ?>
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -311,7 +312,7 @@
 <body>
 
 <div class="container">
-    <a href="/" class="back-link"><i class="bi bi-arrow-left"></i> Volver</a>
+    <a href="/panel/" class="back-link"><i class="bi bi-arrow-left"></i> Volver</a>
 
     <div class="header">
         <h1>🥗 Plan de Nutrición</h1>

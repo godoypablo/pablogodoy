@@ -1,3 +1,4 @@
+<?php require __DIR__ . '/../_auth.php'; ?>
 <!DOCTYPE html>
 <html lang="es">
 <head>

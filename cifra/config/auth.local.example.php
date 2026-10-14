@@ -10,3 +10,6 @@
 define('AUTH_USER',      'pablo');
 define('AUTH_PASS_HASH', 'PEGAR_HASH_AQUI');
 define('AUTH_SECRET',    'PEGAR_SECRETO_AQUI');
+
+// Clave compartida del grupo para /viaje.php (opcional; sin ella solo entrás vos logueado)
+define('VIAJE_PASS_HASH', 'PEGAR_HASH_CLAVE_VIAJE_AQUI');
