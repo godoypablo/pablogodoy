@@ -1,0 +1,6 @@
+User-agent: *
+Disallow: /cifra/
+Disallow: /panel/
+Disallow: /viaje.php
+
+Sitemap: https://www.pablogodoy.com.ar/sitemap.xml

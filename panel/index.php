@@ -48,9 +48,12 @@
 <body>
 <div class="container py-5">
     <header class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-5">
-        <div>
+        <div class="d-flex align-items-center gap-3">
+            <img src="/img/logo/isotipo.svg" alt="" width="48" height="48">
+            <div>
             <h1 class="fw-bold h2 mb-1">Panel Privado</h1>
             <p class="text-muted font-monospace small mb-0">pablogodoy.com.ar</p>
+            </div>
         </div>
         <div class="d-flex gap-2">
             <a href="/" class="btn btn-outline-secondary btn-sm"><i class="bi bi-globe me-1"></i>Ver sitio</a>

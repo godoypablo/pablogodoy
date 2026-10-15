@@ -554,7 +554,12 @@ La carpeta raíz `hipoteca/` (versión vieja sin login) fue eliminada el 2026-10
 - APIs: errores de BD se loguean con `error_log`, al cliente solo va un mensaje genérico (`cifra_error_publico()`).
 - **Panel privado** (`/panel/`): `panel/index.php` + ayudamemorias en `panel/notas/*.php`; cada uno empieza con `require __DIR__ . '/../_auth.php'`. Las URLs viejas `/*.html` redirigen (301) a `/panel/notas/*.php`.
 - **Viaje** (`/viaje.php`, no se mueve para no romper la PWA del grupo): `viaje_require_acceso()` pide la clave del grupo (`VIAJE_PASS_HASH` en `auth.local.php`, cookie `viaje_acceso` 180 días). Logueado en Cifra entra directo. Pantalla: `cifra/config/viaje_acceso.php`.
-- **Portada** (`index.php`): transitoria "en construcción" hasta la landing; link "Acceso" → `/cifra/login.php?next=/panel/`.
+- **Landing** (`index.php`): "Pablo Godoy · Lic. en Sistemas de Información" (Mat. Coprocier Nº 495). Secciones: hero, servicios, cómo trabajo, proyectos (turnitoAhora + Cifra con mockup CSS de datos ficticios), sobre mí, contacto. WhatsApp `wa.me/5493434504750`. Foto: `img/pablo-godoy.{webp,jpg}`. Link "Acceso" en el footer → `/cifra/login.php?next=/panel/`.
+- **Diseño landing**: hero oscuro (#0b1224, grilla sutil + brillo azul) con navegación translúcida oscura. Tipografías: Inter (texto), Inter Tight (títulos), Instrument Serif itálica (`.serif`, palabra destacada en cada título). Tipografía sutil: títulos peso 500 (h1 4.3rem máx., h2 2.25rem), cifras y números de pasos en 300, negritas 600 (500 dentro de bajadas), etiquetas en mayúsculas 500 con tracking .16–.18em. No usar 700/800 salvo en logos. Retrato recortado `img/retrato.{webp,png}` (fondo transparente, recortado en círculo abajo; el círculo de CSS usa centro 50%/56% y radio 42%: si se cambia la imagen, mantener esa geometría). Proyectos: logo `img/logo/turnitoahora.png` y logo de Cifra en HTML/CSS (`.logo-cifra`, fondo #211e54 + `bi-bar-chart-fill`). "Sobre mí": sin título, arranca con "Soy Pablo A. Godoy…" (`.sobre-intro`); foto completa `img/pablo-godoy.{webp,jpg}` recortada en círculo (máx. 260px, aro blanco + línea gris), no el retrato recortado del hero; HSC se muestra con `img/logo/hsc.png` (`.logo-hsc`).
+- **Formulario** (`contacto.php`): `mail()` a godoypablo@gmail.com desde `web@pablogodoy.com.ar`; anti-spam: campo trampa `sitio_web`, mínimo 3 s, 3 envíos/hora por IP. Responde JSON si `X-Requested-With: fetch`.
+- **Marca** (`img/logo/`): isotipo `isotipo.svg` (bloque azul noche #1e3a8a→#0f172a + "PG" Inter 800 blanco + cursor celeste #38bdf8), `isologotipo(-blanco).svg` (isotipo + "Pablo Godoy" + "LIC. EN SISTEMAS DE INFORMACIÓN"), `logotipo(-blanco).svg` ("pablogodoy_" con cursor que parpadea). Letras convertidas a trazos (no dependen de fuentes). También `favicon.svg`, `apple-touch-icon.png`, `icon-512.png`, `img/og-image.jpg` (1200×630 para WhatsApp/redes).
+- SEO: meta + Open Graph + JSON-LD `ProfessionalService`, `robots.txt` (excluye /cifra/, /panel/, /viaje.php), `sitemap.xml`. Title empieza con "Pablo Godoy |"; H1 lleva `.hero-nombre` ("Pablo Andrés Godoy") antes del titular; "Sobre mí" es un `<h2 class="eyebrow">Sobre Pablo Godoy</h2>`. Meta descripción ≤ ~155 caracteres con el nombre adelante.
+- **LinkedIn**: `https://www.linkedin.com/in/godoypablo1972/` en Contacto (canal), footer y JSON-LD `sameAs` (empresa y persona), con `rel="noopener me"`.
 - **Nunca** abrir por navegador/curl scripts de `cifra/scripts/`: se ejecutan (ej. `regenerar_cuotas_cierre_id.php` borra y regenera cuotas). Correrlos solo por CLI.
 
 #### Flujo Típico de Uso
@@ -704,6 +709,29 @@ Los cambios incluyen:
 
 ---
 
+### 8. Método de Desarrollo de Agentes de IA (en PHP)
+
+**Objetivo:** Toda funcionalidad con IA del proyecto (Cifra, panel, landing) se construye siguiendo esta hoja de ruta de 7 capas, **en PHP en lugar de Python**, sobre el hosting actual (PHP + Apache, MySQL 5.7, deploy por `git pull`/FTP). Sin Docker, sin servicios Python.
+
+| Capa | Hoja de ruta original | Cómo se hace en este proyecto |
+|------|----------------------|-------------------------------|
+| **1. Fundamentos** | Python, JavaScript, Git | **PHP 8** (backend y agentes), JavaScript vanilla (frontend), Git (flujo de la sección 2) |
+| **2. LLMs** | GPT, Claude, Gemini, Llama | **Claude**, con el SDK oficial `anthropic-ai/sdk` (`composer require anthropic-ai/sdk`). Modelo por defecto `claude-opus-5-5`; otro modelo (ej. Haiku para tareas masivas y simples) solo si Pablo lo decide. Otros proveedores, solo si se piden explícitamente |
+| **3. Frameworks de IA** | LangChain, LangGraph, LlamaIndex | No hay equivalentes serios en PHP y no hacen falta: **SDK oficial** → tool runner (`BetaRunnableTool` + `toolRunner()`) o loop manual. Los flujos de varios pasos se escriben como clases PHP simples |
+| **4. Habilidades de agentes** | Prompts, herramientas, RAG, memoria, multiagente | **Prompts** en archivos versionados (`prompts/*.md`), system prompt fijo y cacheado. **Herramientas** = funciones PHP que reutilizan la lógica existente (ej. `cobrarIngreso()`), con esquemas `strict`. **RAG** = consultar MySQL y pasar el contexto. **Memoria** = tablas MySQL. **Multiagente** solo si un agente simple no alcanza |
+| **5. Bases de datos** | Pinecone, ChromaDB, FAISS, PostgreSQL | **MySQL 5.7** (no tiene tipo vector). Volumen chico → `FULLTEXT` de MySQL o embeddings guardados en JSON con similitud coseno en PHP. Una base vectorial externa solo si el volumen lo exige. Ojo: Anthropic no ofrece embeddings, requieren otro proveedor |
+| **6. APIs** | REST, GraphQL, MCP | **REST en PHP** como las de `cifra/api/` (JSON, `require_auth_or_401()`, errores con `cifra_error_publico()`). GraphQL no se usa. MCP solo si hace falta integrar herramientas externas |
+| **7. Despliegue** | Docker, FastAPI, Vercel, AWS | **Hosting actual**: archivos PHP + `git pull`. `vendor/` de Composer se sube junto al código si el servidor no tiene Composer. API key en `config/*.local.php` **fuera de Git** (como `auth.local.php`). Tareas largas → cron, no en el request web |
+
+**Reglas fijas:**
+- La API key **nunca** llega al navegador: el frontend llama a un endpoint PHP propio y ese endpoint llama a Claude.
+- Herramientas que mueven plata o borran datos (saldos, cobros, pagos) **piden confirmación** del usuario antes de ejecutarse.
+- Empezar por lo más simple: una llamada → flujo con herramientas → agente. Solo se sube de nivel si el anterior no alcanza.
+- Toda respuesta del modelo se valida antes de usarla (`stop_reason`, esquema JSON); nunca se ejecuta texto libre.
+- **Hosting: PHP 8.2, sin Composer** (verificado 2026-10-14). Composer se corre **solo en local**; la carpeta `vendor/` resultante se versiona en Git (el servidor la recibe con `git pull`) y se bloquea el acceso web con `.htaccess` (`Require all denied`). `composer.json` y `composer.lock` también van a Git. Al instalar paquetes, fijar `"config": {"platform": {"php": "8.2"}}` para que las dependencias sean compatibles con el servidor.
+
+---
+
 ---
 
 ## 🎯 Resumen Ejecutivo
@@ -716,6 +744,7 @@ Este documento centraliza:
 5. **SIGEDO:** Sistema de gestión electrónica de documentos para TCER
 6. **Crédito Hipotecario:** Gestor de 120 cuotas en UVAs (integrado en Cifra)
 7. **Gym:** Rutina profesional de entrenamientos (Lunes, Miércoles, Viernes)
+8. **Agentes de IA:** Método de desarrollo en PHP (7 capas, SDK oficial de Claude, hosting actual)
 
 ---
 

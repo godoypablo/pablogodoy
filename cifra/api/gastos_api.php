@@ -11,6 +11,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') { http_response_code(200); exit; }
 
 require_once '../config/database.php';
 require_once '../config/auth_check.php';
+require_once '../lib/hipoteca_sync.php';
 require_auth_or_401();
 
 // Función para enviar respuesta JSON
@@ -22,6 +23,120 @@ function sendResponse($success, $data = null, $message = '', $code = 200) {
         'message' => $message
     ], JSON_UNESCAPED_UNICODE);
     exit;
+}
+
+/**
+ * Cobro de ingreso en un solo paso (pantalla Cuentas e ingresos).
+ * Upsert del registro del mes con importe + cuenta + fecha, marcado cobrado.
+ * Revierte el movimiento anterior (si lo había) y crea el nuevo: el saldo queda
+ * ajustado por la diferencia sin importar si cambió importe, cuenta o fecha.
+ * importe = 0 → anula el cobro y elimina el registro.
+ * La cuenta usada pasa a ser la cuenta por defecto del concepto.
+ */
+function cobrarIngreso(PDO $db, array $input) {
+    $concepto_id = (int)($input['concepto_id'] ?? 0);
+    $mes         = (int)($input['mes'] ?? 0);
+    $anio        = (int)($input['anio'] ?? 0);
+    $importe     = round((float)($input['importe'] ?? 0), 2);
+    $cuenta_id   = !empty($input['cuenta_id']) ? (int)$input['cuenta_id'] : null;
+    $fecha_in    = !empty($input['fecha']) ? $input['fecha'] : null;
+
+    if (!$concepto_id || $mes < 1 || $mes > 12 || !$anio) {
+        sendResponse(false, null, 'Faltan datos requeridos', 400);
+    }
+    if ($fecha_in && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $fecha_in)) {
+        sendResponse(false, null, 'Fecha inválida', 400);
+    }
+
+    $stmt = $db->prepare("SELECT tipo, moneda, permite_multiples FROM conceptos WHERE id = :id");
+    $stmt->execute(['id' => $concepto_id]);
+    $concepto = $stmt->fetch();
+    if (!$concepto || $concepto['tipo'] !== 'ingreso' || $concepto['permite_multiples']) {
+        sendResponse(false, null, 'El concepto no es un ingreso de carga única', 400);
+    }
+
+    if ($importe > 0) {
+        if (!$cuenta_id) {
+            sendResponse(false, null, 'Seleccioná la cuenta donde cobraste este ingreso', 422);
+        }
+        $stmt = $db->prepare("SELECT moneda FROM cuentas WHERE id = :id AND activo = 1");
+        $stmt->execute(['id' => $cuenta_id]);
+        $cta = $stmt->fetch();
+        if (!$cta) sendResponse(false, null, 'Cuenta no encontrada', 404);
+        if (($cta['moneda'] ?? 'ARS') !== ($concepto['moneda'] ?? 'ARS')) {
+            sendResponse(false, null, 'La cuenta no es de la misma moneda que el ingreso', 422);
+        }
+    }
+
+    $db->beginTransaction();
+    try {
+        $stmt = $db->prepare(
+            "SELECT id, fecha FROM registros_mensuales
+             WHERE concepto_id = :cid AND mes = :mes AND anio = :anio
+             ORDER BY id LIMIT 1 FOR UPDATE"
+        );
+        $stmt->execute(['cid' => $concepto_id, 'mes' => $mes, 'anio' => $anio]);
+        $reg = $stmt->fetch();
+
+        // Revertir movimiento anterior, si lo hay
+        if ($reg) {
+            $stmt = $db->prepare(
+                "SELECT id, cuenta_destino_id, importe FROM movimientos_cuenta
+                 WHERE registro_id = :rid AND tipo = 'ingreso' LIMIT 1"
+            );
+            $stmt->execute(['rid' => $reg['id']]);
+            $mov = $stmt->fetch();
+            if ($mov) {
+                $db->prepare("UPDATE cuentas SET saldo_actual = saldo_actual - :imp, fecha_saldo = CURDATE() WHERE id = :id")
+                   ->execute(['imp' => $mov['importe'], 'id' => $mov['cuenta_destino_id']]);
+                $db->prepare("DELETE FROM movimientos_cuenta WHERE id = :id")->execute(['id' => $mov['id']]);
+            }
+        }
+
+        if ($importe <= 0) {
+            if ($reg) {
+                $db->prepare("DELETE FROM registros_mensuales WHERE id = :id")->execute(['id' => $reg['id']]);
+            }
+            $db->commit();
+            sendResponse(true, ['id' => null], 'Cobro anulado');
+        }
+
+        $fecha = $fecha_in ?: ($reg['fecha'] ?? null) ?: date('Y-m-d');
+
+        if ($reg) {
+            $registro_id = (int)$reg['id'];
+            $db->prepare(
+                "UPDATE registros_mensuales
+                 SET importe = :imp, cuenta_id = :cta, fecha = :fecha, pagado = 1
+                 WHERE id = :id"
+            )->execute(['imp' => $importe, 'cta' => $cuenta_id, 'fecha' => $fecha, 'id' => $registro_id]);
+        } else {
+            $db->prepare(
+                "INSERT INTO registros_mensuales (concepto_id, mes, anio, fecha, importe, cuenta_id, pagado)
+                 VALUES (:cid, :mes, :anio, :fecha, :imp, :cta, 1)"
+            )->execute(['cid' => $concepto_id, 'mes' => $mes, 'anio' => $anio,
+                        'fecha' => $fecha, 'imp' => $importe, 'cta' => $cuenta_id]);
+            $registro_id = (int)$db->lastInsertId();
+        }
+
+        $db->prepare(
+            "INSERT INTO movimientos_cuenta (tipo, cuenta_destino_id, importe, fecha, registro_id)
+             VALUES ('ingreso', :cta, :imp, :fecha, :rid)"
+        )->execute(['cta' => $cuenta_id, 'imp' => $importe, 'fecha' => $fecha, 'rid' => $registro_id]);
+        $db->prepare("UPDATE cuentas SET saldo_actual = saldo_actual + :imp, fecha_saldo = CURDATE() WHERE id = :id")
+           ->execute(['imp' => $importe, 'id' => $cuenta_id]);
+
+        // Recordar la cuenta para los meses siguientes
+        $db->prepare("UPDATE conceptos SET cuenta_id_default = :cta WHERE id = :id")
+           ->execute(['cta' => $cuenta_id, 'id' => $concepto_id]);
+
+        $db->commit();
+    } catch (Exception $e) {
+        $db->rollBack();
+        throw $e;
+    }
+
+    sendResponse(true, ['id' => $registro_id, 'fecha' => $fecha], 'Ingreso cobrado');
 }
 
 // Obtener método HTTP
@@ -45,6 +160,13 @@ try {
 
             $mes_prev  = $mes == 1 ? 12 : $mes - 1;
             $anio_prev = $mes == 1 ? $anio - 1 : $anio;
+
+            // "Cuota Crédito" se completa desde Cuotas hipotecarias (no debe frenar la planilla si falla)
+            try {
+                sincronizarCuotaCredito($db, $mes, $anio);
+            } catch (Throwable $e) {
+                error_log('[cifra] sincronizarCuotaCredito: ' . $e->getMessage());
+            }
 
             // Conceptos con total agregado, incluyendo datos de categoría
             $sql = "SELECT
@@ -114,6 +236,7 @@ try {
                 $concepto['pagado']               = (int)($concepto['pagado'] ?? 0);
                 $concepto['moneda']               = $concepto['moneda'] ?? 'ARS';
                 $concepto['importe_mes_anterior'] = (float)$concepto['importe_mes_anterior'];
+                $concepto['origen']               = ((int)$concepto['id'] === CONCEPTO_CUOTA_CREDITO_ID) ? 'hipoteca' : null;
                 if ($concepto['permite_multiples']) {
                     $detalle = $detalles_por_concepto[$concepto['id']] ?? [];
                     foreach ($detalle as &$d) {
@@ -192,6 +315,10 @@ try {
 
         case 'POST':
             $input = json_decode(file_get_contents('php://input'), true);
+
+            if (($input['accion'] ?? '') === 'cobrar_ingreso') {
+                cobrarIngreso($db, $input);
+            }
 
             if (!isset($input['concepto_id'], $input['mes'], $input['anio'], $input['importe'])) {
                 sendResponse(false, null, 'Faltan datos requeridos', 400);

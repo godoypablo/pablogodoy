@@ -25,11 +25,12 @@ movimientos_cuenta:  tipo(ingreso|pago_gasto|transferencia|extraccion), cuenta_o
 
 ## APIs (api/)
 ```
-gastos_api.php      GET ?mes&anio → incluye importe_mes_anterior por concepto | POST | PATCH {registro_id, pagado|fecha|fecha_vencimiento|cuenta_id} | DELETE {registro_id}
+gastos_api.php      GET ?mes&anio → incluye importe_mes_anterior por concepto | POST | POST {accion:'cobrar_ingreso'} | PATCH {registro_id, pagado|fecha|fecha_vencimiento|cuenta_id} | DELETE {registro_id}
 conceptos_api.php   GET | POST | PUT {cuenta_id_default} | DELETE
 categorias_api.php  GET | POST | PUT | DELETE
 cuentas_api.php     GET ?mes&anio → cuentas+total_pagado_mes | POST | PUT {id,saldo_actual}
-movimientos_api.php GET ?mes&anio&limit | POST transferencia | POST extraccion
+movimientos_api.php POST transferencia | POST extraccion (el GET quedó sin uso: se quitó la pantalla Movimientos)
+tarjetas_api.php    GET ?mes&anio → tarjetas + 12 meses leídos de la planilla | POST | PUT ?id
 ```
 
 ## Circuito saldo (gastos_api.php) — COMPLETO Y VERIFICADO
@@ -43,6 +44,13 @@ movimientos_api.php GET ?mes&anio&limit | POST transferencia | POST extraccion
 - Gastos sin cuenta_id: no generan movimiento ni tocan saldo (permitido)
 - Ingresos cobrados: tipo `ingreso`, cuenta_destino_id, saldo+importe; al revertir saldo−importe
 - Ingresos sin cuenta_id al cobrar: 422 si importe>0 (obliga a seleccionar cuenta antes)
+
+## Cobro de ingreso en un paso — POST {accion:'cobrar_ingreso', concepto_id, mes, anio, importe, cuenta_id, fecha?}
+- `cobrarIngreso()` en gastos_api.php, todo en una transacción: revierte el movimiento anterior del registro (si había) y crea el nuevo → el saldo queda bien aunque cambien importe, cuenta o fecha
+- Upsert del registro con pagado=1; fecha = la enviada, la que ya tenía o hoy
+- importe=0 → anula el cobro y borra el registro | exige cuenta (422) y misma moneda que el concepto
+- Guarda la cuenta usada como `cuenta_id_default` del concepto (el mes siguiente aparece en esa cuenta)
+- Solo ingresos con permite_multiples=0
 
 ## Frontend (app.js)
 - Estado: `app.{mesActual, anioActual, datos, guardandoCambios, dtGastos, categorias[], cuentas[]}`
@@ -71,8 +79,8 @@ movimientos_api.php GET ?mes&anio&limit | POST transferencia | POST extraccion
 - Orden: conceptos servidos alfabéticamente (`ORDER BY c.nombre ASC` en gastos_api.php)
 
 ## Hamburguesa
-Resumen | Cuentas | — | Ingresos | Vencimientos | — | Movimientos | — | Conceptos
-Resumen/Cuentas → modales | Vencimientos → modal+badges | Ingresos → modal unificado
+Resumen | Cuentas e ingresos | — | Vencimientos | — | Conceptos | — | Tarjetas
+Resumen/Cuentas e ingresos → modales | Vencimientos → modal+badges | `abrirModalIngresos()` es alias de `abrirModalCuentas()`
 
 ## Modales — reglas generales
 - Todos: `modal-dialog-scrollable` (header/footer fijos, body scrolleable)
@@ -86,21 +94,17 @@ Resumen/Cuentas → modales | Vencimientos → modal+badges | Ingresos → modal
 - Tooltips ⓘ en todos los valores numéricos (Bootstrap, trigger hover+focus)
 - `saldo_disponible = ingresos − gastos_pagados` | barra progreso 4px (pctPagado)
 
-## Cuentas modal
-- `renderizarCuentas()` → #cardCuentas (sin wrapper .card)
-- Por cuenta: dot-lg + nombre + tipo | solo saldo real (sin asignado/diferencia)
-- `crearSelectorCuenta()` → .cuenta-wrap (fila simple) / .cuenta-wrap-detalle (múltiple)
+## Modal "Cuentas e ingresos" (#modalCuentas) — reemplaza a los viejos modales Cuentas e Ingresos
+- `renderizarCuentas()` → #cardCuentas: por cuenta, cabecera (dot + nombre + tipo + saldo real + transferir/extracción/actualizar saldo) y debajo sus ingresos del mes
+- Ingreso va en la cuenta del registro del mes o, si no hay, en `cuenta_id_default` (`_cuentaDeIngreso()`); sin cuenta → grupo "Sin cuenta asignada" con select (`asignarCuentaIngreso()` → PUT conceptos)
+- Fila `_filaIngresoCuenta()` (.ci-row): círculo + nombre/lápiz + estado + input importe. Estados: `.ci-vacio` | `.ci-pendiente` (importe sin cobrar, círculo ámbar) | `.ci-cobrado` (verde, fecha editable)
+- **Escribir importe + Enter/blur = cobrado** (`guardarImporteIngresoCuenta()` → `_cobrarIngreso()` → POST cobrar_ingreso). Vaciarlo en uno cobrado pide confirmación y anula. Esc cancela
+- Círculo: pendiente → cobra con ese importe | cobrado → PATCH pagado=0 (queda pendiente, revierte saldo) | vacío → foco al input
+- Cambiar fecha (`cambiarFechaIngreso()`) → re-cobra con la nueva fecha | Lápiz (`mostrarEditConceptoIngreso`): si cambia la cuenta de un ingreso ya cobrado, mueve la plata
+- Consolidado: "Ingresos del mes cobrados" (+ pendiente) y total por moneda | Footer: Nuevo ingreso (con cuenta + importe ya queda cobrado) · Nueva cuenta
 - Validación saldo HTTP 422 al marcar pagado Y al reasignar cuenta en gasto ya pagado
-- Alta: "Nueva cuenta" en footer → form inline `.nueva-cuenta-form`
 - Transferencia: #modalTransferencia | Extracción: solo no-billetera
 - `total_pagado_mes`: JOIN conceptos filtrando `tipo='gasto'` (si no, suma ingresos — bug histórico)
-
-## Ingresos modal
-- Layout dos líneas por ítem:
-  - Línea 1 `.ingreso-linea1`: nombre + btn-edit-ingreso + importe (input)
-  - Línea 2 `.ingreso-linea2`: select cuenta (flex:1) + input fecha (7.5rem fijo)
-- Wrapper `.ingreso-body` (flex-direction:column) al lado de `.btn-pagado`
-- `renderizarModalIngresos()` en app.js
 
 ## Vencimientos (permite_multiples=0)
 - `.vencimiento-wrap` → span dd/mm/yy + input[date] oculto; click → showPicker()
@@ -119,85 +123,23 @@ Resumen/Cuentas → modales | Vencimientos → modal+badges | Ingresos → modal
 - `.categoria-header-label`: 0.72rem | `.categoria-header-total`: 0.8rem
 - Edit: todo en `.cat-nombre-edit` con `d-flex flex-wrap` (nombre+orden+botones), colspan="2" — evita overflow mobile
 
-## Movimientos modal
-- Layout flex por fila: fecha(dd/mm/yy)+hora(hh:mm, oculta si es 00:00) | tipo+cuenta | descripción+importe
-- Sin tabla, diseño responsive puro flex
-- Filtro por mes/año al abrir: `api/movimientos_api.php?limit=200&mes=X&anio=Y`
-- Buscador interno (`#inputBusquedaMov`) filtra en cliente por texto libre
-- Resumen chips en header: total cobros/pagos/transferencias/extracciones del mes
-- `_cargarMovimientos()` / `_renderizarMovimientos(q)` / `limpiarBusquedaMov()` en app.js
+## Movimientos
+- **Pantalla eliminada (2026-10-14).** La tabla `movimientos_cuenta` se mantiene: es la que permite revertir cobros/pagos y registra transferencias y extracciones
 
-## Tarjetas de Crédito (tarjetas_api_v3.php, tarjetas_financiero_v3.php)
+## Cuota Crédito ← Cuotas hipotecarias (`lib/hipoteca_sync.php`)
+- `sincronizarCuotaCredito($db, $mes, $anio)` se ejecuta en el GET de gastos_api.php (envuelto en try/catch)
+- Concepto `CONCEPTO_CUOTA_CREDITO_ID = 35`: importe = `ROUND(total_uva × valor_uva, 2)` ("Cuota Bco $") y fecha_vencimiento de la cuota de `cuotas_hipoteca` que **vence en ese mes**
+- No hace nada si no hay cuota ese mes o falta el valor UVA | **No modifica registros ya pagados** | Crea el registro si no existe (cuenta por defecto del concepto)
+- GET marca el concepto con `origen: 'hipoteca'` → en la planilla el importe es solo lectura (`.importe-origen`, link a hipoteca.php)
 
-**Modelo simplificado:** tarjetas → movimientos → cuotas. Cada cuota referencia su cierre real via FK.
-
-**Tablas:**
-```
-tarjetas_credito:      id, banco, nombre_tarjeta, marca, ultimos_4, limite_credito, 
-                       fecha_cierre_dia, fecha_vencimiento_dia, activa
-movimientos_tarjeta:   id, tarjeta_id, fecha_compra, descripcion, comercio, categoria, 
-                       monto_total, cuotas_totales, estado, fecha_cancelacion
-cuotas_movimiento:     id, movimiento_id, cierre_id(FK), numero_cuota, fecha_vencimiento, 
-                       monto, pagada, fecha_pago
-cierres_tarjeta:       id, tarjeta_id, anio, mes, fecha_cierre, fecha_vencimiento
-                       (fuente de verdad: fechas reales por mes)
-```
-
-**API Endpoints:**
-- `GET /api/tarjetas_api_v3.php` — lista tarjetas con deuda + disponible
-- `POST /api/tarjetas_api_v3.php` — crear tarjeta
-- `POST ?action=movimiento` — crear movimiento (auto-genera cuotas usando cierres_tarjeta)
-- `GET ?action=movimientos&tarjeta_id=X` — listar movimientos activos
-- `GET ?action=vencimientos_consolidados&tarjeta_id=X` — agrupa cuotas por fecha, solo futuras (>= CURDATE())
-- `GET ?action=disponible&tarjeta_id=X` — límite − deuda_comprometida
-- `PATCH ?action=marcar_pagada&cuota_id=X` — marca cuota pagada
-- `DELETE ?action=movimiento&id=X` — anula movimiento (soft-delete con fecha_cancelacion)
-- `GET ?action=cierres&tarjeta_id=X` — obtener cierres/vencimientos por mes
-- `POST ?action=generar_cierres&tarjeta_id=X` — auto-genera 24 meses de cierres antes de crear movimiento
-
-**Lógica de Cuotas (`generarCuotas()`):**
-1. Calcula montos por cuota (última cuota absorbe redondeo)
-2. Busca en `cierres_tarjeta` los primeros N cierres (N=cuotas_totales) cuya fecha_cierre >= fecha_compra
-3. Para cada cierre encontrado, crea una cuota con:
-   - `cierre_id` = ID real del cierre
-   - `fecha_vencimiento` = fecha_vencimiento del cierre (no calculada)
-   - `monto` = monto_base o monto_ultima
-4. Si faltan cierres → error (se auto-genera antes de insertar movimiento)
-
-**Dashboard ("Tarjetas de Crédito" modal):**
-- **Alerta resumen**: total a pagar próximo mes, nombre del mes capitalizado
-- **Gráfico de proyección** (Chart.js, compacto mobile):
-  - Barras para próximos 12 meses (desde próximo mes)
-  - Agrupa vencimientos de todas las tarjetas por mes (YYYY-MM)
-  - Font 10px, sin padding, altura 140px, labels en "Jun 26" formato
-  - Tooltip muestra monto exacto en moneda ($X.XXX)
-- **Cards por tarjeta** (col-12 col-md-6):
-  - Nombre + banco + últimos 4 dígitos + badge activo/inactivo
-  - Total Pagos en [Próximo Mes] destacado en verde
-  - Deuda comprometida + barra progreso (color según uso%)
-  - Disponible / Límite
-  - Fechas: "Cierre: día X | Vence: día Y"
-  - Click abre modal detalle
-
-**Modal Detalle Tarjeta:**
-- Pestaña "Próximos Pagos": vencimientos consolidados agrupados por fecha
-  - Primer mes expandido, resto colapsados (acordeón)
-  - Cada cuota con checkbox para marcar pagada (desaparece con animación)
-- Pestaña "Compras": movimientos activos con botón "Agregar Compra"
-- Header: límite, deuda comprometida, disponible, % uso
-- Botón 📅 "Editar Cierres": modal con tabla editable de fechas por mes
-
-**Arquitectura de fechas:**
-- `fecha_cierre_dia` y `fecha_vencimiento_dia` en tarjetas_credito = base (fallback solamente)
-- Fechas **reales y variables** guardadas en `cierres_tarjeta` (mes a mes)
-- Al crear movimiento: POST auto-genera cierres usando `max(cuotas_totales, 12)` meses
-- `generarCuotas()` busca cierres secuencialmente; si no existen → error pre-insert
-- Usuario puede editar cierres desde UI cuando tenga información real del banco
-
-**Validaciones:**
-- Comparación de fechas: día_compra vs fecha_cierre (full date, no solo día)
-- Cierre_id no nulo: cada cuota referencia su cierre real
-- Vencimientos solo futuros: `fecha_vencimiento >= CURDATE()` en queries de dashboard
+## Tarjetas de Crédito (simplificado 2026-10-14) — tarjetas_api.php
+- **Solo lectura de la planilla.** El resumen de cada mes se carga en los conceptos de gasto vinculados a la tarjeta (categoría Bancos): `tarjetas_credito.concepto_id` (pesos) y `concepto_usd_id` (dólares). Importe, vencimiento y pagado salen de `registros_mensuales`
+- Vencimientos los muestra solos (son gastos con fecha_vencimiento) | el pago descuenta de la cuenta como cualquier gasto
+- Modal Tarjetas: gráfico Chart.js apilado (pesos, 12 meses) + por tarjeta tabla Mes | Pesos | Var. % | Dólares | Vence | estado. Alta/edición: nombre, banco, últimos 4, concepto pesos/dólares, activa
+- Chip "Tarjetas" en catNav = suma en pesos de los conceptos vinculados del mes visible
+- **Eliminado:** compras, cuotas, cierres, simulador, alertas, widget próximo vencimiento, sincronizar (tarjetas_api_v3.php, lib/tarjetas_financiero*.php). Las tablas `movimientos_tarjeta`, `cuotas_movimiento`, `cierres_tarjeta` quedan en la BD sin uso
+- Migración: `scripts/tarjetas_simplificar_20261014.sql` (agrega concepto_usd_id, crea "Tarjeta Visa USD"/"Tarjeta Mastercard USD", vincula tarjeta 1→concepto 29, tarjeta 2→concepto 7)
+- Vencimientos: totales por grupo separados por moneda (no suma pesos con dólares)
 
 ## Login (login.php)
 - Logo Montserrat + barra degradé índigo→verde + card shadow

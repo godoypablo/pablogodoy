@@ -72,16 +72,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             letter-spacing: -0.5px;
         }
         .logo-pg {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 2.4rem;
-            height: 2.4rem;
+            width: 2.5rem;
+            height: 2.5rem;
             margin-right: 0.5rem;
-            border-radius: 0.6rem;
-            background: #6366f1;
-            color: #fff;
-            font-size: 1.1rem;
             vertical-align: middle;
         }
         .login-logo .logo-dot {
@@ -160,7 +153,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <?php if ($esCifra): ?>
                 <i class="bi bi-bar-chart-fill" style="color:#6366f1;font-size:1.8rem;vertical-align:middle;margin-right:0.3rem"></i>Cifra<span class="logo-dot">.</span>
                 <?php else: ?>
-                <span class="logo-pg">PG</span>Pablo Godoy
+                <img src="/img/logo/isotipo.svg" class="logo-pg" alt="" width="40" height="40">Pablo Godoy
                 <?php endif; ?>
             </div>
             <p class="text-muted small mb-0"><?= $esCifra ? 'Control financiero personal' : 'Acceso privado' ?></p>

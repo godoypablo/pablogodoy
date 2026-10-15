@@ -127,12 +127,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('selectMes').addEventListener('change', cargarDatos);
     document.getElementById('selectAnio').addEventListener('change', cargarDatos);
     document.getElementById('inputBusqueda')?.addEventListener('input', e => aplicarBusqueda(e.target.value));
-    document.getElementById('inputBusquedaMov')?.addEventListener('input', e => _renderizarMovimientos(e.target.value));
 
-    // Al abrir modal ingresos, renderizar si los datos ya están cargados
-    document.getElementById('modalIngresos').addEventListener('show.bs.modal', () => {
-        if (app.datos) renderizarModalIngresos();
-    });
 
     // iOS: no dispara beforeinstallprompt → banner propio
     const isIOS        = /iPad|iPhone|iPod/.test(navigator.userAgent);
@@ -398,7 +393,7 @@ async function cargarDatos() {
         const [response, respCuentas, respTarjetas] = await Promise.all([
             fetch(`${API_URL}?mes=${app.mesActual}&anio=${app.anioActual}`),
             fetch(`api/cuentas_api.php?mes=${app.mesActual}&anio=${app.anioActual}`),
-            fetch(`${TARJETAS_API}`)
+            fetch(`${TARJETAS_API}?mes=${app.mesActual}&anio=${app.anioActual}`)
         ]);
         const result     = await response.json();
         const resCuentas = await respCuentas.json();
@@ -407,7 +402,10 @@ async function cargarDatos() {
         if (result.success) {
             app.datos = result.data;
             if (resCuentas.success) app.cuentas = resCuentas.data;
-            if (resTarjetas.success) tarjetasActuales = resTarjetas.data || [];
+            if (resTarjetas.success) {
+                tarjetasActuales = resTarjetas.data?.tarjetas || [];
+                tarjetasMeses    = resTarjetas.data?.meses || [];
+            }
 
             // Inicializar categoría filtrada: recuperar de localStorage o usar "Gastos Varios"
             const catGuardada = localStorage.getItem('cifra-categoria-filtrada');
@@ -420,7 +418,7 @@ async function cargarDatos() {
             }
 
             renderizarDatos();
-            cargarDashboardTarjetas();
+            if (document.getElementById('modalTarjetas')?.classList.contains('show')) renderizarTarjetas();
         } else {
             mostrarError('Error al cargar los datos: ' + result.message);
         }
@@ -530,10 +528,6 @@ function renderizarDatos() {
     renderizarCuentas();
     renderizarCardCuentasHome();
 
-    // Si el modal de ingresos está abierto, re-renderizarlo con datos frescos
-    if (document.getElementById('modalIngresos')?.classList.contains('show')) {
-        renderizarModalIngresos();
-    }
     if (document.getElementById('modalResumen')?.classList.contains('show')) {
         renderizarGerencial();
     }
@@ -571,8 +565,13 @@ function mostrarBannerVencimientos() {
     badgeVenc.textContent = totalBadge;
     badgeVenc.classList.remove('d-none');
 
-    const totalVencidos = vencidos.reduce((s, c) => s + (parseFloat(c.importe) || 0), 0);
-    const totalProximos = proximos.reduce((s, c) => s + (parseFloat(c.importe) || 0), 0);
+    // Total por moneda (no mezclar pesos con dólares)
+    const totalGrupo = items => ['ARS', 'USD']
+        .map(m => [m, items.filter(c => (c.moneda || 'ARS') === m).reduce((s, c) => s + (parseFloat(c.importe) || 0), 0)])
+        .filter(([m, t]) => t > 0 || m === 'ARS')
+        .map(([m, t]) => formatearMoneda(t, m)).join(' + ');
+    const totalVencidos = totalGrupo(vencidos);
+    const totalProximos = totalGrupo(proximos);
 
     const filaItem = (c, esVencido) => `
         <div class="venc-fila">
@@ -584,12 +583,12 @@ function mostrarBannerVencimientos() {
     modalBody.innerHTML = `
         ${vencidos.length ? `
         <div class="venc-grupo">
-            <div class="venc-grupo-label venc-grupo-label-vencido">Vencidos · ${formatearMoneda(totalVencidos)}</div>
+            <div class="venc-grupo-label venc-grupo-label-vencido">Vencidos · ${totalVencidos}</div>
             ${vencidos.map(c => filaItem(c, true)).join('')}
         </div>` : ''}
         ${proximos.length ? `
         <div class="venc-grupo">
-            <div class="venc-grupo-label">Esta semana · ${formatearMoneda(totalProximos)}</div>
+            <div class="venc-grupo-label">Esta semana · ${totalProximos}</div>
             ${proximos.map(c => filaItem(c, false)).join('')}
         </div>` : ''}`;
 }
@@ -1088,6 +1087,16 @@ function crearFilaSimple(concepto, tipo) {
         span.className = 'importe-pagado fw-medium';
         span.textContent = concepto.importe > 0 ? formatearMoneda(concepto.importe, concepto.moneda || 'ARS') : '—';
         inputGroup.appendChild(span);
+    } else if (concepto.origen === 'hipoteca') {
+        // Se completa desde Cuotas hipotecarias: solo lectura, con acceso a la pantalla de origen
+        const link = document.createElement('a');
+        link.href = 'hipoteca.php';
+        link.className = 'importe-origen';
+        link.title = 'Viene de Cuotas hipotecarias (Cuota Bco $ de la cuota que vence este mes). Se edita ahí.';
+        link.innerHTML = `<i class="bi bi-house-door"></i><span>${concepto.importe > 0
+            ? formatearMoneda(concepto.importe, concepto.moneda || 'ARS')
+            : 'Sin valor UVA'}</span>`;
+        inputGroup.appendChild(link);
     } else {
         // No pagado: input editable
         const input = document.createElement('input');
@@ -2463,184 +2472,201 @@ function descargarResumenPDF() {
 }
 
 function abrirModalCuentas() {
+    document.getElementById('mesAnioCuentas').textContent =
+        `${String(app.mesActual).padStart(2, '0')}/${app.anioActual}`;
+    ocultarFormNuevoIngreso();
+    renderizarCuentas();
     new bootstrap.Modal(document.getElementById('modalCuentas')).show();
     cargarCuentas();
 }
 
+// Ingresos y Cuentas se manejan desde la misma pantalla
 function abrirModalIngresos() {
-    document.getElementById('mesAnioIngresos').textContent =
-        `${String(app.mesActual).padStart(2, '0')}/${app.anioActual}`;
-    ocultarFormNuevoIngreso();
-    renderizarModalIngresos();
-    new bootstrap.Modal(document.getElementById('modalIngresos')).show();
+    abrirModalCuentas();
 }
 
-function renderizarModalIngresos() {
-    const body = document.getElementById('modalIngresosBody');
-    if (!body) return;
+// ── Ingresos dentro de Cuentas ───────────────────────────────
+// Escribir el importe = cobrado: el saldo de la cuenta se actualiza en el acto.
 
-    const ingresos = (app.datos?.conceptos || []).filter(c => c.tipo === 'ingreso');
+// Cuenta en la que se muestra un ingreso: la del registro del mes o, si no hay, la por defecto
+function _cuentaDeIngreso(c) {
+    const id = c.registro_id && c.cuenta_id ? c.cuenta_id : c.cuenta_id_default;
+    return app.cuentas.some(cu => cu.id == id) ? parseInt(id) : null;
+}
 
-    if (!ingresos.length) {
-        body.innerHTML = '<p class="text-center text-muted py-4">Sin conceptos de ingreso. Usá "Nuevo ingreso" para agregar.</p>';
-        document.getElementById('totalIngresosModal').innerHTML = '';
-        return;
-    }
+function _filaIngresoCuenta(c, cuentaId) {
+    const moneda   = c.moneda || 'ARS';
+    const importe  = parseFloat(c.importe || 0);
+    const cobrado  = c.pagado === 1 && importe > 0;
+    const pendiente = !cobrado && importe > 0;
+    const estado   = cobrado ? 'ci-cobrado' : (pendiente ? 'ci-pendiente' : 'ci-vacio');
+    const fechaVal = c.fecha ? c.fecha.split('T')[0] : '';
 
-    const rows = ingresos.map(c => {
-        const isPaid   = c.pagado === 1;
-        const fechaVal = c.fecha ? c.fecha.split('T')[0] : '';
-        const moneda   = c.moneda || 'ARS';
-        const imp      = c.importe > 0 ? formatearMoneda(c.importe, moneda) : '';
-        const cuentasOpts = app.cuentas
+    let checkTitle = 'Escribí el importe para cobrarlo';
+    let checkIcon  = 'bi-circle';
+    if (cobrado)   { checkTitle = 'Anular cobro (queda pendiente)'; checkIcon = 'bi-check-circle-fill'; }
+    if (pendiente) { checkTitle = 'Confirmar cobro';                checkIcon = 'bi-circle'; }
+
+    let meta;
+    if (!cuentaId) {
+        const opts = app.cuentas
             .filter(cu => (cu.moneda || 'ARS') === moneda)
             .map(cu => `<option value="${cu.id}">${cu.nombre}</option>`).join('');
-        const hasReg   = !!c.registro_id;
+        meta = `<select class="form-select form-select-sm ci-asignar" onchange="asignarCuentaIngreso(${c.id}, this.value)">
+                    <option value="">Elegí la cuenta…</option>${opts}
+                </select>`;
+    } else if (cobrado) {
+        meta = `<span class="ci-estado">Cobrado el</span>
+                <input type="date" class="ci-fecha" value="${fechaVal}"
+                       onchange="cambiarFechaIngreso(${c.id}, this.value)" title="Cambiar fecha de cobro">`;
+    } else if (pendiente) {
+        meta = `<span class="ci-estado ci-estado-pend">Pendiente · tocá el círculo para confirmar</span>`;
+    } else {
+        meta = `<span class="ci-estado">Sin cobrar este mes</span>`;
+    }
 
-        return `
-        <div class="ingreso-row ${isPaid ? 'ingreso-row-cobrado' : ''}"
-             data-concepto-id="${c.id}"
-             data-registro-id="${c.registro_id || ''}">
-
-            <button class="btn-pagado ${isPaid ? 'pagado' : ''}"
-                    title="${isPaid ? 'Marcar como no cobrado' : 'Marcar como cobrado'}"
-                    onclick="toggleCobradoIngreso(${c.registro_id || 'null'}, ${c.id}, this)">
-                <i class="bi ${isPaid ? 'bi-check-circle-fill' : 'bi-circle'}"></i>
-            </button>
-
-            <div class="ingreso-body">
-                <div class="ingreso-linea1" id="ingreso-nombre-wrap-${c.id}">
-                    <span class="ingreso-nombre">${c.nombre}</span>
-                    <button class="btn-edit-ingreso" title="Editar concepto"
-                            onclick="mostrarEditConceptoIngreso(${c.id})">
-                        <i class="bi bi-pencil-fill"></i>
-                    </button>
-                </div>
-                <div class="ingreso-linea2">
-                    <select class="ingreso-cuenta form-select form-select-sm"
-                            data-cuenta-actual="${c.cuenta_id || ''}"
-                            ${!hasReg ? 'disabled' : `onchange="guardarCuentaRegistro(${c.registro_id}, this.value || null)"`}>
-                        <option value="">— Cuenta —</option>
-                        ${cuentasOpts}
-                    </select>
-                    <input type="date" class="ingreso-fecha form-control form-control-sm"
-                           value="${fechaVal}"
-                           ${!hasReg ? 'disabled title="Ingresá el importe primero"' : `onchange="guardarFechaIngreso(${c.registro_id}, this.value, this)"`}>
-                </div>
+    return `
+    <div class="ci-row ${estado}" data-concepto-id="${c.id}">
+        <button class="ci-check" title="${checkTitle}" ${!cuentaId ? 'disabled' : ''}
+                onclick="toggleCobroIngreso(${c.id})">
+            <i class="bi ${checkIcon}"></i>
+        </button>
+        <div class="ci-info">
+            <div class="ci-linea1" id="ingreso-nombre-wrap-${c.id}">
+                <span class="ci-nombre">${c.nombre}</span>
+                <button class="btn-edit-ingreso" title="Editar concepto" onclick="mostrarEditConceptoIngreso(${c.id})">
+                    <i class="bi bi-pencil-fill"></i>
+                </button>
             </div>
-            <div class="ingreso-importe-col">
-                <div class="importe-input-wrap"><input type="text" inputmode="decimal"
-                       class="ingreso-importe input-importe form-control form-control-sm"
-                       value="${imp}"
-                       data-concepto-id="${c.id}"
-                       data-registro-id="${c.registro_id || ''}"
-                       placeholder="0,00"
-                       onfocus="const v=parsearImporte(this.value);this.value=v>0?String(v).replace('.',','):'';this.select()"
-                       onblur="guardarImporteIngreso(this)"
-                       onkeypress="if(event.key==='Enter')this.blur()"
-                       oninput="this.classList.add('unsaved');this.classList.remove('saved')"></div>
-            </div>
-        </div>`;
-    }).join('');
-
-    body.innerHTML = `<div class="ingreso-lista">${rows}</div>`;
-
-    // Setear valor del select de cuenta (no se puede en template string directamente)
-    ingresos.forEach(c => {
-        if (!c.cuenta_id) return;
-        const row = body.querySelector(`[data-concepto-id="${c.id}"]`);
-        if (row) {
-            const sel = row.querySelector('.ingreso-cuenta');
-            if (sel) sel.value = c.cuenta_id;
-        }
-    });
-
-    // Totales
-    const total    = ingresos.reduce((s, c) => s + parseFloat(c.importe || 0), 0);
-    const cobrado  = ingresos.filter(c => c.pagado === 1).reduce((s, c) => s + parseFloat(c.importe || 0), 0);
-    const pendiente = total - cobrado;
-
-    const tooltips = [
-        { label: 'Total',     valor: total,     cls: '',           title: 'Suma de todos los ingresos del mes, cobrados o no' },
-        { label: 'Cobrado',   valor: cobrado,   cls: 'ingreso-cobrado-valor', title: 'Ingresos ya recibidos (marcados con ✓)' },
-        { label: 'Pendiente', valor: pendiente, cls: 'text-muted', title: 'Ingresos que todavía no cobraste' },
-    ];
-
-    const container = document.getElementById('totalIngresosModal');
-    container.innerHTML = tooltips.map(t => `
-        <div class="ingreso-total-item">
-            <span class="ingreso-total-label">
-                ${t.label}
-                <i class="bi bi-info-circle ingreso-total-info"
-                   data-bs-toggle="tooltip"
-                   data-bs-placement="top"
-                   data-bs-title="${t.title}"></i>
-            </span>
-            <span class="ingreso-total-valor ${t.cls}">${formatearMoneda(t.valor)}</span>
-        </div>`).join('');
-
-    container.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el =>
-        new bootstrap.Tooltip(el, { trigger: 'hover focus' })
-    );
+            <div class="ci-meta">${meta}</div>
+        </div>
+        <input type="text" inputmode="decimal" class="ci-importe input-importe form-control form-control-sm"
+               value="${importe > 0 ? formatearMoneda(importe, moneda) : ''}"
+               placeholder="${moneda === 'USD' ? 'U$D 0,00' : '$ 0,00'}"
+               ${!cuentaId ? 'disabled title="Elegí primero la cuenta"' : ''}
+               onfocus="const v=parsearImporte(this.value);this.value=v>0?String(v).replace('.',','):'';this.select()"
+               onblur="guardarImporteIngresoCuenta(${c.id}, this)"
+               onkeydown="if(event.key==='Enter')this.blur();if(event.key==='Escape'){this.dataset.cancelar='1';this.blur()}">
+    </div>`;
 }
 
-async function toggleCobradoIngreso(registroId, conceptoId, btn) {
-    const isPaid   = btn.classList.contains('pagado');
-    const newPagado = isPaid ? 0 : 1;
-
-    // Si no hay registro, crear uno vacío primero
-    if (!registroId && newPagado === 1) {
-        const r = await fetch(API_URL, {
+async function _cobrarIngreso(conceptoId, importe, cuentaId, fecha = null) {
+    const c = app.datos?.conceptos?.find(x => x.id == conceptoId);
+    try {
+        const resp = await fetch(API_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ concepto_id: conceptoId, mes: app.mesActual, anio: app.anioActual, importe: 0 })
-        });
-        const res = await r.json();
-        if (!res.success) { mostrarError(res.message); return; }
-        registroId = res.data.id;
-    }
-    if (!registroId) return;
-
-    try {
-        const resp = await fetch(API_URL, {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ registro_id: registroId, pagado: newPagado })
+            body: JSON.stringify({
+                accion: 'cobrar_ingreso',
+                concepto_id: conceptoId,
+                mes: app.mesActual,
+                anio: app.anioActual,
+                importe,
+                cuenta_id: cuentaId,
+                fecha
+            })
         });
         const result = await resp.json();
         if (!result.success) throw new Error(result.message);
-        await cargarDatos(); // re-renderiza el modal vía renderizarDatos()
+        if (c && importe > 0) mostrarToast(`${c.nombre}: ${formatearMoneda(importe, c.moneda || 'ARS')} cobrado`, 'success');
+        if (c && importe <= 0) mostrarToast(`${c.nombre}: cobro anulado`, 'success');
     } catch (e) {
-        mostrarError('Error: ' + e.message);
+        mostrarError(e.message);
     }
+    await cargarDatos(); // re-renderiza cuentas, saldos y topbar
 }
 
-async function guardarFechaIngreso(registroId, valor, input) {
-    if (!registroId) return;
+async function guardarImporteIngresoCuenta(conceptoId, input) {
+    const c = app.datos?.conceptos?.find(x => x.id == conceptoId);
+    if (!c) return;
+    const moneda   = c.moneda || 'ARS';
+    const anterior = parseFloat(c.importe || 0);
+    if (input.dataset.cancelar) {
+        delete input.dataset.cancelar;
+        input.value = anterior > 0 ? formatearMoneda(anterior, moneda) : '';
+        return;
+    }
+    const importe = parsearImporte(input.value);
+    input.value   = importe > 0 ? formatearMoneda(importe, moneda) : '';
+
+    const cobrado = c.pagado === 1 && anterior > 0;
+    // Sin cambios y ya cobrado (o vacío) → nada que hacer
+    if (Math.abs(importe - anterior) < 0.005 && (cobrado || importe === 0)) return;
+    if (importe === 0 && !c.registro_id) return;
+
+    const cuentaId = _cuentaDeIngreso(c);
+    if (!cuentaId) { mostrarError('Elegí primero la cuenta de este ingreso'); return; }
+    if (importe === 0 && cobrado && !confirm(`¿Anular el cobro de "${c.nombre}"? Se descuenta del saldo de la cuenta.`)) {
+        input.value = formatearMoneda(anterior, moneda);
+        return;
+    }
+    await _cobrarIngreso(conceptoId, importe, cuentaId);
+}
+
+async function toggleCobroIngreso(conceptoId) {
+    const c = app.datos?.conceptos?.find(x => x.id == conceptoId);
+    if (!c) return;
+    const importe = parseFloat(c.importe || 0);
+    const row     = document.querySelector(`#cardCuentas .ci-row[data-concepto-id="${conceptoId}"]`);
+
+    if (importe <= 0) {
+        row?.querySelector('.ci-importe')?.focus();
+        return;
+    }
+    if (c.pagado === 1) {
+        // Anular cobro: el registro queda pendiente con su importe y el saldo se revierte
+        try {
+            const resp = await fetch(API_URL, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ registro_id: c.registro_id, pagado: 0 })
+            });
+            const result = await resp.json();
+            if (!result.success) throw new Error(result.message);
+            mostrarToast(`${c.nombre}: cobro anulado`, 'success');
+        } catch (e) {
+            mostrarError(e.message);
+        }
+        await cargarDatos();
+        return;
+    }
+    await _cobrarIngreso(conceptoId, importe, _cuentaDeIngreso(c));
+}
+
+async function cambiarFechaIngreso(conceptoId, fecha) {
+    const c = app.datos?.conceptos?.find(x => x.id == conceptoId);
+    if (!c || !fecha) return;
+    await _cobrarIngreso(conceptoId, parseFloat(c.importe || 0), _cuentaDeIngreso(c), fecha);
+}
+
+async function asignarCuentaIngreso(conceptoId, cuentaId) {
+    if (!cuentaId) return;
     try {
-        const resp = await fetch(API_URL, {
-            method: 'PATCH',
+        const resp = await fetch(CONCEPTOS_API_URL, {
+            method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ registro_id: registroId, fecha: valor || null })
+            body: JSON.stringify({ id: conceptoId, cuenta_id_default: cuentaId })
         });
         const result = await resp.json();
         if (!result.success) throw new Error(result.message);
-        // Actualizar en memoria
-        const c = app.datos?.conceptos?.find(c => c.registro_id == registroId);
-        if (c) c.fecha = valor;
+        const c = app.datos?.conceptos?.find(x => x.id == conceptoId);
+        if (c) {
+            c.cuenta_id_default = parseInt(cuentaId);
+            // Un registro pendiente del mes con otra cuenta también se reasigna
+            if (c.registro_id && c.pagado !== 1) c.cuenta_id = parseInt(cuentaId);
+        }
+        if (c?.registro_id && c.pagado !== 1) {
+            await fetch(API_URL, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ registro_id: c.registro_id, cuenta_id: parseInt(cuentaId) })
+            });
+        }
+        renderizarCuentas();
+        document.querySelector(`#cardCuentas .ci-row[data-concepto-id="${conceptoId}"] .ci-importe`)?.focus();
     } catch (e) {
-        mostrarError('Error al guardar fecha: ' + e.message);
-        if (input) input.classList.add('is-invalid');
+        mostrarError(e.message);
     }
-}
-
-async function guardarImporteIngreso(input) {
-    const importe    = parsearImporte(input.value);
-    input.value      = importe > 0 ? formatearMoneda(importe) : '';
-    const conceptoId = parseInt(input.dataset.conceptoId);
-    const registroId = input.dataset.registroId ? parseInt(input.dataset.registroId) : null;
-    // guardarImporte ya llama cargarDatos(), que re-renderiza el modal si está abierto
-    await guardarImporte(conceptoId, importe, registroId, input);
 }
 
 function mostrarEditConceptoIngreso(conceptoId) {
@@ -2667,7 +2693,7 @@ function mostrarEditConceptoIngreso(conceptoId) {
             <button class="btn btn-success btn-sm" onclick="guardarEditConceptoIngreso(${conceptoId})">
                 <i class="bi bi-check-lg"></i>
             </button>
-            <button class="btn btn-outline-secondary btn-sm" onclick="renderizarModalIngresos()">
+            <button class="btn btn-outline-secondary btn-sm" onclick="renderizarCuentas()">
                 <i class="bi bi-x-lg"></i>
             </button>
             <button class="btn btn-outline-danger btn-sm" title="Desactivar concepto"
@@ -2694,6 +2720,21 @@ async function guardarEditConceptoIngreso(conceptoId) {
         });
         const result = await resp.json();
         if (!result.success) throw new Error(result.message);
+
+        // Si cambió la cuenta y el ingreso del mes ya existe, moverlo también
+        const c = app.datos?.conceptos?.find(x => x.id == conceptoId);
+        const cuentaNueva = cuentaDef ? parseInt(cuentaDef) : null;
+        if (c?.registro_id && cuentaNueva && cuentaNueva !== _cuentaDeIngreso(c)) {
+            if (c.pagado === 1 && parseFloat(c.importe) > 0) {
+                await _cobrarIngreso(conceptoId, parseFloat(c.importe), cuentaNueva);
+                return;
+            }
+            await fetch(API_URL, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ registro_id: c.registro_id, cuenta_id: cuentaNueva })
+            });
+        }
         mostrarToast('Concepto actualizado', 'success');
         await cargarDatos(); // re-renderiza todo
     } catch (e) {
@@ -2738,7 +2779,12 @@ async function guardarNuevoIngreso() {
         if (!resC.success) throw new Error(resC.message);
         const nuevoConceptoId = resC.data?.id;
 
-        // 2. Crear registro del mes si hay importe
+        // 2. Si hay importe: con cuenta queda cobrado (suma al saldo); sin cuenta, pendiente
+        if (nuevoConceptoId && importe > 0 && cuentaDef) {
+            ocultarFormNuevoIngreso();
+            await _cobrarIngreso(nuevoConceptoId, importe, parseInt(cuentaDef));
+            return;
+        }
         if (nuevoConceptoId && importe > 0) {
             await fetch(API_URL, {
                 method: 'POST',
@@ -3513,6 +3559,11 @@ function renderizarCuentas() {
         billetera:        'Billetera virtual'
     };
 
+    // Ingresos del mes agrupados por cuenta
+    const ingresos = (app.datos?.conceptos || []).filter(c => c.tipo === 'ingreso' && !c.permite_multiples);
+    const ingresosDe = cuentaId => ingresos.filter(i => _cuentaDeIngreso(i) === cuentaId);
+    const sinCuenta  = ingresos.filter(i => _cuentaDeIngreso(i) === null);
+
     const filasHtml = app.cuentas.map(c => {
         const saldo    = parseFloat(c.saldo_actual || 0);
         const fechaStr = c.fecha_saldo ? formatearFechaCorta(c.fecha_saldo) : '—';
@@ -3548,8 +3599,32 @@ function renderizarCuentas() {
                     </div>
                 </div>
             </div>
+            ${ingresosDe(parseInt(c.id)).map(i => _filaIngresoCuenta(i, parseInt(c.id))).join('')}
         </div>`;
     }).join('');
+
+    const sinCuentaHtml = sinCuenta.length ? `
+        <div class="cuenta-item ci-sin-cuenta">
+            <div class="cuenta-item-header">
+                <div class="d-flex align-items-center gap-2">
+                    <span class="cuenta-dot-lg" style="background:#cbd5e1"></span>
+                    <div>
+                        <span class="cuenta-nombre">Sin cuenta asignada</span>
+                        <span class="cuenta-tipo">Elegí dónde cobrás cada uno: queda recordado para los próximos meses</span>
+                    </div>
+                </div>
+            </div>
+            ${sinCuenta.map(i => _filaIngresoCuenta(i, null)).join('')}
+        </div>` : '';
+
+    const ingTotal   = ingresos.filter(i => (i.moneda || 'ARS') === 'ARS').reduce((s, i) => s + parseFloat(i.importe || 0), 0);
+    const ingCobrado = ingresos.filter(i => (i.moneda || 'ARS') === 'ARS' && i.pagado === 1).reduce((s, i) => s + parseFloat(i.importe || 0), 0);
+    const ingresosResumen = ingTotal > 0 ? `
+        <div class="cuenta-consolidado-row ci-resumen">
+            <span class="cuenta-consolidado-label">Ingresos del mes cobrados</span>
+            <span class="cuenta-consolidado-valor">${formatearMoneda(ingCobrado)}${ingTotal - ingCobrado > 0.005
+                ? ` <small class="ci-resumen-pend">· pendiente ${formatearMoneda(ingTotal - ingCobrado)}</small>` : ''}</span>
+        </div>` : '';
 
     const consolidadoUSD = totalUSD > 0
         ? `<div class="cuenta-consolidado-row">
@@ -3558,8 +3633,9 @@ function renderizarCuentas() {
            </div>` : '';
 
     contenedor.innerHTML = `
-    <div class="cuenta-lista">${filasHtml}</div>
+    <div class="cuenta-lista">${filasHtml}${sinCuentaHtml}</div>
     <div class="cuenta-consolidado">
+        ${ingresosResumen}
         <div class="cuenta-consolidado-row">
             <span class="cuenta-consolidado-label">Total en cuentas ARS</span>
             <span class="cuenta-consolidado-valor">${formatearMoneda(totalARS)}</span>
@@ -3797,121 +3873,6 @@ const _CAT_ICONO = {
     'Otros': 'bi-tag-fill'
 };
 
-const _MOV_TIPO = {
-    ingreso:       { label: 'Cobro',         icon: 'bi-arrow-down-circle', cls: 'mov-cobro'         },
-    pago_gasto:    { label: 'Pago',          icon: 'bi-arrow-up-circle',   cls: 'mov-pago'          },
-    transferencia: { label: 'Transferencia', icon: 'bi-arrow-left-right',  cls: 'mov-transferencia' },
-    extraccion:    { label: 'Extracción',    icon: 'bi-cash-stack',        cls: 'mov-extraccion'    },
-};
-
-let _movData = [];
-
-async function abrirModalMovimientos() {
-    const modal = new bootstrap.Modal(document.getElementById('modalMovimientos'));
-    modal.show();
-    await _cargarMovimientos();
-}
-
-async function _cargarMovimientos() {
-    const body = document.getElementById('modalMovimientosBody');
-    body.innerHTML = '<div class="text-center py-4"><div class="spinner-border text-primary"></div></div>';
-
-    const elMesAnio = document.getElementById('movMesAnio');
-    if (elMesAnio) elMesAnio.textContent = `${obtenerNombreMes(app.mesActual)} ${app.anioActual}`;
-
-    try {
-        const resp = await fetch(`api/movimientos_api.php?limit=200&mes=${app.mesActual}&anio=${app.anioActual}`);
-        const result = await resp.json();
-        if (!result.success) throw new Error(result.message);
-        _movData = result.data;
-        _renderizarMovimientos('');
-    } catch (error) {
-        body.innerHTML = `<div class="alert alert-danger m-3">Error: ${error.message}</div>`;
-    }
-}
-
-function _renderizarMovimientos(q) {
-    q = _normalizar(q);
-    const body    = document.getElementById('modalMovimientosBody');
-    const btnClear = document.getElementById('btnLimpiarMov');
-    if (btnClear) btnClear.classList.toggle('d-none', !q);
-
-    const data = q ? _movData.filter(m => {
-        const cuenta = m.cuenta_origen || m.cuenta_destino || '';
-        const desc   = m.observaciones || m.descripcion || '';
-        const tipo   = (_MOV_TIPO[m.tipo]?.label || m.tipo);
-        return _normalizar(cuenta + ' ' + desc + ' ' + tipo).includes(q);
-    }) : _movData;
-
-    // Resumen
-    const resumen = document.getElementById('movResumen');
-    if (resumen) {
-        const cobros   = data.filter(m => m.tipo === 'ingreso').reduce((s, m) => s + m.importe, 0);
-        const pagos    = data.filter(m => m.tipo === 'pago_gasto').reduce((s, m) => s + m.importe, 0);
-        const transf   = data.filter(m => m.tipo === 'transferencia').length;
-        const items = [
-            cobros > 0 ? `<span class="mov-res-chip mov-cobro"><i class="bi bi-arrow-down-circle me-1"></i>${formatearMoneda(cobros)}</span>` : '',
-            pagos  > 0 ? `<span class="mov-res-chip mov-pago"><i class="bi bi-arrow-up-circle me-1"></i>${formatearMoneda(pagos)}</span>`   : '',
-            transf > 0 ? `<span class="mov-res-chip mov-transferencia"><i class="bi bi-arrow-left-right me-1"></i>${transf} transf.</span>` : '',
-        ].filter(Boolean);
-        resumen.innerHTML = items.join('') || '<span class="text-muted">Sin movimientos</span>';
-    }
-
-    if (!data.length) {
-        body.innerHTML = '<p class="text-center text-muted py-4">Sin resultados</p>';
-        return;
-    }
-
-    // Agrupar por fecha
-    const porFecha = {};
-    data.forEach(m => {
-        const fechaParte = (m.fecha || '').split('T')[0].split(' ')[0];
-        if (!porFecha[fechaParte]) porFecha[fechaParte] = [];
-        porFecha[fechaParte].push(m);
-    });
-
-    const html = Object.entries(porFecha).map(([fecha, movs]) => {
-        const [yy, mm, dd] = fecha.split('-');
-        const diasSemana = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
-        const diaSem = diasSemana[new Date(fecha + 'T12:00:00').getDay()] || '';
-        const fechaLabel = fecha ? `${diaSem} ${dd}/${mm}/${(yy||'').slice(2)}` : '—';
-
-        const filas = movs.map(m => {
-            const t = _MOV_TIPO[m.tipo] || { label: m.tipo, icon: 'bi-circle', cls: '' };
-            const cuentaStr = m.tipo === 'transferencia'
-                ? `${m.cuenta_origen || '?'} → ${m.cuenta_destino || '?'}`
-                : (m.cuenta_origen || m.cuenta_destino || '—');
-            const desc = m.observaciones || m.descripcion || '';
-            const esIngreso = m.tipo === 'ingreso';
-            const importeStr = (esIngreso ? '+' : '−') + formatearMoneda(m.importe).replace('-','');
-
-            return `
-            <div class="mov-fila">
-                <div class="mov-icono ${t.cls}"><i class="bi ${t.icon}"></i></div>
-                <div class="mov-info">
-                    <div class="mov-tipo-cuenta"><span class="mov-tipo-label">${t.label}</span><span class="mov-cuenta">${cuentaStr}</span></div>
-                    ${desc ? `<div class="mov-desc">${desc}</div>` : ''}
-                </div>
-                <div class="mov-importe ${t.cls}">${importeStr}</div>
-            </div>`;
-        }).join('');
-
-        return `
-        <div class="mov-grupo">
-            <div class="mov-fecha-header">${fechaLabel}</div>
-            ${filas}
-        </div>`;
-    }).join('');
-
-    body.innerHTML = html;
-}
-
-function limpiarBusquedaMov() {
-    const input = document.getElementById('inputBusquedaMov');
-    if (input) { input.value = ''; }
-    _renderizarMovimientos('');
-}
-
 async function actualizarSaldoCuenta(cuentaId) {
     const cuenta = app.cuentas.find(c => c.id == cuentaId);
     if (!cuenta) return;
@@ -3981,2267 +3942,258 @@ function mostrarToast(mensaje, tipo = 'success') {
 }
 
 // ============================================================
-// VISTA ANUAL
+// TARJETAS DE CRÉDITO (solo lectura)
+// Los resúmenes se cargan en la planilla, en los conceptos vinculados a cada
+// tarjeta (categoría Bancos, pesos y dólares). Acá solo se muestra la evolución.
 // ============================================================
 
-const ANUAL_API_URL = 'api/anual_api.php';
+const TARJETAS_API = 'api/tarjetas_api.php';
+const _TJ_MESES = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+const _TJ_COLORES = ['#6366f1', '#ef4444', '#10b981', '#f59e0b', '#0ea5e9', '#a855f7'];
 
-function abrirModalAnual() {
-    new bootstrap.Modal(document.getElementById('modalAnual')).show();
-    cargarVistaAnual(new Date().getFullYear());
-}
+let tarjetasActuales = [];   // [{id, nombre_tarjeta, concepto_id, concepto_usd_id, serie, ...}]
+let tarjetasMeses    = [];   // [{mes, anio}] del más viejo al seleccionado
+let _tjChart         = null;
 
-async function cargarVistaAnual(anio) {
-    const body = document.getElementById('modalAnualBody');
-    body.innerHTML = '<div class="text-center py-5 text-muted"><span class="spinner-border spinner-border-sm me-2"></span>Cargando...</div>';
-    try {
-        const resp   = await fetch(`${ANUAL_API_URL}?anio=${anio}`);
-        const result = await resp.json();
-        if (!result.success) throw new Error(result.message);
-        _renderizarTablaAnual(result.data);
-    } catch (e) {
-        body.innerHTML = `<div class="text-center py-5 text-danger"><i class="bi bi-exclamation-circle me-2"></i>${e.message}</div>`;
-    }
-}
+const _tjClave = m => `${m.anio}-${String(m.mes).padStart(2, '0')}`;
 
-function _formatCompacto(v) {
-    if (!v || v === 0) return '—';
-    if (v >= 1000000) return '$\u00a0' + (v / 1000000).toFixed(1).replace('.', ',') + 'M';
-    if (v >= 1000)    return '$\u00a0' + Math.round(v / 1000) + 'k';
-    return '$\u00a0' + Math.round(v);
-}
-
-function _renderizarTablaAnual(data) {
-    const body       = document.getElementById('modalAnualBody');
-    const meses      = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
-    const anioActual = new Date().getFullYear();
-    const mesActual  = new Date().getMonth(); // 0-indexed
-    const anio       = data.anio;
-
-    const btnNext = anio >= anioActual
-        ? `<button class="btn btn-sm btn-outline-secondary" disabled><i class="bi bi-chevron-right"></i></button>`
-        : `<button class="btn btn-sm btn-outline-secondary" onclick="cargarVistaAnual(${anio + 1})"><i class="bi bi-chevron-right"></i></button>`;
-
-    let html = `
-    <div class="d-flex align-items-center justify-content-between px-3 py-2 border-bottom">
-        <button class="btn btn-sm btn-outline-secondary" onclick="cargarVistaAnual(${anio - 1})"><i class="bi bi-chevron-left"></i></button>
-        <span class="fw-bold">${anio}</span>
-        ${btnNext}
-    </div>
-    <div class="anual-table-wrap">
-    <table class="table table-sm anual-table mb-0">
-    <thead><tr>
-        <th class="anual-cat-col">Categoría</th>
-        ${meses.map((m, i) => `<th class="anual-mes-col text-end${i === mesActual && anio === anioActual ? ' anual-mes-actual' : ''}">${m}</th>`).join('')}
-        <th class="anual-mes-col anual-total-col text-end">Total</th>
-    </tr></thead>
-    <tbody>`;
-
-    data.categorias.forEach(cat => {
-        const maxVal = Math.max(...cat.meses.filter(v => v > 0), 0);
-        html += `<tr>
-            <td class="anual-cat-col"><span class="anual-cat-dot" style="background:${cat.color}"></span>${cat.nombre}</td>
-            ${cat.meses.map((v, i) => {
-                const cls = [
-                    'text-end',
-                    (i === mesActual && anio === anioActual) ? 'anual-mes-actual' : '',
-                    (v > 0 && v === maxVal) ? 'anual-cel-max' : '',
-                    v === 0 ? 'text-muted' : '',
-                ].filter(Boolean).join(' ');
-                return `<td class="${cls}">${_formatCompacto(v)}</td>`;
-            }).join('')}
-            <td class="text-end anual-total-col fw-medium">${_formatCompacto(cat.total)}</td>
-        </tr>`;
-    });
-
-    html += `<tr class="anual-total-row">
-        <td class="anual-cat-col fw-bold">Total</td>
-        ${data.totales_mes.map((v, i) => {
-            const cls = ['text-end', 'fw-bold', (i === mesActual && anio === anioActual) ? 'anual-mes-actual' : ''].filter(Boolean).join(' ');
-            return `<td class="${cls}">${_formatCompacto(v)}</td>`;
-        }).join('')}
-        <td class="text-end anual-total-col fw-bold">${_formatCompacto(data.total_anual)}</td>
-    </tr>`;
-
-    html += `</tbody></table></div>`;
-    body.innerHTML = html;
-}
-
-// ============================================================
-// TARJETAS DE CRÉDITO
-// ============================================================
-
-const TARJETAS_API = 'api/tarjetas_api_v3.php';
-
-// Helper para fetch a API con credenciales
-function fetchAPI(url, options = {}) {
-    return fetch(url, {
-        credentials: 'include',
-        ...options
-    });
-}
-let tarjetasActuales = [];
-let tarjetaSeleccionada = null;
-
-// Abrir modal principal de tarjetas
 function abrirModalTarjetas() {
-    const modal = new bootstrap.Modal(document.getElementById('modalTarjetas'), { keyboard: false });
-    modal.show();
+    new bootstrap.Modal(document.getElementById('modalTarjetas')).show();
     cargarTarjetas();
 }
 
-// Cargar y renderizar tarjetas
 async function cargarTarjetas() {
     const body = document.getElementById('modalTarjetasBody');
-
     try {
-        const resp = await fetchAPI(TARJETAS_API);
+        const resp   = await fetch(`${TARJETAS_API}?mes=${app.mesActual}&anio=${app.anioActual}`);
         const result = await resp.json();
-
-        if (!result.success) throw new Error(result.message || 'Error al cargar tarjetas');
-
-        tarjetasActuales = result.data || [];
-
-        if (tarjetasActuales.length === 0) {
-            body.innerHTML = `
-                <div class="text-center py-5">
-                    <i class="bi bi-inbox fs-1 text-muted mb-3" style="display:block"></i>
-                    <p class="text-muted">Sin tarjetas registradas</p>
-                </div>`;
-            return;
-        }
-
-        // Calcular vencimientos del próximo mes para mostrar en resumen
-        let proximoMesTotal = 0;
-        let proximoMesNombre = '';
-
-        for (const tarjeta of tarjetasActuales) {
-            try {
-                const resp = await fetchAPI(`${TARJETAS_API}?action=vencimientos_consolidados&tarjeta_id=${tarjeta.id}`);
-                const result = await resp.json();
-
-                if (result.success && result.data && result.data.length > 0) {
-                    const mesActual = app.mesActual.toString().padStart(2, '0');
-                    const anioActual = app.anioActual.toString();
-
-                    // Determinar próximo mes
-                    let proxMes = parseInt(mesActual) + 1;
-                    let proxAnio = anioActual;
-                    if (proxMes > 12) {
-                        proxMes = 1;
-                        proxAnio++;
-                    }
-                    const proximoMesEsperado = `${proxAnio}-${proxMes.toString().padStart(2, '0')}`;
-
-                    // Sumar vencimientos del próximo mes
-                    result.data.forEach(venc => {
-                        const fechaVenc = venc.fecha_vencimiento.substring(0, 7);
-                        if (fechaVenc === proximoMesEsperado) {
-                            proximoMesTotal += parseFloat(venc.total || 0);
-                            if (!proximoMesNombre) {
-                                const fecha = new Date(venc.fecha_vencimiento);
-                                proximoMesNombre = fecha.toLocaleDateString('es-AR', {month:'long', year:'numeric'});
-                            }
-                        }
-                    });
-                }
-            } catch (e) {
-                console.error('Error obteniendo vencimientos:', e);
-            }
-        }
-
-        // Inicializar proyección antes de recolectar vencimientos
-        vencimientosPorTarjeta = {};
-        const proyeccionMensual = {}; // { 'YYYY-MM': total }
-        const mesesProyeccion = []; // para mantener orden cronológico
-        let mesesGrafico = []; // será llenado después de recolectar
-
-        for (const t of tarjetasActuales) {
-            try {
-                const resp = await fetchAPI(`${TARJETAS_API}?action=vencimientos_consolidados&tarjeta_id=${t.id}`);
-                const result = await resp.json();
-
-                let totalProximo = 0;
-                if (result.success && result.data && result.data.length > 0) {
-                    const mesActual = app.mesActual.toString().padStart(2, '0');
-                    const anioActual = app.anioActual.toString();
-
-                    let proxMes = parseInt(mesActual) + 1;
-                    let proxAnio = anioActual;
-                    if (proxMes > 12) {
-                        proxMes = 1;
-                        proxAnio++;
-                    }
-                    const proximoMesEsperado = `${proxAnio}-${proxMes.toString().padStart(2, '0')}`;
-
-                    // Acumular en proyección mensual
-                    result.data.forEach(venc => {
-                        const fechaVenc = venc.fecha_vencimiento.substring(0, 7);
-                        const totalVenc = parseFloat(venc.total || 0);
-
-                        if (fechaVenc === proximoMesEsperado) {
-                            totalProximo += totalVenc;
-                        }
-
-                        // Acumular para gráfico (próximos 12 meses desde próximoMesEsperado)
-                        if (fechaVenc >= proximoMesEsperado) {
-                            if (!proyeccionMensual[fechaVenc]) {
-                                proyeccionMensual[fechaVenc] = 0;
-                                mesesProyeccion.push(fechaVenc);
-                            }
-                            proyeccionMensual[fechaVenc] += totalVenc;
-                        }
-                    });
-                }
-                vencimientosPorTarjeta[t.id] = totalProximo;
-            } catch (e) {
-                vencimientosPorTarjeta[t.id] = 0;
-            }
-        }
-
-        // Ordenar meses y limitar a 12 meses
-        mesesProyeccion.sort();
-        mesesGrafico = mesesProyeccion.slice(0, 12);
-
-        // Renderizar tarjetas como cards
-        let html = `
-            <div class="container-fluid p-2">
-                ${proximoMesTotal > 0 ? `
-                <div class="alert alert-info mb-4">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <small class="text-muted d-block">📅 Próximo período a vencer</small>
-                            <strong style="text-transform: capitalize;">${proximoMesNombre.charAt(0).toUpperCase() + proximoMesNombre.slice(1)}</strong>
-                        </div>
-                        <div class="text-end">
-                            <small class="text-muted d-block">Total a pagar</small>
-                            <strong class="fs-5">${formatearMoneda(proximoMesTotal)}</strong>
-                        </div>
-                    </div>
-                </div>
-                ` : ''}
-                ${mesesGrafico.length > 0 ? `
-                <div class="mb-2">
-                    <h6 class="text-muted mb-2" style="font-size:0.85rem">Proyección de pagos</h6>
-                    <canvas id="chartProyeccionTarjetas" style="max-height:140px"></canvas>
-                </div>
-                ` : ''}
-                <div class="row g-2">`;
-
-        tarjetasActuales.forEach(t => {
-            const porcentajeUso = t.limite_credito > 0 ? Math.round((t.deuda_comprometida / t.limite_credito) * 100) : 0;
-            const colorUso = porcentajeUso > 80 ? 'danger' : porcentajeUso > 50 ? 'warning' : 'success';
-            const totalProximo = vencimientosPorTarjeta[t.id] || 0;
-            const mesActual = app.mesActual.toString().padStart(2, '0');
-            const anioActual = app.anioActual.toString();
-            let proxMes = parseInt(mesActual) + 1;
-            let proxAnio = anioActual;
-            if (proxMes > 12) {
-                proxMes = 1;
-                proxAnio++;
-            }
-            const meses = ['', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
-            const proximoMesNombre = `${meses[proxMes]} ${proxAnio}`;
-
-            html += `
-                <div class="col-12 col-md-6">
-                    <div class="card h-100 tarj-card" style="border-left:4px solid #6366f1;cursor:pointer" onclick="abrirDetalleTarjeta(${t.id})">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between align-items-start mb-2">
-                                <div>
-                                    <h6 class="card-title mb-1">${t.nombre_tarjeta}</h6>
-                                    <small class="text-muted">${t.banco}</small>
-                                    ${t.ultimos_4 ? `<small class="text-muted d-block">••••${t.ultimos_4}</small>` : ''}
-                                </div>
-                                <span class="badge bg-${t.activa ? 'success' : 'secondary'}" style="font-size:0.7rem">
-                                    ${t.activa ? 'Activa' : 'Inactiva'}
-                                </span>
-                            </div>
-                            <hr class="my-2">
-                            <div class="mb-3 p-2 bg-light rounded">
-                                <small class="text-muted d-block">💳 Total Pagos en ${proximoMesNombre}</small>
-                                <div class="fw-bold fs-6 text-success">${formatearMoneda(totalProximo)}</div>
-                            </div>
-                            <div class="mb-2">
-                                <small class="text-muted">Deuda comprometida total</small>
-                                <div class="fw-bold">${formatearMoneda(t.deuda_comprometida)}</div>
-                            </div>
-                            <div class="mb-2">
-                                <div class="d-flex justify-content-between align-items-center mb-1">
-                                    <small class="text-muted">Disponible</small>
-                                    <span class="badge bg-${colorUso}">${porcentajeUso}%</span>
-                                </div>
-                                <div class="progress" style="height:6px">
-                                    <div class="progress-bar bg-${colorUso}" style="width:${porcentajeUso}%"></div>
-                                </div>
-                            </div>
-                            <small class="text-muted">${formatearMoneda(t.disponible)} de ${formatearMoneda(t.limite_credito)}</small>
-                            <hr class="my-2">
-                            <small class="text-muted">
-                                <i class="bi bi-calendar-event me-1"></i>Cierre: día ${t.fecha_cierre_dia} | Vence: día ${t.fecha_vencimiento_dia}
-                            </small>
-                            ${t.concepto_id ? `
-                                <div class="mt-3 pt-2 border-top">
-                                    <button class="btn btn-sm btn-outline-primary w-100" onclick="abrirSincronizarTarjeta(${t.id})">
-                                        <i class="bi bi-arrow-repeat me-1"></i>Sincronizar
-                                    </button>
-                                </div>
-                            ` : ''}
-                        </div>
-                    </div>
-                </div>`;
-        });
-
-        html += '</div></div>';
-        body.innerHTML = html;
-
-        // Renderizar gráfico de proyección mensual
-        if (mesesGrafico.length > 0) {
-            try {
-                // Destruir instancia previa si existe
-                if (chartProyeccionTarjetas) {
-                    chartProyeccionTarjetas.destroy();
-                    chartProyeccionTarjetas = null;
-                }
-
-                const canvasEl = document.getElementById('chartProyeccionTarjetas');
-                if (canvasEl) {
-                    // Construir arrays de labels y valores
-                    const labels = mesesGrafico.map(mes => {
-                        const [year, month] = mes.split('-');
-                        const fecha = new Date(year, parseInt(month) - 1, 1);
-                        return fecha.toLocaleDateString('es-AR', {month:'short', year:'2-digit'});
-                    });
-
-                    const valores = mesesGrafico.map(mes => proyeccionMensual[mes] || 0);
-
-                    // Crear chart.js (compacto para mobile)
-                    chartProyeccionTarjetas = new Chart(canvasEl, {
-                        type: 'bar',
-                        data: {
-                            labels: labels,
-                            datasets: [{
-                                label: 'Pagos proyectados',
-                                data: valores,
-                                backgroundColor: '#6366f1cc',
-                                borderColor: '#6366f1',
-                                borderWidth: 0,
-                                borderRadius: 3
-                            }]
-                        },
-                        options: {
-                            responsive: true,
-                            maintainAspectRatio: true,
-                            devicePixelRatio: 1,
-                            plugins: {
-                                legend: { display: false },
-                                tooltip: {
-                                    padding: 6,
-                                    titleFont: { size: 11 },
-                                    bodyFont: { size: 11 },
-                                    callbacks: {
-                                        label: ctx => formatearMoneda(ctx.parsed.y)
-                                    }
-                                }
-                            },
-                            scales: {
-                                x: {
-                                    ticks: { font: { size: 10 } },
-                                    grid: { display: false }
-                                },
-                                y: {
-                                    beginAtZero: true,
-                                    ticks: {
-                                        font: { size: 10 },
-                                        callback: v => '$' + (v >= 1000 ? (v / 1000).toFixed(0) + 'k' : v.toFixed(0))
-                                    },
-                                    grid: { drawBorder: false, color: 'rgba(0,0,0,0.05)' }
-                                }
-                            },
-                            layout: { padding: { left: 0, right: 0, top: 0, bottom: 0 } }
-                        }
-                    });
-                }
-            } catch (e) {
-                console.error('Error renderizando gráfico:', e);
-            }
-        }
-
-        // Actualizar selector en modal movimiento
-        actualizarSelectTarjetasMovimiento();
-
-        // Actualizar chip de tarjetas en la pantalla principal
+        if (!result.success) throw new Error(result.message);
+        tarjetasActuales = result.data.tarjetas || [];
+        tarjetasMeses    = result.data.meses || [];
+        renderizarTarjetas();
         renderizarChipTarjetas();
-
-    } catch (error) {
-        body.innerHTML = `<div class="alert alert-danger m-3">${error.message}</div>`;
+    } catch (e) {
+        body.innerHTML = `<div class="alert alert-danger m-3">No se pudieron cargar las tarjetas: ${e.message}</div>`;
     }
 }
 
-// Abrir detalle de tarjeta
-async function abrirDetalleTarjeta(tarjetaId) {
-    tarjetaId = String(tarjetaId);
-    tarjetaSeleccionada = parseInt(tarjetaId);
-    const body = document.getElementById('modalTarjetasBody');
+function renderizarTarjetas() {
+    const body    = document.getElementById('modalTarjetasBody');
+    const activas = tarjetasActuales.filter(t => t.activa);
 
-    try {
-        body.innerHTML = '<div class="text-center py-5"><div class="spinner-border text-primary"></div></div>';
-
-        // Cargar datos en paralelo
-        const [respVencimientos, respMovimientos, respDisponible] = await Promise.all([
-            fetchAPI(`${TARJETAS_API}?action=vencimientos_consolidados&tarjeta_id=${tarjetaId}`),
-            fetchAPI(`${TARJETAS_API}?action=movimientos&tarjeta_id=${tarjetaId}`),
-            fetchAPI(`${TARJETAS_API}?action=disponible&tarjeta_id=${tarjetaId}`)
-        ]);
-
-        const resultVencimientos = await respVencimientos.json();
-        const resultMovimientos = await respMovimientos.json();
-        const resultDisponible = await respDisponible.json();
-
-        if (!resultVencimientos.success) throw new Error(resultVencimientos.message);
-
-        const tarjeta = tarjetasActuales.find(t => String(t.id) === tarjetaId);
-        if (!tarjeta) {
-            throw new Error(`Tarjeta no encontrada: ${tarjetaId}`);
-        }
-
-        const vencimientos = resultVencimientos.data || [];
-        const movimientos = resultMovimientos.success ? resultMovimientos.data : [];
-        const disponible_info = resultDisponible.success ? resultDisponible.data : null;
-
-        const proximo = vencimientos.length > 0 ? vencimientos[0] : null;
-
-        let html = `
-            <div class="p-3 tarj-modal">
-                <div class="mb-3">
-                    <button class="btn btn-sm btn-outline-secondary" onclick="cargarTarjetas()">
-                        <i class="bi bi-chevron-left me-1"></i>Volver
-                    </button>
-                </div>
-
-                <div class="card mb-4" style="border-top:3px solid var(--color-primary)">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-start mb-3">
-                            <div>
-                                <h5 class="mb-1">${tarjeta.nombre_tarjeta}</h5>
-                                <p class="text-muted mb-0">
-                                    <small>${tarjeta.banco}</small>
-                                    ${tarjeta.ultimos_4 ? `<span class="text-muted ms-2">•</span> <small class="ms-2">•••• ${tarjeta.ultimos_4}</small>` : ''}
-                                </p>
-                            </div>
-                            <div class="btn-group btn-group-sm" role="group">
-                                <button class="btn btn-outline-secondary" onclick="abrirCierresModal(${tarjetaId})" title="Editar cierres y vencimientos">
-                                    <i class="bi bi-calendar2"></i>
-                                </button>
-                                <button class="btn btn-outline-secondary" onclick="editarTarjeta(${tarjetaId})" title="Editar tarjeta">
-                                    <i class="bi bi-pencil"></i>
-                                </button>
-                            </div>
-                        </div>
-                        <div class="row g-3">
-                            <div class="col-6">
-                                <small class="text-muted d-block mb-1">Límite de Crédito</small>
-                                <div class="fw-bold fs-6">${formatearMoneda(disponible_info?.limite || 0)}</div>
-                            </div>
-                            <div class="col-6">
-                                <small class="text-muted d-block mb-1">Disponible</small>
-                                <div class="fw-bold fs-6" style="color: ${(disponible_info?.disponible || 0) < 0 ? '#dc3545' : '#10b981'}">
-                                    ${formatearMoneda(disponible_info?.disponible || 0)}
-                                </div>
-                            </div>
-                            <div class="col-6">
-                                <small class="text-muted d-block mb-1">Comprometido</small>
-                                <div class="fw-bold fs-6">${formatearMoneda(disponible_info?.deuda_comprometida || 0)}</div>
-                            </div>
-                            <div class="col-6">
-                                <small class="text-muted d-block mb-1">Uso</small>
-                                <div class="fw-bold fs-6">
-                                    ${((disponible_info?.deuda_comprometida || 0) / (disponible_info?.limite || 1) * 100).toFixed(0)}%
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                ${proximo ? `
-                <div class="alert alert-primary mb-4">
-                    <div class="d-flex justify-content-between align-items-baseline mb-2">
-                        <small class="text-muted d-block">📅 Próximo vencimiento</small>
-                        <strong>${parsearFechaISO(proximo.fecha_vencimiento).toLocaleDateString('es-AR', {day:'2-digit', month:'short', year:'numeric'})}</strong>
-                    </div>
-                    <div class="d-flex justify-content-between align-items-baseline">
-                        <small class="text-muted d-block">💰 Total a pagar</small>
-                        <strong class="fs-6">${formatearMoneda(proximo.total)}</strong>
-                    </div>
-                </div>
-                ` : '<div class="alert alert-info mb-4">Sin cuotas pendientes</div>'}
-
-                <!-- Pestañas -->
-                <ul class="nav nav-tabs mb-3" role="tablist">
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link active" id="tab-pagos" data-bs-toggle="tab" data-bs-target="#content-pagos" type="button" role="tab" aria-controls="content-pagos" aria-selected="true">
-                            <i class="bi bi-calendar-event me-2"></i>Próximos Pagos
-                        </button>
-                    </li>
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link" id="tab-compras" data-bs-toggle="tab" data-bs-target="#content-compras" type="button" role="tab" aria-controls="content-compras" aria-selected="false">
-                            <i class="bi bi-bag me-2"></i>Compras
-                        </button>
-                    </li>
-                </ul>
-
-                <!-- Contenido pestañas -->
-                <div class="tab-content mb-4">
-                    <!-- Pestaña: Próximos Pagos -->
-                    <div class="tab-pane fade show active" id="content-pagos" role="tabpanel" aria-labelledby="tab-pagos">
-                        ${renderizarVencimientosConsolidados(vencimientos)}
-                    </div>
-
-                    <!-- Pestaña: Compras -->
-                    <div class="tab-pane fade" id="content-compras" role="tabpanel" aria-labelledby="tab-compras">
-                        <div class="mb-3">
-                            <button class="btn btn-primary btn-sm mb-3" onclick="abrirFormularioMovimiento(${tarjetaId})">
-                                <i class="bi bi-plus-lg me-1"></i>Agregar Compra
-                            </button>
-                        </div>
-                        ${renderizarMovimientosSimple(movimientos)}
-                    </div>
-                </div>
-            </div>`;
-
-        body.innerHTML = html;
-
-    } catch (error) {
-        body.innerHTML = `<div class="alert alert-danger m-3">${error.message}</div>`;
-    }
-}
-
-// Parsear fecha YYYY-MM-DD sin ambigüedad de zona horaria
-function parsearFechaISO(dateString) {
-    const [year, month, day] = dateString.split('-').map(Number);
-    return new Date(year, month - 1, day);
-}
-
-// Renderizar vencimientos consolidados por fecha con acordeón por mes
-function renderizarVencimientosConsolidados(vencimientos) {
-    if (!vencimientos || vencimientos.length === 0) {
-        return '<div class="alert alert-info alert-sm">Sin cuotas pendientes</div>';
+    if (!tarjetasActuales.length) {
+        body.innerHTML = `<p class="text-center text-muted py-5 mb-0">Sin tarjetas. Usá "Nueva tarjeta" para agregar una.</p>`;
+        return;
     }
 
-    // Agrupar por mes (YYYY-MM)
-    const porMes = {};
-    vencimientos.forEach(venc => {
-        const fecha = venc.fecha_vencimiento.substring(0, 7); // YYYY-MM
-        if (!porMes[fecha]) {
-            porMes[fecha] = { total: 0, vencimientos: [] };
-        }
-        porMes[fecha].total += venc.total;
-        porMes[fecha].vencimientos.push(venc);
-    });
+    const mesesDesc = [...tarjetasMeses].reverse();
 
-    const meses = Object.keys(porMes).sort();
-    let html = '';
+    const tarjetasHtml = tarjetasActuales.map((t, idx) => {
+        const color = _TJ_COLORES[idx % _TJ_COLORES.length];
+        const sinVinculo = !t.concepto_id && !t.concepto_usd_id;
 
-    meses.forEach((mes, idx) => {
-        const mesData = porMes[mes];
-        const [anio, month] = mes.split('-');
-        const mesNombre = new Date(anio, parseInt(month) - 1).toLocaleDateString('es-AR', {month:'long', year:'numeric'});
-        const abierto = idx === 0 ? '' : ' d-none'; // Primer mes expandido
-
-        html += `
-            <div class="tarj-mes-grupo">
-                <div class="tarj-mes-header" onclick="toggleMesTarjetas(this)">
-                    <span>${mesNombre.charAt(0).toUpperCase() + mesNombre.slice(1)} · ${formatearMoneda(mesData.total)}</span>
-                    <i class="bi bi-chevron-${idx === 0 ? 'down' : 'right'}"></i>
-                </div>
-                <div class="tarj-mes-body${abierto}">`;
-
-        mesData.vencimientos.forEach(venc => {
-            const fecha = parsearFechaISO(venc.fecha_vencimiento);
-            const fechaStr = fecha.toLocaleDateString('es-AR', {day:'2-digit', month:'long'});
-
-            html += `
-                    <div class="tarj-vencimiento-grupo">
-                        <div class="tarj-vencimiento-header">
-                            <span class="fecha">📅 ${fechaStr}</span>
-                            <span class="total">${formatearMoneda(venc.total)}</span>
-                        </div>
-                        <div class="tarj-cuotas-lista">`;
-
-            venc.cuotas.forEach(cuota => {
-                html += `
-                            <div class="tarj-cuota-item">
-                                <input type="checkbox" class="form-check-input tarj-cuota-check"
-                                       data-cuota-id="${cuota.cuota_id}" onchange="marcarCuotaPagada(${cuota.cuota_id}, this)">
-                                <div class="tarj-cuota-info">
-                                    <div class="tarj-cuota-descripcion">${cuota.descripcion}</div>
-                                    <div class="tarj-cuota-numero">Cuota ${cuota.numero_cuota}/${cuota.cuotas_totales}</div>
-                                </div>
-                                <div class="tarj-cuota-monto">${formatearMoneda(cuota.monto)}</div>
-                            </div>`;
-            });
-
-            html += `
-                        </div>
-                    </div>`;
-        });
-
-        html += `
-                </div>
-            </div>`;
-    });
-
-    return html;
-}
-
-// Toggle acordeón de meses
-function toggleMesTarjetas(header) {
-    const body = header.nextElementSibling;
-    const icon = header.querySelector('i');
-    const abierto = !body.classList.contains('d-none');
-    body.classList.toggle('d-none', abierto);
-    icon.className = abierto ? 'bi bi-chevron-right' : 'bi bi-chevron-down';
-}
-
-// Marcar cuota como pagada
-async function marcarCuotaPagada(cuotaId, checkbox) {
-    checkbox.disabled = true;
-    try {
-        const resp = await fetchAPI(`${TARJETAS_API}?action=marcar_pagada&cuota_id=${cuotaId}`, { method: 'PATCH' });
-        const result = await resp.json();
-
-        if (result.success) {
-            // Animar fade-out
-            const fila = checkbox.closest('.tarj-cuota-item');
-            fila.style.opacity = '0';
-            fila.style.transition = 'opacity 0.3s ease-out';
-
-            setTimeout(() => {
-                fila.remove();
-                // Actualizar totales si quedan cuotas
-                _actualizarTotalesVencimientoDespuesPago(cuotaId);
-                mostrarToast('Cuota marcada como pagada', 'success');
-            }, 300);
-        } else {
-            checkbox.disabled = false;
-            checkbox.checked = false;
-            mostrarError('Error: ' + result.message);
-        }
-    } catch (error) {
-        checkbox.disabled = false;
-        checkbox.checked = false;
-        mostrarError('Error: ' + error.message);
-    }
-}
-
-// Actualizar totales después de pagar una cuota
-function _actualizarTotalesVencimientoDespuesPago(cuotaId) {
-    // Recalcular total del vencimiento
-    const cuotaItem = document.querySelector(`[data-cuota-id="${cuotaId}"]`)?.closest('.tarj-cuota-item');
-    if (!cuotaItem) {
-        // Si no hay más cuotas en ese vencimiento, recalcular totales de tarjeta
-        if (tarjetaSeleccionada) {
-            abrirDetalleTarjeta(tarjetaSeleccionada);
-        }
-    }
-}
-
-// Renderizar movimientos en formato simple (lista)
-function renderizarMovimientosSimple(movimientos) {
-    if (!movimientos || movimientos.length === 0) {
-        return '<div class="alert alert-info alert-sm">Sin movimientos registrados</div>';
-    }
-
-    return movimientos.map(m => {
-        const descEscaped = (m.descripcion || '').replace(/"/g, '&quot;');
-        const comercioEscaped = (m.comercio || '').replace(/"/g, '&quot;');
-        const categoriaEscaped = (m.categoria || '').replace(/"/g, '&quot;');
-        const detalles = [];
-
-        detalles.push(`📅 ${formatearFechaCorta(m.fecha_compra)}`);
-        detalles.push(`${m.cuotas_totales} cuota${m.cuotas_totales > 1 ? 's' : ''}`);
-        if (m.comercio) detalles.push(`${m.comercio}`);
-
-        return `
-            <div class="tarj-movimiento-fila">
-                <div class="tarj-movimiento-info">
-                    <div class="tarj-movimiento-titulo">${m.descripcion || '(sin descripción)'}</div>
-                    <div class="tarj-movimiento-detalles">
-                        ${detalles.map(d => `<span>${d}</span>`).join('')}
-                    </div>
-                </div>
-                <div class="tarj-movimiento-monto">${formatearMoneda(m.monto_total)}</div>
-                <div class="tarj-movimiento-acciones">
-                    <button class="btn btn-sm btn-outline-primary" onclick="editarMovimientoTarjeta(${m.id}, '${descEscaped}', '${comercioEscaped}', '${categoriaEscaped}')" title="Editar">
-                        <i class="bi bi-pencil-fill"></i>
-                    </button>
-                    <button class="btn btn-sm btn-outline-danger" onclick="anularMovimientoTarjeta(${m.id})" title="Anular">
-                        <i class="bi bi-trash-fill"></i>
-                    </button>
-                </div>
-            </div>
-        `;
-    }).join('');
-}
-
-// Renderizar proyección mensual
-function renderizarProyeccion(proyeccion) {
-    // Filtrar períodos con total_pendiente = 0 y calcular estados correctos
-    const hoy = new Date();
-    hoy.setHours(0, 0, 0, 0);
-
-    const periodosConDeuda = proyeccion
-        .filter(p => p.total_pendiente > 0)
-        .map(p => {
-            // Calcular estado financiero basado en fecha_vencimiento vs hoy
-            const fechaVenc = parsearFechaISO(p.fecha_vencimiento);
-            fechaVenc.setHours(0, 0, 0, 0);
-            const diasAlVencimiento = Math.ceil((fechaVenc - hoy) / (1000 * 60 * 60 * 24));
-
-            let estado = 'pendiente';
-            if (p.pagado) {
-                estado = 'pagado';
-            } else if (diasAlVencimiento < 0) {
-                estado = 'vencido';
-            } else if (diasAlVencimiento === 0) {
-                estado = 'hoy';
-            } else if (diasAlVencimiento <= 7) {
-                estado = 'proximo';
+        const filas = mesesDesc.map((m, i) => {
+            const d     = t.serie[_tjClave(m)] || {};
+            const prev  = mesesDesc[i + 1] ? (t.serie[_tjClave(mesesDesc[i + 1])] || {}) : {};
+            const ars   = d.ars?.importe || 0;
+            const usd   = d.usd?.importe || 0;
+            const arsPrev = prev.ars?.importe || 0;
+            let variacion = '';
+            if (ars > 0 && arsPrev > 0) {
+                const pct = Math.round((ars - arsPrev) / arsPrev * 100);
+                const cls = pct > 0 ? 'tj-var-sube' : (pct < 0 ? 'tj-var-baja' : 'tj-var-igual');
+                variacion = `<span class="${cls}">${pct > 0 ? '▲' : (pct < 0 ? '▼' : '=')} ${Math.abs(pct)}%</span>`;
             }
+            const venc   = d.ars?.fecha_vencimiento || d.usd?.fecha_vencimiento;
+            const conImp = ars > 0 || usd > 0;
+            const pagado = conImp
+                && (!(ars > 0) || d.ars?.pagado === 1)
+                && (!(usd > 0) || d.usd?.pagado === 1);
+            const estado = !conImp ? ''
+                : (pagado ? '<i class="bi bi-check-circle-fill tj-pagado" title="Pagado"></i>'
+                          : '<i class="bi bi-clock tj-pendiente" title="Pendiente de pago"></i>');
+            const actual = m.mes === app.mesActual && m.anio === app.anioActual;
 
-            return { ...p, estado_financiero: estado };
-        });
+            return `
+            <tr class="${actual ? 'tj-mes-actual' : ''}">
+                <td class="tj-col-mes">${_TJ_MESES[m.mes - 1]} ${String(m.anio).slice(2)}</td>
+                <td class="text-end">${ars > 0 ? formatearMoneda(ars) : '<span class="text-muted">—</span>'}</td>
+                <td class="text-end tj-col-var">${variacion}</td>
+                <td class="text-end">${usd > 0 ? formatearMoneda(usd, 'USD') : '<span class="text-muted">—</span>'}</td>
+                <td class="text-end tj-col-venc">${venc ? formatearFechaCorta(venc) : ''}</td>
+                <td class="text-center tj-col-estado">${estado}</td>
+            </tr>`;
+        }).join('');
 
-    if (periodosConDeuda.length === 0) {
-        return '<div class="alert alert-info">Sin cuotas pendientes</div>';
-    }
-
-    return periodosConDeuda.map(p => {
-        const iconos = {
-            'pagado': 'bi-check-circle-fill',
-            'vencido': 'bi-exclamation-triangle-fill',
-            'hoy': 'bi-lightning-fill',
-            'proximo': 'bi-alarm',
-            'pendiente': 'bi-hourglass-split'
-        };
-
-        const colores = {
-            'pagado': '#198754',
-            'vencido': '#dc3545',
-            'hoy': '#ffc107',
-            'proximo': '#fd7e14',
-            'pendiente': '#0dcaf0'
-        };
-
-        const botones = !p.pagado && p.total_pendiente > 0
-            ? `<button class="btn btn-sm btn-success ms-2" onclick="_abrirFormPago(${p.id}, ${p.total_pendiente})">
-                   <i class="bi bi-cash me-1"></i>Pagar
-               </button>`
-            : '';
+        const vinculo = sinVinculo
+            ? `<div class="alert alert-warning py-2 px-3 mb-2 small">
+                   Esta tarjeta no está vinculada a ningún concepto de la planilla.
+                   <a href="#" onclick="abrirFormularioTarjeta(${t.id});return false;">Vincular</a>
+               </div>`
+            : `<div class="tj-vinculo">Se carga en la planilla:
+                   ${t.concepto_nombre ? `<span>${t.concepto_nombre}</span>` : ''}
+                   ${t.concepto_usd_nombre ? `<span>${t.concepto_usd_nombre}</span>` : ''}
+               </div>`;
 
         return `
-            <div class="d-flex align-items-center gap-2 p-2 mb-2 tarj-periodo-principal" style="border-left:3px solid ${colores[p.estado_financiero]}">
-                <div>
-                    <i class="bi ${iconos[p.estado_financiero]}" style="color:${colores[p.estado_financiero]}"></i>
-                </div>
-                <div class="flex-grow-1">
-                    <div class="fw-bold">${p.periodo}</div>
-                    <small class="text-muted">
-                        Vence: ${parsearFechaISO(p.fecha_vencimiento).toLocaleDateString('es-AR', {day:'2-digit', month:'short'})}
-                        · ${p.cuotas_pagadas}/${p.cuotas_totales} cuotas
-                    </small>
-                </div>
-                <div class="text-end d-flex align-items-center gap-2">
+        <div class="tj-card ${t.activa ? '' : 'tj-inactiva'}">
+            <div class="tj-card-header">
+                <div class="d-flex align-items-center gap-2">
+                    <span class="cuenta-dot-lg" style="background:${color}"></span>
                     <div>
-                        <div class="fw-bold">${formatearMoneda(p.total_pendiente)}</div>
-                        <small class="text-muted d-block">${p.estado_financiero.toUpperCase()}</small>
+                        <span class="cuenta-nombre">${t.nombre_tarjeta}${t.activa ? '' : ' <small class="text-muted">(inactiva)</small>'}</span>
+                        <span class="cuenta-tipo">${t.banco || ''}${t.ultimos_4 ? ` · •••• ${t.ultimos_4}` : ''}</span>
                     </div>
-                    ${botones}
                 </div>
-            </div>`;
+                <button class="btn btn-ghost-muted btn-sm" title="Editar tarjeta" onclick="abrirFormularioTarjeta(${t.id})">
+                    <i class="bi bi-pencil"></i>
+                </button>
+            </div>
+            ${vinculo}
+            ${sinVinculo ? '' : `
+            <div class="table-responsive">
+                <table class="table table-sm tj-tabla mb-0">
+                    <thead><tr>
+                        <th>Mes</th><th class="text-end">Pesos</th><th class="text-end">Var.</th>
+                        <th class="text-end">Dólares</th><th class="text-end">Vence</th><th></th>
+                    </tr></thead>
+                    <tbody>${filas}</tbody>
+                </table>
+            </div>`}
+        </div>`;
     }).join('');
+
+    body.innerHTML = `
+        ${activas.some(t => t.concepto_id) ? `
+        <div class="tj-grafico">
+            <div class="tj-grafico-titulo">Evolución del resumen en pesos · últimos ${tarjetasMeses.length} meses</div>
+            <div class="tj-grafico-canvas"><canvas id="tjChart"></canvas></div>
+        </div>` : ''}
+        ${tarjetasHtml}
+        <p class="tj-nota">
+            <i class="bi bi-info-circle me-1"></i>Los importes, vencimientos y pagos se cargan en la planilla
+            (categoría <strong>Bancos</strong>). Esta pantalla los muestra mes a mes.
+        </p>`;
+
+    _renderizarGraficoTarjetas(activas);
 }
 
-// Renderizar movimientos (consumos) detallados
-function renderizarMovimientosDetalle(movimientos, tarjetaId) {
-    if (!movimientos || movimientos.length === 0) {
-        return '<div class="alert alert-info alert-sm">Sin movimientos registrados</div>';
-    }
+function _renderizarGraficoTarjetas(activas) {
+    const canvas = document.getElementById('tjChart');
+    if (_tjChart) { _tjChart.destroy(); _tjChart = null; }
+    if (!canvas || typeof Chart === 'undefined') return;
 
-    return movimientos.map(m => `
-        <div class="p-2 mb-2 tarj-periodo-principal border-start ps-3" style="border-left-width:3px;border-left-color:#6366f1;">
-            <div class="d-flex justify-content-between align-items-start mb-1">
-                <div class="flex-grow-1">
-                    <div class="fw-bold">${m.descripcion || '(sin descripción)'}</div>
-                    <small class="text-muted">
-                        ${formatearFechaCorta(m.fecha_compra)} ·
-                        ${m.cuotas_totales} cuota${m.cuotas_totales > 1 ? 's' : ''}
-                        (${m.cuotas_pagadas}/${m.cuotas_totales} pagada${m.cuotas_pagadas !== 1 ? 's' : ''})
-                    </small>
-                </div>
-                <div class="text-end">
-                    <div class="fw-bold">${formatearMoneda(m.monto_total)}</div>
-                    <div class="btn-group btn-group-sm" role="group">
-                        <button class="btn btn-link p-0" onclick="_editarConsumoTarjeta(${m.id}, '${m.fecha_compra}', ${m.cuota_pagada_proximo_resumen || 1}, ${m.cuotas_totales}, '${(m.descripcion || '').replace(/'/g, "\\'")}', ${m.monto_total})" title="Editar">
-                            <i class="bi bi-pencil-sm"></i>
-                        </button>
-                        <button class="btn btn-link p-0 text-danger" onclick="_eliminarConsumoTarjeta(${m.id})" title="Eliminar">
-                            <i class="bi bi-trash-sm"></i>
-                        </button>
-                    </div>
-                </div>
-            </div>
-            ${m.comercio ? `<small class="text-muted d-block">${m.comercio}</small>` : ''}
-        </div>
-    `).join('');
+    const oscuro   = document.documentElement.getAttribute('data-bs-theme') === 'dark';
+    const colorTxt = oscuro ? '#94a3b8' : '#64748b';
+    const colorGrid = oscuro ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)';
+
+    _tjChart = new Chart(canvas, {
+        type: 'bar',
+        data: {
+            labels: tarjetasMeses.map(m => `${_TJ_MESES[m.mes - 1]} ${String(m.anio).slice(2)}`),
+            datasets: activas.filter(t => t.concepto_id).map(t => ({
+                label: t.nombre_tarjeta,
+                data: tarjetasMeses.map(m => t.serie[_tjClave(m)]?.ars?.importe || 0),
+                backgroundColor: _TJ_COLORES[tarjetasActuales.indexOf(t) % _TJ_COLORES.length],
+                borderRadius: 3,
+                maxBarThickness: 22,
+            })),
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'bottom', labels: { color: colorTxt, boxWidth: 10, font: { size: 11 } } },
+                tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ${formatearMoneda(ctx.parsed.y)}` } },
+            },
+            scales: {
+                x: { stacked: true, ticks: { color: colorTxt, font: { size: 10 } }, grid: { display: false } },
+                y: {
+                    stacked: true,
+                    ticks: {
+                        color: colorTxt, font: { size: 10 },
+                        callback: v => v >= 1e6 ? `${(v / 1e6).toLocaleString('es-AR', { maximumFractionDigits: 1 })} M`
+                                     : v >= 1e3 ? `${Math.round(v / 1e3)} k` : v,
+                    },
+                    grid: { color: colorGrid },
+                },
+            },
+        },
+    });
 }
 
-// Abrir formulario de tarjeta (nueva)
-function abrirFormularioTarjeta() {
-    document.getElementById('formTarjeta').reset();
-    document.getElementById('ftMonto')?.remove(); // Limpiar si existe
-    document.getElementById('modalFormTarjetaLabel').textContent = '+ Nueva Tarjeta';
-    poblarSelectConceptosTarjeta();
-    const modal = new bootstrap.Modal(document.getElementById('modalFormTarjeta'), { keyboard: false });
-    modal.show();
+// ── Alta / edición de tarjeta ────────────────────────────────
+
+function abrirFormularioTarjeta(tarjetaId = null) {
+    const t = tarjetaId ? tarjetasActuales.find(x => x.id === tarjetaId) : null;
+    document.getElementById('tjFormId').value      = t ? t.id : '';
+    document.getElementById('tjFormNombre').value  = t?.nombre_tarjeta || '';
+    document.getElementById('tjFormBanco').value   = t?.banco || '';
+    document.getElementById('tjFormUltimos').value = t?.ultimos_4 || '';
+    document.getElementById('tjFormActiva').checked = t ? !!t.activa : true;
+    document.getElementById('modalFormTarjetaLabel').innerHTML =
+        `<i class="bi bi-credit-card me-2"></i>${t ? 'Editar tarjeta' : 'Nueva tarjeta'}`;
+
+    // Conceptos de gasto de una sola carga por mes, separados por moneda
+    const conceptos = (app.datos?.conceptos || []).filter(c => c.tipo === 'gasto' && !c.permite_multiples);
+    const opciones = (moneda, seleccionado) => '<option value="">— Ninguno —</option>' +
+        conceptos.filter(c => (c.moneda || 'ARS') === moneda)
+            .map(c => `<option value="${c.id}" ${c.id == seleccionado ? 'selected' : ''}>${c.nombre}${c.categoria_nombre ? ` · ${c.categoria_nombre}` : ''}</option>`)
+            .join('');
+    document.getElementById('tjFormConcepto').innerHTML    = opciones('ARS', t?.concepto_id);
+    document.getElementById('tjFormConceptoUsd').innerHTML = opciones('USD', t?.concepto_usd_id);
+
+    bootstrap.Modal.getOrCreateInstance(document.getElementById('modalFormTarjeta')).show();
 }
 
-// Guardar tarjeta
 async function guardarTarjeta() {
-    const banco = document.getElementById('ftBanco').value.trim();
-    const nombre = document.getElementById('ftNombre').value.trim();
-    const marca = document.getElementById('ftMarca').value;
-    const ultimos = document.getElementById('ftUltimos').value.trim();
-    const limite = parseFloat(document.getElementById('ftLimite').value) || 0;
-    const cierre = parseInt(document.getElementById('ftCierre').value);
-    const vencimiento = parseInt(document.getElementById('ftVencimiento').value);
-    const titular = document.getElementById('ftTitular').value.trim();
-    const conceptoId = parseInt(document.getElementById('ftConcepto').value) || null;
-
-    if (!banco || !nombre || !marca || !cierre || !vencimiento) {
-        mostrarError('Complete los campos obligatorios');
-        return;
-    }
-
-    if (cierre < 1 || cierre > 31 || vencimiento < 1 || vencimiento > 31) {
-        mostrarError('Días deben estar entre 1 y 31');
-        return;
-    }
-
-    try {
-        const resp = await fetch(TARJETAS_API, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                banco,
-                nombre_tarjeta: nombre,
-                marca,
-                ultimos_4: ultimos,
-                limite_credito: limite,
-                fecha_cierre_dia: cierre,
-                fecha_vencimiento_dia: vencimiento,
-                titular,
-                concepto_id: conceptoId
-            })
-        });
-
-        const result = await resp.json();
-        if (!result.success) throw new Error(result.message);
-
-        mostrarToast('Tarjeta creada', 'success');
-        bootstrap.Modal.getInstance(document.getElementById('modalFormTarjeta')).hide();
-
-        // Recargar tarjetas
-        const respT = await fetch(`${TARJETAS_API}`);
-        const resT = await respT.json();
-        if (resT.success) tarjetasActuales = resT.data || [];
-        renderizarChipTarjetas();
-
-        cargarTarjetas();
-
-    } catch (error) {
-        mostrarError('Error: ' + error.message);
-    }
-}
-
-// Abrir formulario movimiento
-function abrirFormularioMovimiento(tarjetaId) {
-    document.getElementById('formMovimiento').reset();
-    document.getElementById('mvTarjeta').value = tarjetaId || '';
-    document.getElementById('mvFecha').valueAsDate = new Date();
-    document.getElementById('mvCuotas').value = '1';
-    actualizarOpcionesCuota();
-
-    const modal = new bootstrap.Modal(document.getElementById('modalMovimientoTarjeta'), { keyboard: false });
-    modal.show();
-}
-
-// Actualizar opciones de cuota al cambiar cantidad
-document.addEventListener('input', (e) => {
-    if (e.target.id === 'mvCuotas') {
-        actualizarOpcionesCuota();
-    }
-});
-
-function actualizarOpcionesCuota() {
-    const cuotas = parseInt(document.getElementById('mvCuotas').value) || 1;
-    const select = document.getElementById('mvCuotaPagar');
-    let html = '';
-
-    for (let i = 1; i <= cuotas; i++) {
-        const label = i === 1 ? 'Cuota 1 (primera)' : `Cuota ${i}`;
-        html += `<option value="${i}" ${i === 1 ? 'selected' : ''}>${label}</option>`;
-    }
-
-    select.innerHTML = html;
-}
-
-// Guardar movimiento (compra)
-async function guardarMovimiento() {
-    const tarjetaId = parseInt(document.getElementById('mvTarjeta').value);
-    const fecha = document.getElementById('mvFecha').value;
-    const descripcion = document.getElementById('mvDescripcion').value.trim();
-    const comercio = document.getElementById('mvComercio').value.trim();
-    const categoria = document.getElementById('mvCategoria').value.trim();
-    const monto = parsearImporte(document.getElementById('mvMonto').value);
-    const cuotas = parseInt(document.getElementById('mvCuotas').value);
-
-    if (!tarjetaId || !fecha || !descripcion || !monto || monto <= 0 || !cuotas) {
-        mostrarError('Complete los campos obligatorios correctamente');
-        return;
-    }
-
-    try {
-        const resp = await fetchAPI(`${TARJETAS_API}?action=movimiento`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                tarjeta_id: tarjetaId,
-                fecha_compra: fecha,
-                descripcion,
-                comercio: comercio || '',
-                categoria: categoria || '',
-                monto_total: monto,
-                cuotas_totales: cuotas
-            })
-        });
-
-        const result = await resp.json();
-        if (!result.success) throw new Error(result.message);
-
-        mostrarToast(`Compra registrada - ${result.data.cuotas_generadas} cuotas generadas`, 'success');
-        bootstrap.Modal.getInstance(document.getElementById('modalMovimientoTarjeta')).hide();
-
-        // Recargar tarjetas y volver a detalle
-        const respT = await fetchAPI(`${TARJETAS_API}`);
-        const resT = await respT.json();
-        if (resT.success) tarjetasActuales = resT.data || [];
-        renderizarChipTarjetas();
-
-        abrirDetalleTarjeta(tarjetaId);
-
-    } catch (error) {
-        mostrarError('Error: ' + error.message);
-    }
-}
-
-// Editar movimiento (descripción, comercio, categoría)
-function editarMovimientoTarjeta(movimientoId, descActual, comercioActual, categoriaActual) {
-    const html = `
-        <div class="modal fade" id="modalEditarMovimiento" tabindex="-1">
-            <div class="modal-dialog modal-dialog-centered">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title">Editar Movimiento</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                    </div>
-                    <div class="modal-body">
-                        <div class="mb-3">
-                            <label class="form-label">Descripción</label>
-                            <input type="text" id="editDesc" class="form-control" value="${descActual}">
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Comercio</label>
-                            <input type="text" id="editComercio" class="form-control" value="${comercioActual}">
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Categoría</label>
-                            <input type="text" id="editCategoria" class="form-control" value="${categoriaActual}">
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="button" class="btn btn-primary" onclick="guardarEdicionMovimiento(${movimientoId})">Guardar</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    `;
-
-    // Crear modal
-    let modalDiv = document.getElementById('modalEditarMovimiento');
-    if (modalDiv) modalDiv.remove();
-
-    document.body.insertAdjacentHTML('beforeend', html);
-    const modal = new bootstrap.Modal(document.getElementById('modalEditarMovimiento'), { keyboard: false });
-    modal.show();
-}
-
-// Guardar edición de movimiento
-async function guardarEdicionMovimiento(movimientoId) {
-    const descripcion = document.getElementById('editDesc').value.trim();
-    const comercio = document.getElementById('editComercio').value.trim();
-    const categoria = document.getElementById('editCategoria').value.trim();
-
-    if (!descripcion) {
-        mostrarError('La descripción es obligatoria');
-        return;
-    }
-
-    try {
-        const resp = await fetchAPI(`${TARJETAS_API}?action=movimiento&id=${movimientoId}`, {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                descripcion,
-                comercio,
-                categoria
-            })
-        });
-
-        const result = await resp.json();
-        if (!result.success) throw new Error(result.message);
-
-        mostrarToast('Movimiento actualizado', 'success');
-        bootstrap.Modal.getInstance(document.getElementById('modalEditarMovimiento')).hide();
-
-        // Recargar detalle
-        if (tarjetaSeleccionada) {
-            abrirDetalleTarjeta(tarjetaSeleccionada);
-        }
-
-    } catch (error) {
-        mostrarError('Error: ' + error.message);
-    }
-}
-
-// Anular movimiento (marca como cancelado, no borra)
-async function anularMovimientoTarjeta(movimientoId) {
-    if (!confirm('¿Anular este movimiento? Las cuotas se ocultarán del cálculo de deuda.')) return;
-
-    try {
-        const resp = await fetchAPI(`${TARJETAS_API}?action=movimiento&id=${movimientoId}`, {
-            method: 'DELETE'
-        });
-
-        const result = await resp.json();
-        if (!result.success) throw new Error(result.message);
-
-        mostrarToast('Movimiento anulado', 'success');
-
-        // Recargar detalle
-        if (tarjetaSeleccionada) {
-            abrirDetalleTarjeta(tarjetaSeleccionada);
-        }
-
-    } catch (error) {
-        mostrarError('Error: ' + error.message);
-    }
-}
-
-// Actualizar select de tarjetas en modal movimiento
-function actualizarSelectTarjetasMovimiento() {
-    const select = document.getElementById('mvTarjeta');
-    let html = '<option value="">— Seleccionar —</option>';
-
-    tarjetasActuales.forEach(t => {
-        html += `<option value="${t.id}">${t.nombre_tarjeta} (${t.banco})</option>`;
-    });
-
-    select.innerHTML = html;
-}
-
-// Abrir modal para editar cierres y vencimientos
-async function abrirCierresModal(tarjetaId) {
-    try {
-        tarjetaId = parseInt(tarjetaId, 10);
-        const resp = await fetchAPI(`${TARJETAS_API}?action=cierres&tarjeta_id=${tarjetaId}`);
-        const result = await resp.json();
-
-        if (!result.success) throw new Error(result.message);
-
-        const cierres = result.data || [];
-        const tarjeta = tarjetasActuales.find(t => parseInt(t.id, 10) === tarjetaId);
-
-        let html = `
-            <div class="modal fade" id="modalCierres" tabindex="-1">
-                <div class="modal-dialog modal-lg">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h5 class="modal-title">Cierres y Vencimientos - ${tarjeta?.nombre_tarjeta}</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                        </div>
-                        <div class="modal-body">`;
-
-        if (cierres.length === 0) {
-            html += `
-                            <div class="alert alert-info">
-                                <i class="bi bi-info-circle me-2"></i>
-                                <strong>No hay cierres configurados.</strong><br>
-                                Genera cierres automáticos basados en los días de cierre y vencimiento de la tarjeta.
-                            </div>
-                            <button class="btn btn-primary w-100" onclick="generarCierresAuto(${tarjetaId})">
-                                <i class="bi bi-plus-circle me-2"></i>
-                                Generar Cierres para los Próximos 12 Meses
-                            </button>`;
-        } else {
-            html += `
-                            <div class="table-responsive">
-                                <table class="table table-sm table-hover">
-                                    <thead>
-                                        <tr>
-                                            <th>Mes/Año</th>
-                                            <th>Fecha de Cierre</th>
-                                            <th>Fecha de Vencimiento</th>
-                                            <th></th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="tablaCierres">`;
-
-            cierres.forEach(cierre => {
-            const mesNombre = new Date(cierre.anio, cierre.mes - 1).toLocaleDateString('es-AR', {month:'long', year:'numeric'});
-            html += `
-                                        <tr>
-                                            <td>${mesNombre.charAt(0).toUpperCase() + mesNombre.slice(1)}</td>
-                                            <td>
-                                                <input type="date" class="form-control form-control-sm cierre-${cierre.id}"
-                                                       value="${cierre.fecha_cierre}">
-                                            </td>
-                                            <td>
-                                                <input type="date" class="form-control form-control-sm vencimiento-${cierre.id}"
-                                                       value="${cierre.fecha_vencimiento}">
-                                            </td>
-                                            <td>
-                                                <button class="btn btn-sm btn-outline-primary"
-                                                        onclick="guardarCierre(${tarjetaId}, ${cierre.id}, ${cierre.anio}, ${cierre.mes})"
-                                                        title="Guardar cambios">
-                                                    <i class="bi bi-check"></i>
-                                                </button>
-                                            </td>
-                                        </tr>`;
-            });
-
-            html += `
-                                    </tbody>
-                                </table>
-                            </div>
-                            <p class="text-muted small mt-3">
-                                💡 Edita las fechas según los días reales de cierre y vencimiento de cada mes.
-                            </p>`;
-        }
-
-        html += `
-                        </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
-                        </div>
-                    </div>
-                </div>
-            </div>`;
-
-        let modalDiv = document.getElementById('modalCierres');
-        if (modalDiv) modalDiv.remove();
-
-        document.body.insertAdjacentHTML('beforeend', html);
-        const modal = new bootstrap.Modal(document.getElementById('modalCierres'), { keyboard: false });
-        modal.show();
-
-    } catch (error) {
-        mostrarError('Error: ' + error.message);
-    }
-}
-
-// Generar cierres automáticamente para los próximos 12 meses
-async function generarCierresAuto(tarjetaId) {
-    try {
-        const resp = await fetchAPI(`${TARJETAS_API}?action=generar_cierres&tarjeta_id=${tarjetaId}`, {
-            method: 'POST'
-        });
-
-        const result = await resp.json();
-        if (!result.success) throw new Error(result.message);
-
-        mostrarToast(result.message, 'success');
-
-        // Reabrir modal para mostrar los cierres generados
-        setTimeout(() => abrirCierresModal(tarjetaId), 500);
-
-    } catch (error) {
-        mostrarError('Error: ' + error.message);
-    }
-}
-
-// Guardar cambios en un cierre
-async function guardarCierre(tarjetaId, cierreId, anio, mes) {
-    const fechaCierre = document.querySelector(`.cierre-${cierreId}`).value;
-    const fechaVencimiento = document.querySelector(`.vencimiento-${cierreId}`).value;
-
-    if (!fechaCierre || !fechaVencimiento) {
-        mostrarError('Las fechas no pueden estar vacías');
-        return;
-    }
-
-    try {
-        const resp = await fetchAPI(`${TARJETAS_API}?action=cierres&tarjeta_id=${tarjetaId}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                anio: anio,
-                mes: mes,
-                fecha_cierre: fechaCierre,
-                fecha_vencimiento: fechaVencimiento
-            })
-        });
-
-        const result = await resp.json();
-        if (!result.success) throw new Error(result.message);
-
-        mostrarToast('Cierre actualizado', 'success');
-    } catch (error) {
-        mostrarError('Error: ' + error.message);
-    }
-}
-
-// Editar tarjeta
-function editarTarjeta(tarjetaId) {
-    tarjetaId = parseInt(tarjetaId, 10);
-    const tarjeta = tarjetasActuales.find(t => parseInt(t.id, 10) === tarjetaId);
-    if (!tarjeta) return;
-
-    const html = `
-        <div class="modal fade" id="modalEditarTarjeta" tabindex="-1">
-            <div class="modal-dialog modal-lg">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title">Editar Tarjeta</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                    </div>
-                    <div class="modal-body">
-                        <form id="formEditarTarjeta">
-                            <div class="row g-3">
-                                <div class="col-md-6">
-                                    <label for="edBanco" class="form-label">Banco</label>
-                                    <input type="text" class="form-control" id="edBanco" value="${tarjeta.banco || ''}">
-                                </div>
-                                <div class="col-md-6">
-                                    <label for="edNombre" class="form-label">Nombre de Tarjeta</label>
-                                    <input type="text" class="form-control" id="edNombre" value="${tarjeta.nombre_tarjeta || ''}">
-                                </div>
-                                <div class="col-md-6">
-                                    <label for="edMarca" class="form-label">Marca</label>
-                                    <input type="text" class="form-control" id="edMarca" value="${tarjeta.marca || ''}">
-                                </div>
-                                <div class="col-md-6">
-                                    <label for="edUltimos" class="form-label">Últimos 4 Dígitos</label>
-                                    <input type="text" class="form-control" id="edUltimos" placeholder="1234" value="${tarjeta.ultimos_4 || ''}" maxlength="4">
-                                </div>
-                                <div class="col-12">
-                                    <label for="edTitular" class="form-label">Titular</label>
-                                    <input type="text" class="form-control" id="edTitular" value="${tarjeta.titular || ''}">
-                                </div>
-                                <div class="col-md-6">
-                                    <label for="edLimite" class="form-label">Límite de Crédito</label>
-                                    <input type="number" class="form-control" id="edLimite" step="0.01" value="${tarjeta.limite_credito || 0}">
-                                </div>
-                                <div class="col-md-3">
-                                    <label for="edCierreDia" class="form-label">Día de Cierre</label>
-                                    <input type="number" class="form-control" id="edCierreDia" min="1" max="31" value="${tarjeta.fecha_cierre_dia || 25}">
-                                </div>
-                                <div class="col-md-3">
-                                    <label for="edVencimientoDia" class="form-label">Día de Vencimiento</label>
-                                    <input type="number" class="form-control" id="edVencimientoDia" min="1" max="31" value="${tarjeta.fecha_vencimiento_dia || 3}">
-                                </div>
-                                <div class="col-12">
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" id="edActiva" ${tarjeta.activa ? 'checked' : ''}>
-                                        <label class="form-check-label" for="edActiva">
-                                            Tarjeta Activa
-                                        </label>
-                                    </div>
-                                </div>
-                                <div class="col-12">
-                                    <label for="edConcepto" class="form-label">Concepto de Gasto Asociado</label>
-                                    <select class="form-select" id="edConcepto">
-                                        <option value="">— Sin concepto —</option>
-                                    </select>
-                                    <small class="text-muted d-block mt-1">Para sincronizar automáticamente los pagos con los gastos registrados</small>
-                                </div>
-                            </div>
-                        </form>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="button" class="btn btn-primary" onclick="guardarEdicionTarjeta(${tarjetaId})">
-                            <i class="bi bi-check me-2"></i>Guardar
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>`;
-
-    let modalDiv = document.getElementById('modalEditarTarjeta');
-    if (modalDiv) modalDiv.remove();
-
-    document.body.insertAdjacentHTML('beforeend', html);
-
-    // Cargar conceptos en el select edConcepto
-    poblarSelectConceptoEditarTarjeta(tarjeta.concepto_id || '');
-
-    const modal = new bootstrap.Modal(document.getElementById('modalEditarTarjeta'), { keyboard: false });
-    modal.show();
-}
-
-// Guardar edición de tarjeta
-async function guardarEdicionTarjeta(tarjetaId) {
-    try {
-        const conceptoId = parseInt(document.getElementById('edConcepto').value) || null;
-        const payload = {
-            banco: document.getElementById('edBanco').value,
-            nombre_tarjeta: document.getElementById('edNombre').value,
-            marca: document.getElementById('edMarca').value,
-            ultimos_4: document.getElementById('edUltimos').value,
-            titular: document.getElementById('edTitular').value,
-            limite_credito: parseFloat(document.getElementById('edLimite').value) || 0,
-            fecha_cierre_dia: parseInt(document.getElementById('edCierreDia').value) || 25,
-            fecha_vencimiento_dia: parseInt(document.getElementById('edVencimientoDia').value) || 3,
-            activa: document.getElementById('edActiva').checked ? 1 : 0,
-            concepto_id: conceptoId
-        };
-
-        const resp = await fetchAPI(`${TARJETAS_API}?id=${tarjetaId}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-        });
-
-        const result = await resp.json();
-        if (!result.success) throw new Error(result.message);
-
-        mostrarToast('Tarjeta actualizada', 'success');
-        bootstrap.Modal.getInstance(document.getElementById('modalEditarTarjeta')).hide();
-
-        // Recargar tarjetas
-        cargarTarjetas();
-
-    } catch (error) {
-        mostrarError('Error: ' + error.message);
-    }
-}
-
-// Cargar conceptos tipo 'gasto' en un select
-async function poblarSelectConceptosTarjeta() {
-    try {
-        const resp = await fetch(CONCEPTOS_API_URL);
-        const res = await resp.json();
-        if (!res.success) throw new Error(res.message);
-
-        const gastos = res.data.filter(c => c.tipo === 'gasto');
-        const opciones = ['<option value="">— Sin concepto —</option>',
-            ...gastos.map(c =>
-                `<option value="${c.id}">${c.nombre}</option>`
-            )
-        ].join('');
-
-        ['ftConcepto'].forEach(id => {
-            const el = document.getElementById(id);
-            if (el) {
-                const val = el.value;
-                el.innerHTML = opciones;
-                el.value = val;
-            }
-        });
-    } catch (error) {
-        console.error('Error al cargar conceptos:', error);
-    }
-}
-
-// Cargar conceptos en modal de edición y establecer valor actual
-async function poblarSelectConceptoEditarTarjeta(conceptoId) {
-    try {
-        const resp = await fetch(CONCEPTOS_API_URL);
-        const res = await resp.json();
-        if (!res.success) throw new Error(res.message);
-
-        const gastos = res.data.filter(c => c.tipo === 'gasto');
-        const opciones = ['<option value="">— Sin concepto —</option>',
-            ...gastos.map(c =>
-                `<option value="${c.id}">${c.nombre}</option>`
-            )
-        ].join('');
-
-        const el = document.getElementById('edConcepto');
-        if (el) {
-            el.innerHTML = opciones;
-            el.value = conceptoId || '';
-        }
-    } catch (error) {
-        console.error('Error al cargar conceptos:', error);
-    }
-}
-
-// Abrir modal de sincronización de tarjeta
-function abrirSincronizarTarjeta(tarjetaId) {
-    tarjetaId = parseInt(tarjetaId, 10);
-    const tarjeta = tarjetasActuales.find(t => parseInt(t.id, 10) === tarjetaId);
-    if (!tarjeta) return;
-
-    // Calcular próximo mes
-    const mesActual = app.mesActual;
-    const anioActual = app.anioActual;
-    let proximoMes = mesActual + 1;
-    let proximoAnio = anioActual;
-    if (proximoMes > 12) {
-        proximoMes = 1;
-        proximoAnio++;
-    }
-
-    const meses = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
-    const proximoMesNombre = meses[proximoMes - 1] + ' ' + proximoAnio;
-
-    // Buscar total de cuotas para el próximo mes (lo tenemos de cargarTarjetas)
-    let totalProximo = 0;
-    if (vencimientosPorTarjeta && vencimientosPorTarjeta[tarjetaId]) {
-        totalProximo = vencimientosPorTarjeta[tarjetaId];
-    }
-
-    // Guardar data en window para usarla en confirmarSincronizar
-    window.datosSincronizar = {
-        tarjetaId,
-        mes: proximoMes,
-        anio: proximoAnio,
-        totalCuotas: totalProximo,
-        nombreTarjeta: `${tarjeta.banco} - ${tarjeta.nombre_tarjeta} (${tarjeta.ultimos_4})`
+    const id = document.getElementById('tjFormId').value;
+    const payload = {
+        nombre_tarjeta:  document.getElementById('tjFormNombre').value.trim(),
+        banco:           document.getElementById('tjFormBanco').value.trim(),
+        ultimos_4:       document.getElementById('tjFormUltimos').value.trim(),
+        concepto_id:     document.getElementById('tjFormConcepto').value || null,
+        concepto_usd_id: document.getElementById('tjFormConceptoUsd').value || null,
+        activa:          document.getElementById('tjFormActiva').checked ? 1 : 0,
     };
-
-    // Poblar modal
-    document.getElementById('syncTarjetaNombre').textContent = window.datosSincronizar.nombreTarjeta;
-    document.getElementById('syncMesNombre').textContent = proximoMesNombre;
-    document.getElementById('syncTotalCuotas').textContent = formatearMoneda(totalProximo);
-    document.getElementById('syncAjuste').value = '0';
-
-    actualizarTotalSincronizar();
-
-    const modal = new bootstrap.Modal(document.getElementById('modalSincronizarTarjeta'), { keyboard: false });
-    modal.show();
-}
-
-// Actualizar total en modal de sincronización al cambiar ajuste
-function actualizarTotalSincronizar() {
-    if (!window.datosSincronizar) return;
-
-    const ajuste = parseFloat(document.getElementById('syncAjuste').value) || 0;
-    const totalFinal = window.datosSincronizar.totalCuotas + ajuste;
-
-    document.getElementById('syncTotalFinal').textContent = formatearMoneda(totalFinal);
-}
-
-// Confirmar sincronización y guardar en registros_mensuales
-async function confirmarSincronizar() {
-    if (!window.datosSincronizar) return;
-
-    const { tarjetaId, mes, anio, totalCuotas } = window.datosSincronizar;
-    const ajuste = parseFloat(document.getElementById('syncAjuste').value) || 0;
+    if (!payload.nombre_tarjeta) { mostrarError('El nombre de la tarjeta es obligatorio'); return; }
 
     try {
-        const resp = await fetchAPI(`${TARJETAS_API}?action=sincronizar&tarjeta_id=${tarjetaId}`, {
-            method: 'POST',
+        const resp = await fetch(id ? `${TARJETAS_API}?id=${id}` : TARJETAS_API, {
+            method: id ? 'PUT' : 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ mes, anio, ajuste })
+            body: JSON.stringify(payload),
         });
-
         const result = await resp.json();
         if (!result.success) throw new Error(result.message);
-
-        const totalFinal = totalCuotas + ajuste;
-        mostrarToast(`✓ Concepto sincronizado: $${formatearMoneda(totalFinal)}`, 'success');
-        bootstrap.Modal.getInstance(document.getElementById('modalSincronizarTarjeta')).hide();
-
-        // Si el mes sincronizado es el actual, recargar datos
-        if (mes === app.mesActual && anio === app.anioActual) {
-            cargarDatos();
-        }
-
-    } catch (error) {
-        mostrarError('Error al sincronizar: ' + error.message);
+        bootstrap.Modal.getInstance(document.getElementById('modalFormTarjeta'))?.hide();
+        mostrarToast(id ? 'Tarjeta actualizada' : 'Tarjeta creada', 'success');
+        await cargarTarjetas();
+    } catch (e) {
+        mostrarError(e.message);
     }
 }
 
-// Editar consumo (movimiento)
-function _editarConsumoTarjeta(consumoId, fechaActual, cuotaActual, cuotasTotal, descActual, importeActual) {
-    const html = `
-        <div class="modal fade" id="modalEditConsumo" tabindex="-1">
-            <div class="modal-dialog">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title">Editar Consumo</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                    </div>
-                    <div class="modal-body">
-                        <div class="mb-3">
-                            <label class="form-label form-field-label">Fecha</label>
-                            <input type="date" id="editFecha" class="form-control form-control-sm" value="${fechaActual}">
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label form-field-label">Descripción</label>
-                            <input type="text" id="editDesc" class="form-control form-control-sm" value="${descActual}">
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label form-field-label">Importe</label>
-                            <input type="text" inputmode="decimal" id="editImporte" class="form-control form-control-sm text-end" value="${importeActual.toString().replace('.', ',')}">
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label form-field-label">Cuota a Pagar en Próximo Resumen</label>
-                            <select id="editCuota" class="form-select form-select-sm">
-                                ${Array.from({length: cuotasTotal}, (_, i) => {
-                                    const num = i + 1;
-                                    const label = num === 1 ? 'Cuota 1 (primera)' : `Cuota ${num}`;
-                                    return `<option value="${num}" ${num === cuotaActual ? 'selected' : ''}>${label}</option>`;
-                                }).join('')}
-                            </select>
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="button" class="btn btn-sm btn-primary" onclick="_guardarEdicionConsumo(${consumoId})">Guardar</button>
-                    </div>
-                </div>
-            </div>
-        </div>`;
-
-    // Remover modal anterior si existe
-    const modalViejo = document.getElementById('modalEditConsumo');
-    if (modalViejo) modalViejo.remove();
-
-    // Crear e inyectar modal
-    const div = document.createElement('div');
-    div.innerHTML = html;
-    document.body.appendChild(div.firstElementChild);
-
-    // Mostrar modal
-    const modal = new bootstrap.Modal(document.getElementById('modalEditConsumo'), { keyboard: false });
-    modal.show();
-}
-
-// Eliminar consumo
-async function _eliminarConsumoTarjeta(consumoId) {
-    if (!confirm('¿Eliminar este consumo? Se eliminarán todas sus cuotas.')) {
-        return;
-    }
-
-    try {
-        const resp = await fetch(`${TARJETAS_API}?action=movimientos&movimiento_id=${consumoId}`, {
-            method: 'DELETE'
-        });
-
-        const result = await resp.json();
-        if (!result.success) throw new Error(result.message);
-
-        mostrarToast('Consumo eliminado', 'success');
-
-        // Recargar detalle de la tarjeta y actualizar chip
-        if (tarjetaSeleccionada) {
-            abrirDetalleTarjeta(tarjetaSeleccionada);
-            const respT = await fetch(`${TARJETAS_API}`);
-            const resT = await respT.json();
-            if (resT.success) tarjetasActuales = resT.data || [];
-            renderizarChipTarjetas();
-        }
-
-    } catch (error) {
-        mostrarError('Error: ' + error.message);
-    }
-}
-
-// Guardar edición de consumo
-async function _guardarEdicionConsumo(consumoId) {
-    const fecha = document.getElementById('editFecha').value;
-    const desc = document.getElementById('editDesc').value.trim();
-    const importe = parsearImporte(document.getElementById('editImporte').value);
-    const cuota = parseInt(document.getElementById('editCuota').value);
-
-    if (!fecha || importe <= 0) {
-        mostrarError('Complete los campos correctamente');
-        return;
-    }
-
-    try {
-        const resp = await fetch(`${TARJETAS_API}?action=movimientos&movimiento_id=${consumoId}`, {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                fecha_compra: fecha,
-                descripcion: desc,
-                importe: importe,
-                cuota_pagada_proximo_resumen: cuota
-            })
-        });
-
-        const result = await resp.json();
-        if (!result.success) throw new Error(result.message);
-
-        mostrarToast('Consumo actualizado', 'success');
-        bootstrap.Modal.getInstance(document.getElementById('modalEditConsumo')).hide();
-
-        // Recargar detalle de la tarjeta y actualizar chip
-        if (tarjetaSeleccionada) {
-            abrirDetalleTarjeta(tarjetaSeleccionada);
-            // Recargar datos de tarjetas para actualizar chip
-            const respT = await fetch(`${TARJETAS_API}`);
-            const resT = await respT.json();
-            if (resT.success) tarjetasActuales = resT.data || [];
-            renderizarChipTarjetas();
-        }
-
-    } catch (error) {
-        mostrarError('Error: ' + error.message);
-    }
-}
-
-// Abrir formulario de pago de período
-function _abrirFormPago(resumenId, total) {
-    const cuentasHtml = app.cuentas
-        .filter(c => c.activo === 1 || c.activo === '1')
-        .map(c => `<option value="${c.id}">${c.nombre} (${formatearMoneda(c.saldo_actual)})</option>`)
-        .join('');
-
-    if (!cuentasHtml) {
-        mostrarError('No hay cuentas activas disponibles');
-        return;
-    }
-
-    const html = `
-        <div class="modal fade" id="modalPagoTarjeta" tabindex="-1">
-            <div class="modal-dialog">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title">Pagar Período</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                    </div>
-                    <div class="modal-body">
-                        <div class="mb-3">
-                            <label class="form-label form-field-label">Cuenta de Débito</label>
-                            <select id="pagoCuentaId" class="form-select form-select-sm">
-                                <option value="">— Seleccionar —</option>
-                                ${cuentasHtml}
-                            </select>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label form-field-label">Importe a Pagar</label>
-                            <input type="text" inputmode="decimal" id="pagoImporte" class="form-control form-control-sm text-end" value="${total.toString().replace('.', ',')}">
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="button" class="btn btn-sm btn-primary" onclick="_confirmarPago(${resumenId})">Confirmar</button>
-                    </div>
-                </div>
-            </div>
-        </div>`;
-
-    // Remover modal anterior si existe
-    const modalViejo = document.getElementById('modalPagoTarjeta');
-    if (modalViejo) modalViejo.remove();
-
-    // Crear e inyectar modal
-    const div = document.createElement('div');
-    div.innerHTML = html;
-    document.body.appendChild(div.firstElementChild);
-
-    // Mostrar modal
-    const modal = new bootstrap.Modal(document.getElementById('modalPagoTarjeta'), { keyboard: false });
-    modal.show();
-}
-
-// Confirmar pago de período
-async function _confirmarPago(resumenId) {
-    const cuentaId = parseInt(document.getElementById('pagoCuentaId').value);
-    const importe = parsearImporte(document.getElementById('pagoImporte').value);
-
-    if (!cuentaId || importe <= 0) {
-        mostrarError('Seleccione una cuenta e importe válido');
-        return;
-    }
-
-    try {
-        const resp = await fetch(`${TARJETAS_API}?action=pago`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                resumen_id: resumenId,
-                cuenta_id: cuentaId,
-                importe: importe
-            })
-        });
-
-        const result = await resp.json();
-        if (!result.success) throw new Error(result.message);
-
-        mostrarToast('Pago registrado', 'success');
-        bootstrap.Modal.getInstance(document.getElementById('modalPagoTarjeta')).hide();
-
-        // Recargar detalle de tarjeta y cuentas
-        if (tarjetaSeleccionada) {
-            abrirDetalleTarjeta(tarjetaSeleccionada);
-        }
-        cargarDatos(); // Actualizar cuentas y saldos
-
-    } catch (error) {
-        mostrarError('Error: ' + error.message);
-    }
-}
-
-// ============================================================
-// DASHBOARD - TARJETAS
-// ============================================================
-
-/**
- * Cargar datos del dashboard de tarjetas
- * Actualiza widgets en el topbar
- */
-async function cargarDashboardTarjetas() {
-    try {
-        // Obtener próximo vencimiento de TODAS las tarjetas
-        const proximos = [];
-
-        for (const tarjeta of tarjetasActuales) {
-            const resp = await fetch(`${TARJETAS_API}?action=proximo_vencimiento&tarjeta_id=${tarjeta.id}`);
-            const result = await resp.json();
-
-            if (result.success && result.data) {
-                proximos.push({
-                    tarjeta_id: tarjeta.id,
-                    tarjeta_nombre: tarjeta.nombre_tarjeta,
-                    ...result.data
-                });
-            }
-        }
-
-        // Encontrar el próximo vencimiento más cercano
-        if (proximos.length > 0) {
-            proximos.sort((a, b) => new Date(a.fecha_vencimiento) - new Date(b.fecha_vencimiento));
-            const proximo = proximos[0];
-
-            mostrarWidgetProximoVencimiento(proximo);
-            verificarAlertasTarjetas();
-        } else {
-            ocultarWidgetProximoVencimiento();
-        }
-
-    } catch (error) {
-        console.error('Error cargando dashboard tarjetas:', error);
-    }
-}
-
-/**
- * Mostrar widget "Próximo Vencimiento" en topbar
- */
-function mostrarWidgetProximoVencimiento(vencimiento) {
-    const stat = document.getElementById('statProximoVenc');
-    const valor = document.getElementById('proximoVencHeader');
-
-    if (!stat || !valor) return;
-
-    const fecha = new Date(vencimiento.fecha_vencimiento);
-    const hoy = new Date();
-    const dias = Math.ceil((fecha - hoy) / (1000 * 60 * 60 * 24));
-
-    let texto = '';
-    let clase = '';
-
-    if (dias < 0) {
-        texto = 'Vencido';
-        clase = 'text-danger';
-    } else if (dias === 0) {
-        texto = 'HOY';
-        clase = 'text-warning';
-    } else if (dias <= 3) {
-        texto = `${dias} día${dias === 1 ? '' : 's'}`;
-        clase = 'text-warning';
-    } else if (dias <= 7) {
-        texto = `${dias} día${dias === 1 ? '' : 's'}`;
-        clase = 'text-info';
-    } else {
-        texto = fecha.toLocaleDateString('es-AR', { day: 'numeric', month: 'short' });
-        clase = '';
-    }
-
-    valor.textContent = texto;
-    valor.className = `topbar-stat-valor ${clase}`;
-    stat.classList.remove('d-none');
-
-    // Tooltip con más detalles
-    stat.title = `${vencimiento.tarjeta_nombre} - ${formatearMoneda(vencimiento.total)} - ${vencimiento.cuotas_pendientes} cuota${vencimiento.cuotas_pendientes === 1 ? '' : 's'}`;
-}
-
-/**
- * Ocultar widget si no hay vencimientos
- */
-function ocultarWidgetProximoVencimiento() {
-    const stat = document.getElementById('statProximoVenc');
-    if (stat) stat.classList.add('d-none');
-}
-
-/**
- * Verificar y mostrar alertas de tarjetas
- */
-async function verificarAlertasTarjetas() {
-    const alertas = [];
-
-    for (const tarjeta of tarjetasActuales) {
-        const resp = await fetch(`${TARJETAS_API}?action=disponible&tarjeta_id=${tarjeta.id}`);
-        const result = await resp.json();
-
-        if (result.success) {
-            const { limite, deuda_comprometida, disponible } = result.data;
-
-            // Alerta: Límite superado (disponible negativo)
-            if (disponible < 0) {
-                alertas.push({
-                    tipo: 'danger',
-                    icon: 'bi-exclamation-triangle-fill',
-                    mensaje: `${tarjeta.nombre_tarjeta}: Límite SUPERADO por ${formatearMoneda(Math.abs(disponible))}`
-                });
-            }
-            // Alerta: Casi lleno (80%+)
-            else if (deuda_comprometida > (limite * 0.8)) {
-                const pct = Math.round((deuda_comprometida / limite) * 100);
-                alertas.push({
-                    tipo: 'warning',
-                    icon: 'bi-exclamation-circle-fill',
-                    mensaje: `${tarjeta.nombre_tarjeta}: ${pct}% del límite utilizado`
-                });
-            }
-        }
-    }
-
-    mostrarAlertasTarjetas(alertas);
-}
-
-/**
- * Renderizar alertas en el DOM (debajo del topbar)
- */
-function mostrarAlertasTarjetas(alertas) {
-    let container = document.getElementById('alertasTarjetasContainer');
-
-    if (alertas.length === 0) {
-        if (container) container.remove();
-        return;
-    }
-
-    if (!container) {
-        container = document.createElement('div');
-        container.id = 'alertasTarjetasContainer';
-        container.style.cssText = 'margin: 1rem 0; display: flex; flex-direction: column; gap: 0.5rem;';
-
-        const header = document.querySelector('header');
-        if (header) {
-            header.parentNode.insertBefore(container, header.nextSibling);
-        }
-    }
-
-    let html = '';
-    alertas.forEach(alerta => {
-        html += `
-            <div class="alert alert-${alerta.tipo} mb-0 d-flex align-items-center gap-2" style="margin: 0 1rem">
-                <i class="bi ${alerta.icon}" style="flex-shrink:0"></i>
-                <span>${alerta.mensaje}</span>
-            </div>`;
-    });
-
-    container.innerHTML = html;
-}
-
-/**
- * Renderizar chip "Tarjetas" en catNav
- * Muestra deuda total comprometida
- */
-async function renderizarChipTarjetas() {
+// ── Chip "Tarjetas" en la barra de categorías ────────────────
+// Total en pesos de los resúmenes del mes visible, leído de la planilla
+function renderizarChipTarjetas() {
     const catNavScroll = document.querySelector('.cat-nav-scroll');
     if (!catNavScroll) return;
 
-    try {
-        // Calcular vencimientos del próximo mes
-        let proximoMesTotal = 0;
+    const ids   = new Set(tarjetasActuales.filter(t => t.activa && t.concepto_id).map(t => String(t.concepto_id)));
+    const total = (app.datos?.conceptos || [])
+        .filter(c => ids.has(String(c.id)))
+        .reduce((s, c) => s + parseFloat(c.importe || 0), 0);
 
-        for (const tarjeta of tarjetasActuales) {
-            const resp = await fetchAPI(`${TARJETAS_API}?action=vencimientos_consolidados&tarjeta_id=${tarjeta.id}`);
-            const result = await resp.json();
-
-            if (result.success && result.data && result.data.length > 0) {
-                // Obtener próximo mes
-                const proximoVenc = result.data[0]; // Ya está ordenado por fecha
-                const fechaProximo = proximoVenc.fecha_vencimiento.substring(0, 7); // YYYY-MM
-                const mesActual = app.mesActual.toString().padStart(2, '0');
-                const anioActual = app.anioActual.toString();
-
-                // Determinar próximo mes
-                let proxMes = parseInt(mesActual) + 1;
-                let proxAnio = anioActual;
-                if (proxMes > 12) {
-                    proxMes = 1;
-                    proxAnio++;
-                }
-                const proximoMesEsperado = `${proxAnio}-${proxMes.toString().padStart(2, '0')}`;
-
-                // Sumar vencimientos del próximo mes
-                result.data.forEach(venc => {
-                    const fechaVenc = venc.fecha_vencimiento.substring(0, 7);
-                    if (fechaVenc === proximoMesEsperado) {
-                        proximoMesTotal += parseFloat(venc.total || 0);
-                    }
-                });
-            }
-        }
-
-        // Remover chip existente
-        let chip = document.getElementById('chipTarjetas');
-        if (chip) chip.remove();
-
-        // Crear chip con el mismo formato que los chips de categoría
-        chip = document.createElement('button');
-        chip.id = 'chipTarjetas';
-        chip.className = 'cat-chip';
-        chip.style.setProperty('--chip-color', '#059669');
-        chip.onclick = () => abrirModalTarjetas();
-        chip.innerHTML = `
-            <i class="bi bi-credit-card cat-chip-icon"></i>
-            <span class="cat-chip-nombre">Tarjetas</span>
-            <span class="cat-chip-total">${formatearMoneda(proximoMesTotal)}</span>`;
-        catNavScroll.appendChild(chip);
-
-    } catch (error) {
-        console.error('Error renderizando chip tarjetas:', error);
-    }
-}
-
-/**
- * Actualizar dashboard cuando se guarda un movimiento
- */
-function actualizarDashboardDespuesPago() {
-    cargarDatos();
-}
-
-// ============================================================
-// SIMULADOR DE COMPRA
-// ============================================================
-
-/**
- * Abrir modal simulador
- */
-function abrirSimulador() {
-    document.getElementById('formSimulador').reset();
-    document.getElementById('simFecha').valueAsDate = new Date();
-    document.getElementById('simCuotas').value = '1';
-
-    // Llenar select de tarjetas
-    const select = document.getElementById('simTarjeta');
-    let html = '<option value="">— Seleccionar —</option>';
-
-    tarjetasActuales.forEach(t => {
-        html += `<option value="${t.id}">${t.nombre_tarjeta} (${t.banco})</option>`;
-    });
-
-    select.innerHTML = html;
-
-    // Limpiar resultado
-    document.getElementById('resultadoSimulacion').innerHTML = '';
-
-    const modal = new bootstrap.Modal(document.getElementById('modalSimulador'), { keyboard: false });
-    modal.show();
-}
-
-/**
- * Actualizar simulación en tiempo real
- */
-async function actualizarSimulacion() {
-    const tarjetaId = parseInt(document.getElementById('simTarjeta').value);
-    const fecha = document.getElementById('simFecha').value;
-    const monto = parseFloat(document.getElementById('simMonto').value) || 0;
-    const cuotas = parseInt(document.getElementById('simCuotas').value) || 1;
-    const cuotaPagar = parseInt(document.getElementById('simCuotaPagar').value) || 1;
-
-    // Actualizar opciones de cuota
-    actualizarOpcionesCuotaSimulador(cuotas);
-
-    // Validaciones básicas
-    if (!tarjetaId || !fecha || monto <= 0 || cuotas < 1) {
-        document.getElementById('resultadoSimulacion').innerHTML = '';
-        return;
-    }
-
-    try {
-        // Obtener datos de la tarjeta
-        const tarjeta = tarjetasActuales.find(t => t.id === tarjetaId);
-        if (!tarjeta) return;
-
-        // Obtener deuda actual para cálculo de impacto
-        const respDisponible = await fetch(`${TARJETAS_API}?action=disponible&tarjeta_id=${tarjetaId}`);
-        const resultDisponible = await respDisponible.json();
-
-        if (!resultDisponible.success) return;
-
-        const deudaActual = resultDisponible.data.deuda_comprometida;
-        const limiteActual = resultDisponible.data.limite;
-        const disponibleActual = resultDisponible.data.disponible;
-
-        // Cálculos post-compra
-        const montoParaCuota = monto / cuotas;
-        const deudaNueva = deudaActual + monto;
-        const disponibleNuevo = limiteActual - deudaNueva;
-        const porcentajeUso = (deudaNueva / limiteActual) * 100;
-
-        // Obtener proyección actual
-        const respProyeccion = await fetch(`${TARJETAS_API}?action=proyeccion&tarjeta_id=${tarjetaId}&meses=12`);
-        const resultProyeccion = await respProyeccion.json();
-
-        const proyeccionActual = resultProyeccion.data || [];
-
-        // Renderizar resultado
-        let html = `
-            <div class="sim-resultado">
-                <!-- Cambio en deuda -->
-                <div class="mb-4">
-                    <h6 class="mb-3">Impacto en Deuda Comprometida</h6>
-                    <div class="row g-3">
-                        <div class="col-6">
-                            <div class="sim-card">
-                                <small class="text-muted">Deuda Actual</small>
-                                <div class="sim-value">${formatearMoneda(deudaActual)}</div>
-                            </div>
-                        </div>
-                        <div class="col-6">
-                            <div class="sim-card">
-                                <small class="text-muted">+ Esta Compra</small>
-                                <div class="sim-value" style="color:#6366f1">${formatearMoneda(monto)}</div>
-                            </div>
-                        </div>
-                        <div class="col-12">
-                            <div class="sim-card" style="background:rgba(99,102,241,0.05);border:2px solid #6366f1">
-                                <small class="text-muted">Deuda NUEVA</small>
-                                <div class="sim-value fw-bold">${formatearMoneda(deudaNueva)}</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Disponible -->
-                <div class="mb-4">
-                    <h6 class="mb-3">Disponible Restante</h6>
-                    <div class="sim-card">
-                        <small class="text-muted">Límite: ${formatearMoneda(limiteActual)}</small>
-                        <div class="progress mb-2" style="height:8px">
-                            <div class="progress-bar ${porcentajeUso > 80 ? 'bg-danger' : porcentajeUso > 50 ? 'bg-warning' : 'bg-success'}"
-                                 style="width:${Math.min(porcentajeUso, 100)}%"></div>
-                        </div>
-                        <div class="d-flex justify-content-between">
-                            <small><strong>${Math.round(porcentajeUso)}%</strong> utilizado</small>
-                            <small><strong>${formatearMoneda(disponibleNuevo)}</strong> disponible</small>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Período y recomendación -->
-                <div class="mb-4">
-                    <h6 class="mb-3">Período y Recomendación</h6>
-                    ${renderizarRecomendacionPeriodo(tarjeta, fecha)}
-                </div>
-
-                <!-- Cuotas mensuales -->
-                <div class="mb-4">
-                    <h6 class="mb-3">Cuotas Mensuales (${formatearMoneda(montoParaCuota)}/mes)</h6>
-                    ${renderizarCuotasSimulacion(fecha, cuotas, montoParaCuota, tarjeta)}
-                </div>
-
-                <!-- Impacto en próximos meses -->
-                <div class="mb-4">
-                    <h6 class="mb-3">Proyección Próximos Meses (CON esta compra)</h6>
-                    ${renderizarProyeccionConCompra(proyeccionActual, fecha, cuotas, montoParaCuota, tarjeta)}
-                </div>
-            </div>`;
-
-        document.getElementById('resultadoSimulacion').innerHTML = html;
-
-    } catch (error) {
-        console.error('Error en simulación:', error);
-        document.getElementById('resultadoSimulacion').innerHTML = `
-            <div class="alert alert-danger">Error: ${error.message}</div>`;
-    }
-}
-
-/**
- * Actualizar opciones de cuota en simulador
- */
-function actualizarOpcionesCuotaSimulador(cuotas) {
-    const select = document.getElementById('simCuotaPagar');
-    let html = '';
-
-    for (let i = 1; i <= cuotas; i++) {
-        const label = i === 1 ? 'Cuota 1 (primera)' : `Cuota ${i}`;
-        html += `<option value="${i}" ${i === 1 ? 'selected' : ''}>${label}</option>`;
-    }
-
-    select.innerHTML = html;
-}
-
-/**
- * Renderizar recomendación de período
- */
-function renderizarRecomendacionPeriodo(tarjeta, fechaCompra) {
-    const fecha = new Date(fechaCompra);
-    const dia = fecha.getDate();
-    const cierre = tarjeta.fecha_cierre_dia;
-
-    let html = '';
-
-    if (dia <= cierre) {
-        html += `
-            <div class="alert alert-info mb-0">
-                <i class="bi bi-check-circle me-2"></i>
-                <strong>Entra en resumen ACTUAL</strong> (cierre ${cierre})
-                <br><small class="text-muted">Vencimiento: ${tarjeta.fecha_vencimiento_dia} del mes siguiente</small>
-            </div>`;
-    } else {
-        html += `
-            <div class="alert alert-warning mb-0">
-                <i class="bi bi-exclamation-triangle me-2"></i>
-                <strong>Entra en PRÓXIMO resumen</strong> (después del cierre ${cierre})
-                <br><small class="text-muted">Se pagará 2 meses después de la compra</small>
-            </div>`;
-    }
-
-    return html;
-}
-
-/**
- * Renderizar cuotas de la compra simulada
- */
-function renderizarCuotasSimulacion(fecha, cuotas, montoParaCuota, tarjeta) {
-    const fechaInicio = new Date(fecha);
-    const meses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
-
-    let html = '<div class="sim-cuotas-list">';
-
-    for (let i = 1; i <= cuotas; i++) {
-        const fechaCuota = new Date(fechaInicio);
-        fechaCuota.setMonth(fechaCuota.getMonth() + (i - 1));
-
-        const mesLabel = meses[fechaCuota.getMonth()];
-        const anio = fechaCuota.getFullYear();
-
-        html += `
-            <div class="sim-cuota-item">
-                <span class="sim-cuota-numero">${i}</span>
-                <span class="sim-cuota-mes">${mesLabel} ${anio}</span>
-                <span class="sim-cuota-monto">${formatearMoneda(montoParaCuota)}</span>
-            </div>`;
-    }
-
-    html += '</div>';
-    return html;
-}
-
-/**
- * Renderizar proyección con la compra incluida
- */
-function renderizarProyeccionConCompra(proyeccionActual, fechaCompra, cuotas, montoParaCuota, tarjeta) {
-    // Simular adición de cuotas a los períodos
-    const fechaInicio = new Date(fechaCompra);
-    const meses = {};
-
-    // Copiar proyección actual
-    proyeccionActual.forEach(p => {
-        meses[p.periodo] = { ...p };
-    });
-
-    // Agregar cuotas de la compra simulada
-    for (let i = 1; i <= cuotas; i++) {
-        const fechaCuota = new Date(fechaInicio);
-        fechaCuota.setMonth(fechaCuota.getMonth() + (i - 1));
-
-        const periodo = fechaCuota.toISOString().substring(0, 7); // YYYY-MM
-
-        if (!meses[periodo]) {
-            meses[periodo] = {
-                periodo,
-                total_pendiente: 0,
-                cuotas_pendientes: 0,
-                estado_resumen: 'abierto'
-            };
-        }
-
-        meses[periodo].total_pendiente += montoParaCuota;
-        meses[periodo].cuotas_pendientes += 1;
-    }
-
-    // Renderizar
-    const periodos = Object.values(meses).sort((a, b) => a.periodo.localeCompare(b.periodo)).slice(0, 6);
-
-    let html = '<div class="sim-proyeccion-list">';
-
-    periodos.forEach(p => {
-        const iconos = {
-            'abierto': 'bi-hourglass-split',
-            'cerrado': 'bi-check-circle-fill',
-            'vencido': 'bi-exclamation-triangle-fill',
-            'parcial': 'bi-dash-circle'
-        };
-
-        const colores = {
-            'abierto': '#0dcaf0',
-            'cerrado': '#198754',
-            'vencido': '#dc3545',
-            'parcial': '#0d6efd'
-        };
-
-        html += `
-            <div class="sim-proyeccion-item">
-                <div class="d-flex align-items-center gap-2">
-                    <i class="bi ${iconos[p.estado_resumen]}" style="color:${colores[p.estado_resumen]}"></i>
-                    <strong>${p.periodo}</strong>
-                </div>
-                <div class="text-end">
-                    <div class="fw-bold">${formatearMoneda(p.total_pendiente)}</div>
-                    <small class="text-muted">${p.cuotas_pendientes} cuota${p.cuotas_pendientes === 1 ? '' : 's'}</small>
-                </div>
-            </div>`;
-    });
-
-    html += '</div>';
-    return html;
-}
-
-/**
- * Confirmar compra desde simulador (ir a formulario movimiento)
- */
-function confirmarCompraSimulada() {
-    const tarjetaId = parseInt(document.getElementById('simTarjeta').value);
-    const fecha = document.getElementById('simFecha').value;
-    const monto = parseFloat(document.getElementById('simMonto').value);
-    const cuotas = parseInt(document.getElementById('simCuotas').value);
-    const cuotaPagar = parseInt(document.getElementById('simCuotaPagar').value);
-
-    // Cerrar simulador
-    bootstrap.Modal.getInstance(document.getElementById('modalSimulador')).hide();
-
-    // Abrir formulario movimiento pre-llenado
-    document.getElementById('mvTarjeta').value = tarjetaId;
-    document.getElementById('mvFecha').value = fecha;
-    document.getElementById('mvMonto').value = monto;
-    document.getElementById('mvCuotas').value = cuotas;
-    document.getElementById('mvCuotaPagar').value = cuotaPagar;
-
-    actualizarOpcionesCuota();
-
-    const modal = new bootstrap.Modal(document.getElementById('modalMovimientoTarjeta'), { keyboard: false });
-    modal.show();
+    document.getElementById('chipTarjetas')?.remove();
+    const chip = document.createElement('button');
+    chip.id = 'chipTarjetas';
+    chip.className = 'cat-chip';
+    chip.style.setProperty('--chip-color', '#059669');
+    chip.onclick = () => abrirModalTarjetas();
+    chip.innerHTML = `
+        <i class="bi bi-credit-card cat-chip-icon"></i>
+        <span class="cat-chip-nombre">Tarjetas</span>
+        <span class="cat-chip-total">${formatearMoneda(total)}</span>`;
+    catNavScroll.appendChild(chip);
 }
