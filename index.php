@@ -109,7 +109,7 @@ $errorForm = isset($_GET['error']);
         .nav-toggle { display: none; background: none; border: 0; font-size: 1.6rem; color: #fff; cursor: pointer; }
 
         /* Hero (oscuro, con retrato recortado) */
-        .hero { position: relative; overflow: hidden; margin-top: -68px; padding: 148px 0 104px; background:
+        .hero { position: relative; overflow: hidden; margin-top: -68px; padding: 112px 0 96px; background:
             radial-gradient(720px 520px at 80% 32%, rgba(37,99,235,.38), transparent 62%),
             radial-gradient(520px 420px at 0% 100%, rgba(56,189,248,.12), transparent 60%),
             #0b1224; color: #cbd5e1; }
@@ -118,13 +118,15 @@ $errorForm = isset($_GET['error']);
             background-size: 56px 56px;
             -webkit-mask-image: radial-gradient(ellipse 80% 70% at 50% 40%, #000 30%, transparent 80%);
                     mask-image: radial-gradient(ellipse 80% 70% at 50% 40%, #000 30%, transparent 80%); }
-        .hero .contenedor { position: relative; display: grid; grid-template-columns: 1.08fr .92fr; gap: 48px; align-items: center; }
+        .hero .contenedor { position: relative; display: grid; grid-template-columns: 1.2fr .8fr; gap: 40px; align-items: center; }
         .pill { display: inline-flex; align-items: center; gap: .55rem; padding: .4rem .9rem .4rem .7rem; border-radius: 999px; border: 1px solid rgba(255,255,255,.12); background: rgba(255,255,255,.04); font-size: .8rem; font-weight: 400; color: #cbd5e1; }
         .pill-punto { position: relative; width: 8px; height: 8px; border-radius: 50%; background: #22c55e; }
         .pill-punto::after { content: ''; position: absolute; inset: -4px; border-radius: 50%; background: rgba(34,197,94,.35); animation: latido 2s ease-out infinite; }
         @keyframes latido { 0% { transform: scale(.6); opacity: 1; } 100% { transform: scale(1.8); opacity: 0; } }
-        .hero h1 { margin-top: 1.4rem; color: #fff; font-size: clamp(2.5rem, 5.8vw, 4.3rem); font-weight: 500; line-height: 1.05; letter-spacing: -0.035em; text-wrap: balance; }
-        .hero-nombre { display: block; margin-bottom: 1rem; font-family: 'Inter', system-ui, sans-serif; font-size: .82rem; font-weight: 500; line-height: 1.4; letter-spacing: .2em; text-transform: uppercase; color: #93c5fd; }
+        .hero h1 { margin-top: 1.5rem; color: #fff; font-size: clamp(2.5rem, 4.6vw, 3.5rem); font-weight: 500; line-height: 1.05; letter-spacing: -0.035em; text-wrap: balance; }
+        /* El nombre ya está en la barra: se oculta a la vista pero sigue en el H1 (SEO) */
+        .hero-nombre { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+        .hero-titular { display: block; }
         .hero h1 .serif { font-size: 1.06em; letter-spacing: -0.01em; padding-right: .06em; background: linear-gradient(100deg, #7dd3fc 0%, #60a5fa 55%, #a5b4fc 100%); -webkit-background-clip: text; background-clip: text; color: transparent; }
         .hero-bajada { margin-top: 1.5rem; font-size: clamp(1.02rem, 1.9vw, 1.15rem); font-weight: 300; line-height: 1.7; color: #a3b1c6; max-width: 33rem; text-wrap: pretty; }
         .hero-bajada strong { color: #e2e8f0; font-weight: 500; }
@@ -135,26 +137,55 @@ $errorForm = isset($_GET['error']);
         .btn-vidrio:hover { background: rgba(255,255,255,.1); }
         .btn-vidrio .bi-whatsapp { color: var(--verde-wa); }
         .hero-cifras { display: grid; grid-template-columns: repeat(3, auto); justify-content: start; gap: 2.5rem; margin-top: 2.75rem; padding-top: 1.75rem; border-top: 1px solid rgba(255,255,255,.08); }
-        .hero-cifras b { display: block; font-family: 'Inter Tight', sans-serif; font-size: 1.85rem; font-weight: 300; color: #fff; letter-spacing: -0.02em; line-height: 1.1; }
-        .hero-cifras span { display: block; font-size: .8rem; line-height: 1.35; color: #94a3b8; margin-top: .2rem; }
-        /* Retrato que "sale" del círculo (geometría ligada a img/retrato: centro 50%/56%, radio 42%) */
-        .hero-retrato { position: relative; width: min(470px, 100%); aspect-ratio: 1; justify-self: center; }
-        .hero-retrato::before { content: ''; position: absolute; left: 8%; right: 8%; top: 14%; bottom: 2%; border-radius: 50%;
-            background: radial-gradient(circle at 32% 26%, #60a5fa 0%, #2563eb 42%, #1e3a8a 100%);
-            box-shadow: 0 0 0 1px rgba(255,255,255,.1), 0 30px 90px rgba(37,99,235,.5); }
-        .hero-retrato::after { content: ''; position: absolute; left: 3%; right: 3%; top: 9%; bottom: -3%; border-radius: 50%; border: 1px dashed rgba(148,163,184,.28); animation: orbita 60s linear infinite; }
+        .hero-cifras b { display: block; font-family: 'Inter Tight', sans-serif; font-size: 1.6rem; font-weight: 300; color: #cbd5e1; letter-spacing: -0.02em; line-height: 1.1; }
+        .hero-cifras span { display: block; font-size: .76rem; line-height: 1.35; color: #7c8aa0; margin-top: .2rem; }
+        /* Logo en círculo (img/logo/logo-hero: fondo azul noche propio, el círculo lo recorta) */
+        /* La inclinación 3D (--rx/--ry) la maneja el JS según el mouse */
+        .hero-logo { position: relative; width: min(470px, 100%); aspect-ratio: 1; justify-self: center; transform: perspective(900px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)); transition: transform .4s ease-out; }
+        .hero-logo::before { content: ''; position: absolute; inset: 8%; border-radius: 50%; animation: halo 3.6s ease-out infinite; }
+        .hero-logo::after { content: ''; position: absolute; inset: 3%; border-radius: 50%; border: 1px dashed rgba(148,163,184,.28); animation: orbita 60s linear infinite; }
         @keyframes orbita { to { transform: rotate(360deg); } }
-        .hero-retrato picture, .hero-retrato img { position: relative; z-index: 1; display: block; width: 100%; height: auto; }
-        .hero-retrato img { filter: drop-shadow(0 24px 40px rgba(0,0,0,.35)); }
-        .chip { position: absolute; z-index: 2; display: flex; align-items: center; gap: .65rem; padding: .6rem .9rem .6rem .6rem; border-radius: 16px; background: rgba(15,23,42,.62); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); border: 1px solid rgba(255,255,255,.14); box-shadow: 0 18px 40px rgba(0,0,0,.35); color: #94a3b8; font-size: .76rem; line-height: 1.3; animation: flotar 6s ease-in-out infinite; }
-        .chip strong { display: block; color: #fff; font-size: .82rem; font-weight: 500; }
-        .chip-icono { width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; font-size: 1.05rem; flex-shrink: 0; }
-        .chip-titulo { left: -10%; bottom: 12%; }
-        .chip-titulo .chip-icono { background: rgba(56,189,248,.16); color: #7dd3fc; }
-        .chip-salud { right: -8%; bottom: -3%; animation-delay: -3s; }
-        .chip-salud .chip-icono { background: rgba(45,212,191,.16); color: #5eead4; }
-        @keyframes flotar { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
-        @media (prefers-reduced-motion: reduce) { .pill-punto::after, .hero-retrato::after, .chip { animation: none; } }
+        @keyframes halo { 0% { box-shadow: 0 0 0 0 rgba(56,189,248,.35); } 100% { box-shadow: 0 0 0 34px rgba(56,189,248,0); } }
+        .hero-logo picture { position: absolute; inset: 8%; z-index: 1; display: block; border-radius: 50%; overflow: hidden; background: #09152f; animation: flotar 7s ease-in-out infinite;
+            box-shadow: 0 0 0 1px rgba(96,165,250,.28), 0 0 60px rgba(56,189,248,.18), 0 30px 90px rgba(37,99,235,.45); }
+        .hero-logo picture::after { content: ''; position: absolute; inset: 0; background: linear-gradient(115deg, transparent 38%, rgba(255,255,255,.13) 50%, transparent 62%); transform: translateX(-100%); animation: barrido 7s ease-in-out infinite; pointer-events: none; }
+        @keyframes barrido { 0%, 55% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
+        .hero-logo img { display: block; width: 100%; height: 100%; object-fit: cover; }
+        /* Puntos de luz que giran sobre la órbita */
+        .hero-orbita { position: absolute; inset: 3%; z-index: 2; border-radius: 50%; pointer-events: none; animation: orbita 16s linear infinite; }
+        .hero-orbita::before, .hero-orbita::after { content: ''; position: absolute; left: 50%; border-radius: 50%; }
+        .hero-orbita::before { top: -4px; width: 8px; height: 8px; margin-left: -4px; background: #7dd3fc; box-shadow: 0 0 14px 4px rgba(56,189,248,.7); }
+        .hero-orbita::after { bottom: -3px; width: 6px; height: 6px; margin-left: -3px; background: #a5b4fc; box-shadow: 0 0 12px 3px rgba(129,140,248,.6); }
+        @keyframes flotar { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+        /* Red de nodos animada del fondo (canvas, ver JS) */
+        .hero-red { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; opacity: .8;
+            -webkit-mask-image: radial-gradient(ellipse 90% 80% at 60% 45%, #000 35%, transparent 85%);
+                    mask-image: radial-gradient(ellipse 90% 80% at 60% 45%, #000 35%, transparent 85%); }
+        /* Entrada escalonada del hero (--d = demora) */
+        .entrar { animation: entrar .9s cubic-bezier(.2,.7,.2,1) var(--d, 0s) backwards; }
+        @keyframes entrar { from { opacity: 0; transform: translateY(22px); } }
+        .hero-logo.entrar { animation-name: entrar-logo; animation-duration: 1.2s; }
+        @keyframes entrar-logo { from { opacity: 0; transform: scale(.86); } }
+        .hero-cifras b { font-variant-numeric: tabular-nums; }
+        /* Destello que recorre el botón principal */
+        .btn-luz { position: relative; overflow: hidden; }
+        .btn-luz::after { content: ''; position: absolute; top: 0; bottom: 0; left: 0; width: 40%; background: linear-gradient(90deg, transparent, rgba(255,255,255,.35), transparent); transform: translateX(-150%) skewX(-20deg); animation: destello 4.5s ease-in-out infinite; pointer-events: none; }
+        @keyframes destello { 0%, 65% { transform: translateX(-150%) skewX(-20deg); } 100% { transform: translateX(350%) skewX(-20deg); } }
+        .hero h1 .serif { background-size: 220% auto; animation: brillo-texto 7s ease-in-out infinite alternate; }
+        @keyframes brillo-texto { to { background-position: 100% 50%; } }
+        @media (prefers-reduced-motion: reduce) { .pill-punto::after, .hero-logo::before, .hero-logo::after, .hero-logo picture, .hero-logo picture::after, .hero-orbita, .entrar, .btn-luz::after, .hero h1 .serif { animation: none; } }
+
+        /* Cinta de servicios que se desplaza */
+        .cinta { background: #0b1224; border-top: 1px solid rgba(255,255,255,.06); padding: 22px 0; color: #cbd5e1; }
+        .cinta-ventana { overflow: hidden; -webkit-mask-image: linear-gradient(90deg, transparent, #000 10%, #000 90%, transparent); mask-image: linear-gradient(90deg, transparent, #000 10%, #000 90%, transparent); }
+        .cinta-pista { display: flex; width: max-content; animation: cinta 48s linear infinite; }
+        .cinta:hover .cinta-pista { animation-play-state: paused; }
+        .cinta ul { display: flex; flex-shrink: 0; list-style: none; }
+        .cinta li { display: flex; align-items: center; white-space: nowrap; font-family: 'Inter Tight', 'Inter', sans-serif; font-size: 1.08rem; font-weight: 300; letter-spacing: -0.005em; }
+        .cinta li i { color: #60a5fa; margin-right: .55rem; }
+        .cinta li::after { content: '✦'; margin: 0 1.6rem; color: #38bdf8; font-size: .65rem; opacity: .7; }
+        @keyframes cinta { to { transform: translateX(-50%); } }
+        @media (prefers-reduced-motion: reduce) { .cinta-pista { animation: none; } }
 
         /* Servicios */
         .grilla-servicios { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
@@ -179,60 +210,31 @@ $errorForm = isset($_GET['error']);
         .paso h3 { font-size: 1.08rem; font-weight: 500; }
         .paso p { margin-top: .4rem; color: var(--suave); font-size: .95rem; }
 
-        /* Proyectos */
-        .grilla-proyectos { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; }
-        .proyecto { background: #fff; border: 1px solid var(--linea); border-radius: var(--radio); overflow: hidden; display: flex; flex-direction: column; }
-        .proyecto-vista { aspect-ratio: 16 / 10; display: grid; place-items: center; padding: 28px; position: relative; overflow: hidden; }
-        .proyecto-cuerpo { padding: 28px; display: flex; flex-direction: column; gap: .6rem; flex: 1; }
-        .proyecto-tipo { font-size: .7rem; font-weight: 500; color: var(--acento); text-transform: uppercase; letter-spacing: .16em; }
-        .proyecto h3 { font-size: 1.3rem; font-weight: 500; }
-        .proyecto h3 img { display: block; height: 44px; width: auto; }
-        .logo-cifra { display: inline-flex; align-items: center; gap: .45rem; padding: .35rem .85rem .35rem .7rem; border-radius: 8px; background: #211e54; color: #fff; font-size: 1.3rem; font-weight: 700; letter-spacing: -0.01em; line-height: 1.2; }
-        .logo-cifra i { font-size: 1.05rem; }
-        .proyecto p { color: var(--suave); }
-        .etiquetas { display: flex; flex-wrap: wrap; gap: .4rem; margin-top: .25rem; }
-        .etiquetas span { font-size: .76rem; font-weight: 400; padding: .25rem .6rem; border-radius: 999px; background: var(--fondo-alt); border: 1px solid var(--linea); color: var(--texto); }
-        .proyecto-link { margin-top: auto; padding-top: .75rem; font-weight: 500; text-decoration: none; display: inline-flex; align-items: center; gap: .35rem; }
-        .proyecto-privado { margin-top: auto; padding-top: .75rem; font-size: .88rem; color: var(--suave); display: inline-flex; align-items: center; gap: .35rem; }
-
-        /* Mockup TurnitoAhora (ilustrativo) */
-        .vista-turnito { background: linear-gradient(135deg, #fdf2f8 0%, #fce7f3 50%, #ede9fe 100%); }
-        .tel { width: 200px; background: #fff; border-radius: 22px; box-shadow: 0 18px 40px rgba(76,29,149,.18); padding: 14px; font-size: .62rem; color: #334155; }
-        .tel-cab { display: flex; align-items: center; gap: .45rem; margin-bottom: .6rem; }
-        .tel-avatar { width: 26px; height: 26px; border-radius: 50%; background: #db2777; color: #fff; display: grid; place-items: center; font-weight: 700; font-size: .6rem; }
-        .tel-cab strong { display: block; font-size: .7rem; color: #0f172a; }
-        .tel-dias { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; margin-bottom: .5rem; }
-        .tel-dias span { text-align: center; padding: 4px 0; border-radius: 6px; background: #f1f5f9; }
-        .tel-dias span.sel { background: #db2777; color: #fff; }
-        .tel-horas { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; }
-        .tel-horas span { text-align: center; padding: 5px 0; border-radius: 6px; border: 1px solid #e2e8f0; }
-        .tel-horas span.sel { border-color: #db2777; color: #db2777; font-weight: 700; }
-        .tel-ok { margin-top: .6rem; background: #dcfce7; color: #166534; border-radius: 8px; padding: 6px; text-align: center; font-weight: 600; }
-
-        /* Mockup Cifra (ilustrativo, datos ficticios) */
-        .vista-cifra { background: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 60%, #d1fae5 100%); }
-        .panel-cifra { width: 100%; max-width: 330px; background: #fff; border-radius: 14px; box-shadow: 0 18px 40px rgba(49,46,129,.16); padding: 14px; font-size: .66rem; }
-        .panel-cifra-cab { display: flex; justify-content: space-between; align-items: center; margin-bottom: .6rem; }
-        .panel-cifra-cab strong { font-size: .85rem; color: #0f172a; }
-        .panel-cifra-cab strong b { color: #6366f1; }
-        .kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: .7rem; }
-        .kpi { background: #f8fafc; border-radius: 8px; padding: 6px 7px; }
-        .kpi small { display: block; color: #64748b; font-size: .56rem; }
-        .kpi b { color: #0f172a; font-size: .74rem; }
-        .barras { display: flex; align-items: flex-end; gap: 5px; height: 58px; padding: 0 2px; border-bottom: 1px solid #e2e8f0; }
-        .barras span { flex: 1; border-radius: 3px 3px 0 0; background: linear-gradient(#818cf8, #6366f1); }
-        .filas { margin-top: .55rem; display: grid; gap: 4px; }
-        .filas div { display: flex; justify-content: space-between; padding: 4px 6px; border-radius: 6px; background: #f8fafc; }
-        .filas .ok { color: #059669; font-weight: 600; }
-
         /* Sobre mí */
-        .sobre-mi { display: grid; grid-template-columns: .55fr 1.45fr; gap: 56px; align-items: center; }
-        .sobre-retrato { display: block; width: 100%; max-width: 260px; aspect-ratio: 1; justify-self: center; border-radius: 50%; overflow: hidden; box-shadow: 0 0 0 6px #fff, 0 0 0 7px var(--linea), 0 12px 30px rgba(15,23,42,.10); }
-        .sobre-retrato img { display: block; width: 100%; height: 100%; object-fit: cover; }
+        .sobre-mi { display: grid; grid-template-columns: .6fr 1.4fr; gap: 56px; align-items: stretch; }
+        /* Columna azul con la foto (la foto se funde con el panel para no resaltar) */
+        .sobre-panel { position: relative; overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1.1rem; padding: 44px 24px; border-radius: 20px; text-align: center; color: #a3b1c6;
+            background: radial-gradient(320px 260px at 30% 15%, rgba(56,189,248,.22), transparent 70%), linear-gradient(165deg, #1e3a8a 0%, #12245a 50%, #0b1224 100%);
+            box-shadow: 0 20px 50px rgba(30,58,138,.18); }
+        .sobre-panel::before { content: ''; position: absolute; inset: 0; pointer-events: none;
+            background-image: linear-gradient(rgba(255,255,255,.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.05) 1px, transparent 1px);
+            background-size: 32px 32px;
+            -webkit-mask-image: radial-gradient(ellipse 80% 70% at 50% 30%, #000 20%, transparent 80%);
+                    mask-image: radial-gradient(ellipse 80% 70% at 50% 30%, #000 20%, transparent 80%); }
+        .sobre-panel > * { position: relative; }
+        /* Retrato que "sale" del círculo, en chico (geometría ligada a img/retrato: centro 50%/56%, radio 42%) */
+        .sobre-retrato { display: block; width: 150px; aspect-ratio: 1; }
+        .sobre-retrato::before { content: ''; position: absolute; left: 8%; right: 8%; top: 14%; bottom: 2%; border-radius: 50%;
+            background: radial-gradient(circle at 32% 26%, rgba(96,165,250,.55) 0%, rgba(37,99,235,.35) 50%, rgba(30,58,138,.25) 100%);
+            box-shadow: 0 0 0 1px rgba(255,255,255,.12); }
+        .sobre-retrato img { position: relative; display: block; width: 100%; height: auto; }
+        .sobre-panel-texto strong { display: block; color: #fff; font-family: 'Inter Tight', 'Inter', sans-serif; font-size: 1.1rem; font-weight: 500; }
+        .sobre-panel-texto span { display: block; margin-top: .15rem; font-size: .82rem; color: #93c5fd; }
+        .sobre-panel-lugar { display: inline-flex; align-items: center; gap: .4rem; padding: .35rem .8rem; border-radius: 999px; border: 1px solid rgba(255,255,255,.12); background: rgba(255,255,255,.05); font-size: .78rem; color: #cbd5e1; }
+        .sobre-panel-lugar i { color: #7dd3fc; }
         .sobre-mi p { margin-top: 1rem; }
         .sobre-mi .sobre-intro { margin-top: .9rem; font-family: 'Inter Tight', 'Inter', sans-serif; font-size: clamp(1.2rem, 2.3vw, 1.45rem); font-weight: 300; line-height: 1.5; letter-spacing: -0.01em; color: var(--tinta); }
         .sobre-mi .sobre-intro strong { font-weight: 500; }
-        .logo-hsc { display: inline-block; height: 2.6em; width: auto; vertical-align: middle; margin: -.4em .1em -.3em; }
         .credenciales { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 2rem; }
         .credencial { border: 1px solid var(--linea); border-radius: 14px; padding: 16px; background: #fff; }
         .credencial i { color: var(--acento); font-size: 1.3rem; }
@@ -282,23 +284,93 @@ $errorForm = isset($_GET['error']);
         .revelar.visible { opacity: 1; transform: none; }
         @media (prefers-reduced-motion: reduce) { .revelar { opacity: 1; transform: none; transition: none; } html { scroll-behavior: auto; } }
 
+        /* Efectos al pasar el mouse (van después de .revelar para poder pisar su transform) */
+        .servicio.revelar { transition: opacity .6s ease, transform .35s ease, box-shadow .25s, border-color .25s; }
+        .servicio.revelar:hover { transform: translateY(-4px); box-shadow: 0 18px 40px rgba(37,99,235,.10); border-color: #bfdbfe; }
+        .servicio { position: relative; }
+        .servicio > * { position: relative; }
+        .servicio::before { content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; opacity: 0; transition: opacity .3s;
+            background: radial-gradient(380px circle at var(--mx, 50%) var(--my, 0%), rgba(37,99,235,.10), transparent 45%); }
+        .servicio:hover::before { opacity: 1; }
+        .servicio-icono { transition: transform .35s cubic-bezier(.3,1.6,.5,1), background .25s, color .25s; }
+        .servicio:hover .servicio-icono { transform: translateY(-3px) rotate(-6deg); background: var(--acento); color: #fff; }
+        .servicio-destacado:hover .servicio-icono { background: #0d9488; color: #fff; }
+        .credencial { transition: border-color .2s, transform .2s, box-shadow .2s; }
+        .credencial:hover { border-color: #bfdbfe; transform: translateY(-2px); box-shadow: var(--sombra); }
+        .canal { transition: border-color .15s, box-shadow .15s, transform .15s; }
+        .canal:hover { transform: translateX(4px); }
+
+        /* Línea que une los pasos y se llena al aparecer */
+        .grilla-pasos { position: relative; }
+        .grilla-pasos::before, .grilla-pasos::after { content: ''; position: absolute; top: -22px; left: 0; right: 0; height: 2px; border-radius: 2px; }
+        .grilla-pasos::before { background: var(--linea); }
+        .grilla-pasos::after { background: linear-gradient(90deg, #38bdf8, #2563eb, #818cf8); transform: scaleX(0); transform-origin: left; transition: transform 1.8s cubic-bezier(.4,0,.2,1) .2s; }
+        .grilla-pasos.visible::after { transform: none; }
+        .paso::after { content: ''; position: absolute; top: -27px; left: 0; width: 12px; height: 12px; border-radius: 50%; background: #fff; border: 2px solid #cbd5e1; transition: border-color .4s, box-shadow .4s, background .4s; }
+        .paso::before { transition: color .5s; }
+        .grilla-pasos.visible .paso::after { background: var(--acento); border-color: var(--acento); box-shadow: 0 0 0 5px rgba(37,99,235,.15); }
+        .grilla-pasos.visible .paso::before { color: var(--acento); }
+        .grilla-pasos.visible .paso:nth-child(2)::after, .grilla-pasos.visible .paso:nth-child(2)::before { transition-delay: .6s; }
+        .grilla-pasos.visible .paso:nth-child(3)::after, .grilla-pasos.visible .paso:nth-child(3)::before { transition-delay: 1.1s; }
+        .grilla-pasos.visible .paso:nth-child(4)::after, .grilla-pasos.visible .paso:nth-child(4)::before { transition-delay: 1.6s; }
+
+        /* Franja "webmaster profesional" antes de Contacto */
+        .cta-banda { position: relative; overflow: hidden; text-align: center; color: #a3b1c6; background:
+            radial-gradient(640px 320px at 50% 0%, rgba(37,99,235,.38), transparent 70%),
+            radial-gradient(420px 300px at 100% 100%, rgba(56,189,248,.12), transparent 65%), #0b1224; }
+        .cta-banda::before { content: ''; position: absolute; inset: 0; pointer-events: none;
+            background-image: linear-gradient(rgba(255,255,255,.04) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.04) 1px, transparent 1px);
+            background-size: 56px 56px;
+            -webkit-mask-image: radial-gradient(ellipse 70% 80% at 50% 30%, #000 20%, transparent 75%);
+                    mask-image: radial-gradient(ellipse 70% 80% at 50% 30%, #000 20%, transparent 75%); }
+        .cta-banda::after { content: ''; position: absolute; top: 0; left: 0; width: 35%; height: 1px; background: linear-gradient(90deg, transparent, #38bdf8, transparent); animation: recorrer 6s linear infinite; }
+        @keyframes recorrer { from { transform: translateX(-100%); } to { transform: translateX(300%); } }
+        .cta-contenido { position: relative; max-width: 860px; }
+        .cta-banda .eyebrow { color: #93c5fd; }
+        .cta-banda h2 { color: #fff; font-size: clamp(1.8rem, 4.2vw, 2.8rem); font-weight: 500; letter-spacing: -0.03em; text-wrap: balance; }
+        .cta-banda h2 .serif { background: linear-gradient(100deg, #7dd3fc 0%, #60a5fa 55%, #a5b4fc 100%); -webkit-background-clip: text; background-clip: text; color: transparent; padding-right: .06em; }
+        .cta-banda p { margin: 1.1rem auto 0; max-width: 36rem; font-size: 1.06rem; font-weight: 300; }
+        .cta-garantias { display: flex; flex-wrap: wrap; justify-content: center; gap: .6rem; margin-top: 1.75rem; list-style: none; }
+        .cta-garantias li { display: inline-flex; align-items: center; gap: .45rem; padding: .45rem .9rem; border-radius: 999px; border: 1px solid rgba(255,255,255,.12); background: rgba(255,255,255,.04); font-size: .86rem; color: #e2e8f0; }
+        .cta-garantias i { color: #7dd3fc; }
+        .cta-banda .hero-acciones { justify-content: center; }
+        @media (prefers-reduced-motion: reduce) { .cta-banda::after { animation: none; } }
+
+        /* Barra de progreso de lectura */
+        .nav-progreso { position: absolute; left: 0; bottom: -1px; width: 100%; height: 2px; transform-origin: 0 50%; transform: scaleX(0); background: linear-gradient(90deg, #38bdf8, #2563eb, #a5b4fc); pointer-events: none; }
+
+        /* Pulso del botón flotante de WhatsApp */
+        .wa-flotante::before { content: ''; position: absolute; inset: 0; border-radius: 50%; background: var(--verde-wa); z-index: -1; animation: pulso-wa 2.6s ease-out infinite; }
+        @keyframes pulso-wa { 0% { transform: scale(1); opacity: .55; } 100% { transform: scale(1.7); opacity: 0; } }
+        @media (prefers-reduced-motion: reduce) { .wa-flotante::before { animation: none; } }
+
         /* Responsive */
         @media (max-width: 960px) {
             .grilla-pasos { grid-template-columns: repeat(2, 1fr); row-gap: 32px; }
+            .grilla-pasos::before, .grilla-pasos::after, .paso::after { display: none; }
             .credenciales { grid-template-columns: 1fr 1fr 1fr; }
         }
         @media (max-width: 860px) {
             section { padding: 64px 0; }
-            .hero { padding: 108px 0 72px; }
+            .hero { padding: 92px 0 72px; }
             .hero .contenedor, .sobre-mi, .contacto { grid-template-columns: 1fr; gap: 40px; }
-            .hero-retrato { width: min(380px, 94%); }
-            .sobre-retrato { max-width: 220px; }
-            .chip { font-size: .7rem; padding: .5rem .75rem .5rem .5rem; }
-            .chip strong { font-size: .76rem; }
-            .chip-icono { width: 28px; height: 28px; font-size: .9rem; }
-            .chip-titulo { left: -3%; bottom: 6%; }
-            .chip-salud { right: -3%; bottom: -9%; }
-            .grilla-servicios, .grilla-proyectos { grid-template-columns: 1fr; }
+            .hero-logo { width: min(380px, 94%); }
+            /* Una sola columna: el texto y el H1 se "disuelven" en la grilla para ordenar:
+               pill → nombre → logo → titular, bajada y botones → cifras */
+            .hero .contenedor { gap: 0; }
+            .hero-texto, .hero h1 { display: contents; }
+            .hero h1 { font-size: clamp(1.7rem, 8.2vw, 2.05rem); }
+            .pill { justify-self: start; }
+            .hero-logo { order: 1; width: min(320px, 86%); margin: 28px 0 32px; }
+            .hero-titular, .hero-bajada, .hero-acciones { order: 2; }
+            .hero-bajada { font-size: .98rem; margin-top: 1.25rem; }
+            .hero-titular, .hero-bajada { text-align: justify; text-wrap: wrap; -webkit-hyphens: auto; hyphens: auto; }
+            .hero-cifras { order: 3; justify-content: center; text-align: center; gap: 2rem; margin-top: 28px; padding-top: 0; border-top: 0; }
+            .hero-cifras b { font-size: 1.25rem; color: #a3b1c6; }
+            .hero-cifras span { font-size: .7rem; color: #64748b; }
+            .sobre-panel { padding: 32px 20px; }
+            .sobre-retrato { width: 130px; }
+            .grilla-servicios { grid-template-columns: 1fr; }
             .servicio-destacado { grid-template-columns: 1fr; gap: 16px; }
             .nav-toggle { display: block; }
             .nav-links { position: absolute; top: 68px; left: 0; right: 0; flex-direction: column; align-items: stretch; gap: 0; background: #0b1224; border-bottom: 1px solid rgba(255,255,255,.08); padding: 8px 20px 16px; display: none; }
@@ -314,8 +386,8 @@ $errorForm = isset($_GET['error']);
             .grilla-pasos { grid-template-columns: 1fr; }
             .hero-acciones .btn { flex: 1 1 100%; justify-content: center; }
             .hero-cifras { grid-template-columns: repeat(3, 1fr); gap: 1rem; }
-            .hero-cifras b { font-size: 1.5rem; }
-            .hero-cifras span { font-size: .72rem; }
+            .hero-cifras b { font-size: 1.15rem; }
+            .hero-cifras span { font-size: .68rem; }
             .marca-texto span { font-size: .72rem; }
         }
     </style>
@@ -327,54 +399,68 @@ $errorForm = isset($_GET['error']);
     <div class="contenedor">
         <a href="#inicio" class="marca" aria-label="Pablo Godoy, inicio">
             <img src="/img/logo/isotipo.svg" class="marca-iso" alt="" width="40" height="40">
-            <span class="marca-texto"><strong>Pablo Godoy</strong><span>Lic. en Sistemas de Información</span></span>
+            <span class="marca-texto"><strong>Pablo Andrés Godoy</strong><span>Lic. en Sistemas de Información</span></span>
         </a>
         <button class="nav-toggle" id="navToggle" aria-label="Abrir menú" aria-expanded="false"><i class="bi bi-list"></i></button>
         <ul class="nav-links" id="navLinks">
             <li><a href="#servicios">Servicios</a></li>
             <li><a href="#proceso">Cómo trabajo</a></li>
-            <li><a href="#proyectos">Proyectos</a></li>
             <li><a href="#sobre-mi">Sobre mí</a></li>
             <li><a href="#contacto" class="btn btn-primario">Pedí presupuesto</a></li>
             <li><a href="/cifra/login.php?next=%2Fpanel%2F" class="nav-acceso" rel="nofollow" title="Acceso privado" aria-label="Acceso privado"><i class="bi bi-lock" aria-hidden="true"></i><span>Acceso</span></a></li>
         </ul>
     </div>
+    <div class="nav-progreso" id="navProgreso"></div>
 </header>
 
 <main>
 <!-- ── Hero ───────────────────────────────────────────────── -->
 <section class="hero" id="inicio">
+    <canvas class="hero-red" id="heroRed" aria-hidden="true"></canvas>
     <div class="contenedor">
         <div class="hero-texto">
-            <span class="pill"><span class="pill-punto"></span> Disponible para nuevos proyectos</span>
-            <h1><span class="hero-nombre">Pablo Andrés Godoy</span>Tecnología <span class="serif">a&nbsp;medida</span> para tu organización.</h1>
-            <p class="hero-bajada">Sitios web, apps para Android e iPhone, sistemas de gestión y consultoría. <strong>Más de 25 años</strong> convirtiendo ideas en soluciones que funcionan, desde Paraná para todo el país.</p>
-            <div class="hero-acciones">
+            <span class="pill entrar"><span class="pill-punto"></span> Disponible para nuevos proyectos</span>
+            <h1><span class="hero-nombre entrar" style="--d:.1s">Pablo Andrés Godoy</span><span class="hero-titular entrar" style="--d:.15s">Tecnología <span class="serif">a&nbsp;medida</span> para tu organización.</span></h1>
+            <p class="hero-bajada entrar" style="--d:.25s">Sitios web, apps para Android e iPhone, sistemas de gestión y consultoría. <strong>Más de 25 años</strong> convirtiendo ideas en soluciones que funcionan, desde Paraná para todo el país.</p>
+            <div class="hero-acciones entrar" style="--d:.4s">
                 <a href="#contacto" class="btn btn-luz"><i class="bi bi-send"></i> Pedí tu presupuesto</a>
                 <a href="<?= htmlspecialchars($waLink) ?>" class="btn btn-vidrio" target="_blank" rel="noopener"><i class="bi bi-whatsapp"></i> Escribime por WhatsApp</a>
             </div>
-            <div class="hero-cifras">
-                <div><b>+25</b><span>años de experiencia</span></div>
-                <div><b>Nº 495</b><span>Matrícula Coprocier</span></div>
-                <div><b>24 h</b><span>tiempo de respuesta</span></div>
+            <div class="hero-cifras entrar" style="--d:.55s">
+                <div><b data-contar="25" data-pre="+">+25</b><span>años de experiencia</span></div>
+                <div><b data-contar="495" data-pre="Nº ">Nº 495</b><span>Matrícula Coprocier</span></div>
+                <div><b data-contar="24" data-suf=" h">24 h</b><span>tiempo de respuesta</span></div>
             </div>
         </div>
-        <div class="hero-retrato">
+        <div class="hero-logo entrar" style="--d:.2s">
+            <span class="hero-orbita" aria-hidden="true"></span>
             <picture>
-                <source srcset="/img/retrato.webp" type="image/webp">
-                <img src="/img/retrato.png" alt="Pablo Andrés Godoy, Licenciado en Sistemas de Información" width="470" height="470" fetchpriority="high">
+                <source srcset="/img/logo/logo-hero.webp" type="image/webp">
+                <img src="/img/logo/logo-hero.jpg" alt="Logo de Pablo Godoy: iniciales PG entre redes y símbolos de código" width="600" height="600" fetchpriority="high">
             </picture>
-            <div class="chip chip-titulo">
-                <span class="chip-icono"><i class="bi bi-mortarboard-fill"></i></span>
-                <div><strong>Lic. en Sistemas de Información</strong>Matriculado · Coprocier</div>
-            </div>
-            <div class="chip chip-salud">
-                <span class="chip-icono"><i class="bi bi-heart-pulse-fill"></i></span>
-                <div><strong>Especialista en salud</strong>+25 años en el sector</div>
-            </div>
         </div>
     </div>
 </section>
+
+<!-- ── Cinta de servicios ─────────────────────────────────── -->
+<?php
+$cinta = [
+    ['window-stack', 'Sitios web'], ['bag', 'Tiendas online'], ['search', 'SEO y Google'],
+    ['hdd-network', 'Hosting y dominios'], ['tools', 'Mantenimiento web'], ['phone', 'Apps Android e iPhone'],
+    ['diagram-3', 'Sistemas de gestión'], ['heart-pulse', 'Software para salud'], ['shield-check', 'Seguridad y respaldos'],
+];
+?>
+<div class="cinta">
+    <div class="cinta-ventana">
+        <div class="cinta-pista">
+            <?php foreach ([false, true] as $copia): ?>
+            <ul<?= $copia ? ' aria-hidden="true"' : '' ?>>
+                <?php foreach ($cinta as [$icono, $texto]): ?><li><i class="bi bi-<?= $icono ?>"></i><?= $texto ?></li><?php endforeach; ?>
+            </ul>
+            <?php endforeach; ?>
+        </div>
+    </div>
+</div>
 
 <!-- ── Servicios ──────────────────────────────────────────── -->
 <section id="servicios" class="seccion-alt">
@@ -397,7 +483,7 @@ $errorForm = isset($_GET['error']);
             </article>
             <article class="servicio revelar">
                 <div class="servicio-icono"><i class="bi bi-phone"></i></div>
-                <h3>Apps para Android e iPhone</h3>
+                <h3>Apps para Android y iOS</h3>
                 <p>Aplicaciones móviles para tus clientes o tu equipo, publicadas en Google Play y App Store.</p>
                 <ul>
                     <li><i class="bi bi-check2"></i> Una sola base para ambas plataformas</li>
@@ -450,7 +536,7 @@ $errorForm = isset($_GET['error']);
             <span class="eyebrow">Cómo trabajo</span>
             <h2>Un proceso claro, <span class="serif">sin sorpresas</span>.</h2>
         </div>
-        <div class="grilla-pasos">
+        <div class="grilla-pasos trazo">
             <div class="paso revelar">
                 <h3>Charlamos</h3>
                 <p>Me contás qué necesitás. Entiendo tu negocio y tus objetivos antes de hablar de tecnología.</p>
@@ -471,77 +557,46 @@ $errorForm = isset($_GET['error']);
     </div>
 </section>
 
-<!-- ── Proyectos ──────────────────────────────────────────── -->
-<section id="proyectos" class="seccion-alt">
-    <div class="contenedor">
-        <div class="seccion-cabecera revelar">
-            <span class="eyebrow">Proyectos</span>
-            <h2>Algunos trabajos <span class="serif">realizados</span>.</h2>
-            <p>Productos en uso real, diseñados y desarrollados de punta a punta.</p>
-        </div>
-        <div class="grilla-proyectos">
-            <article class="proyecto revelar">
-                <div class="proyecto-vista vista-turnito" aria-hidden="true">
-                    <div class="tel">
-                        <div class="tel-cab"><span class="tel-avatar">FA</span><div><strong>Flor Alisados</strong>Paraná · Alisado 3 h</div></div>
-                        <div class="tel-dias"><span>lun 12</span><span class="sel">mar 13</span><span>mié 14</span><span>jue 15</span></div>
-                        <div class="tel-horas"><span>09:00</span><span class="sel">09:30</span><span>10:00</span><span>14:00</span><span>14:30</span><span>15:00</span></div>
-                        <div class="tel-ok">✓ ¡Listo! Tu turno está reservado</div>
-                    </div>
-                </div>
-                <div class="proyecto-cuerpo">
-                    <span class="proyecto-tipo">Plataforma web · SaaS</span>
-                    <h3><img src="/img/logo/turnitoahora.png" alt="turnitoAhora" width="286" height="59" loading="lazy"></h3>
-                    <p>Agenda de turnos online para peluquerías, estética, uñas, tatuajes y más. Los clientes reservan solos desde Instagram o WhatsApp, sin registrarse, y el sistema evita turnos superpuestos.</p>
-                    <div class="etiquetas"><span>Reservas online</span><span>Avisos por WhatsApp</span><span>Multi-negocio</span></div>
-                    <a href="https://www.turnitoahora.com.ar" class="proyecto-link" target="_blank" rel="noopener">Visitar turnitoahora.com.ar <i class="bi bi-arrow-up-right"></i></a>
-                </div>
-            </article>
-            <article class="proyecto revelar">
-                <div class="proyecto-vista vista-cifra" aria-hidden="true">
-                    <div class="panel-cifra">
-                        <div class="panel-cifra-cab"><strong>Cifra<b>.</b></strong><span>Octubre 2026</span></div>
-                        <div class="kpis">
-                            <div class="kpi"><small>Ingresos</small><b>$ 1.250.000</b></div>
-                            <div class="kpi"><small>Pagado</small><b>$ 842.300</b></div>
-                            <div class="kpi"><small>Disponible</small><b>$ 407.700</b></div>
-                        </div>
-                        <div class="barras"><span style="height:45%"></span><span style="height:70%"></span><span style="height:55%"></span><span style="height:85%"></span><span style="height:60%"></span><span style="height:40%"></span><span style="height:75%"></span><span style="height:50%"></span></div>
-                        <div class="filas">
-                            <div><span>Servicios</span><span class="ok">Pagado</span></div>
-                            <div><span>Tarjeta · cuota 3/6</span><span>$ 58.900</span></div>
-                        </div>
-                    </div>
-                </div>
-                <div class="proyecto-cuerpo">
-                    <span class="proyecto-tipo">App web instalable (PWA)</span>
-                    <h3><span class="logo-cifra"><i class="bi bi-bar-chart-fill" aria-hidden="true"></i>Cifra</span></h3>
-                    <p>Sistema de gestión financiera: cuentas, gastos e ingresos mensuales, tarjetas de crédito con proyección de cuotas y seguimiento de créditos en UVA. Se instala en el celular como una app.</p>
-                    <div class="etiquetas"><span>PHP + MySQL</span><span>Gráficos</span><span>Funciona offline</span></div>
-                    <span class="proyecto-privado"><i class="bi bi-lock"></i> Sistema privado · imagen ilustrativa con datos ficticios</span>
-                </div>
-            </article>
-        </div>
-    </div>
-</section>
-
 <!-- ── Sobre mí ───────────────────────────────────────────── -->
-<section id="sobre-mi">
+<section id="sobre-mi" class="seccion-alt">
     <div class="contenedor sobre-mi">
-        <picture class="sobre-retrato revelar">
-            <source srcset="/img/pablo-godoy.webp" type="image/webp">
-            <img src="/img/pablo-godoy.jpg" alt="Pablo Andrés Godoy, Licenciado en Sistemas de Información" width="260" height="260" loading="lazy">
-        </picture>
+        <div class="sobre-panel revelar">
+            <picture class="sobre-retrato">
+                <source srcset="/img/retrato.webp" type="image/webp">
+                <img src="/img/retrato.png" alt="Pablo Andrés Godoy, Licenciado en Sistemas de Información" width="150" height="150" loading="lazy">
+            </picture>
+            <div class="sobre-panel-texto"><strong>Pablo A. Godoy</strong><span>Lic. en Sistemas de Información</span></div>
+            <span class="sobre-panel-lugar"><i class="bi bi-geo-alt"></i> Paraná, Entre Ríos</span>
+        </div>
         <div class="revelar">
             <h2 class="eyebrow">Sobre Pablo Godoy</h2>
             <p class="sobre-intro">Soy <strong>Pablo A. Godoy</strong>, y hace más de dos décadas desarrollo software para el <strong>sector público y privado</strong>, con especial foco en <strong>proyectos orientados a la salud</strong>.</p>
-            <p>Entre otros clientes, desde hace más de 25 años desarrollo soluciones para <a href="https://www.hsc.com.ar" target="_blank" rel="noopener"><img src="/img/logo/hsc.png" class="logo-hsc" alt="HSC S.A. — Health System Consulting" width="173" height="81" loading="lazy"></a>, consultora especializada en informática para centros de salud, hospitales, obras sociales y prepagas. En el sector público trabajo en sistemas de gestión donde la seguridad, la trazabilidad y la confiabilidad no son opcionales.</p>
+            <p>Entre otros clientes, desde hace más de 25 años desarrollo soluciones para <a href="https://www.hsc.com.ar" target="_blank" rel="noopener">HSC S.A.</a>, consultora especializada en informática para centros de salud, hospitales, obras sociales y prepagas. En el sector público trabajo en sistemas de gestión donde la seguridad, la trazabilidad y la confiabilidad no son opcionales.</p>
             <p>Hoy pongo esa experiencia al servicio de empresas, comercios, industrias e instituciones que quieren usar la tecnología para trabajar mejor. Me ocupo personalmente de cada proyecto: hablás siempre con quien lo desarrolla.</p>
             <div class="credenciales">
                 <div class="credencial"><i class="bi bi-mortarboard"></i><strong>Lic. en Sistemas de Información</strong><span>Título universitario</span></div>
                 <div class="credencial"><i class="bi bi-award"></i><strong>Mat. Nº 495</strong><span>Coprocier · Entre Ríos</span></div>
                 <div class="credencial"><i class="bi bi-heart-pulse"></i><strong>+25 años</strong><span>Público, privado y salud</span></div>
             </div>
+        </div>
+    </div>
+</section>
+
+<!-- ── Webmaster profesional ─────────────────────────────── -->
+<section class="cta-banda">
+    <div class="contenedor cta-contenido revelar">
+        <span class="eyebrow">Webmaster profesional</span>
+        <h2>Tu sitio web, en manos de <span class="serif">un profesional</span>.</h2>
+        <p>Diseño, desarrollo, dominio, hosting, SEO y mantenimiento: me ocupo de todo para que tu web esté siempre online, rápida y trayéndote clientes.</p>
+        <ul class="cta-garantias">
+            <li><i class="bi bi-phone"></i> Adaptada a celulares</li>
+            <li><i class="bi bi-lightning-charge"></i> Rápida y en Google</li>
+            <li><i class="bi bi-shield-check"></i> Segura y con respaldos</li>
+            <li><i class="bi bi-person-check"></i> Hablás siempre conmigo</li>
+        </ul>
+        <div class="hero-acciones">
+            <a href="#contacto" class="btn btn-luz"><i class="bi bi-send"></i> Pedí tu presupuesto</a>
+            <a href="<?= htmlspecialchars($waLink) ?>" class="btn btn-vidrio" target="_blank" rel="noopener"><i class="bi bi-whatsapp"></i> Escribime por WhatsApp</a>
         </div>
     </div>
 </section>
@@ -625,7 +680,6 @@ $errorForm = isset($_GET['error']);
         </div>
         <div class="footer-links">
             <a href="#servicios">Servicios</a>
-            <a href="#proyectos">Proyectos</a>
             <a href="#contacto">Contacto</a>
             <a href="https://www.linkedin.com/in/godoypablo1972/" target="_blank" rel="noopener me"><i class="bi bi-linkedin"></i> LinkedIn</a>
             <a href="/cifra/login.php?next=%2Fpanel%2F" rel="nofollow">Acceso</a>
@@ -650,15 +704,137 @@ $errorForm = isset($_GET['error']);
         navToggle.innerHTML = '<i class="bi bi-list"></i>';
     }));
 
-    // Borde de la barra al hacer scroll
-    const nav = document.getElementById('nav');
-    addEventListener('scroll', () => nav.classList.toggle('con-borde', scrollY > 8), { passive: true });
+    const sinMovimiento = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-    // Aparición suave de secciones
+    // Borde de la barra y progreso de lectura al hacer scroll
+    const nav = document.getElementById('nav');
+    const progreso = document.getElementById('navProgreso');
+    const alScroll = () => {
+        nav.classList.toggle('con-borde', scrollY > 8);
+        const max = document.documentElement.scrollHeight - innerHeight;
+        progreso.style.transform = `scaleX(${max > 0 ? Math.min(1, scrollY / max) : 0})`;
+    };
+    addEventListener('scroll', alScroll, { passive: true });
+    alScroll();
+
+    // Aparición suave de secciones (escalonada dentro de cada grilla)
+    document.querySelectorAll('.grilla-servicios, .grilla-pasos').forEach(g =>
+        [...g.children].forEach((el, i) => el.style.transitionDelay = `${i * 110}ms`));
     const obs = new IntersectionObserver(entradas => entradas.forEach(e => {
-        if (e.isIntersecting) { e.target.classList.add('visible'); obs.unobserve(e.target); }
+        if (!e.isIntersecting) return;
+        e.target.classList.add('visible');
+        obs.unobserve(e.target);
+        // Sacar la demora para que no afecte los efectos de hover
+        setTimeout(() => e.target.style.transitionDelay = '', 1400);
     }), { threshold: 0.12 });
-    document.querySelectorAll('.revelar').forEach(el => obs.observe(el));
+    document.querySelectorAll('.revelar, .trazo').forEach(el => obs.observe(el));
+
+    // Cifras del hero que cuentan desde cero
+    if (!sinMovimiento) document.querySelectorAll('[data-contar]').forEach(el => {
+        const fin = +el.dataset.contar, pre = el.dataset.pre || '', suf = el.dataset.suf || '';
+        const inicio = performance.now() + 600, duracion = 1600;
+        el.style.minWidth = el.offsetWidth + 'px';
+        el.textContent = pre + '0' + suf;
+        const paso = t => {
+            const k = Math.min(1, Math.max(0, (t - inicio) / duracion));
+            el.textContent = pre + Math.round(fin * (1 - Math.pow(1 - k, 3))) + suf;
+            if (k < 1) requestAnimationFrame(paso);
+        };
+        requestAnimationFrame(paso);
+    });
+
+    // Red de nodos animada en el fondo del hero (se pausa fuera de pantalla)
+    (() => {
+        const cv = document.getElementById('heroRed');
+        if (!cv || sinMovimiento) return;
+        const ctx = cv.getContext('2d');
+        const hero = cv.parentElement;
+        const DIST = 130, DIST_RATON = 190;
+        let w = 0, h = 0, nodos = [], raton = null, enPantalla = true, corriendo = false;
+
+        const medir = () => {
+            const dpr = Math.min(devicePixelRatio || 1, 2);
+            const nuevoAncho = hero.clientWidth;
+            h = hero.clientHeight;
+            cv.width = nuevoAncho * dpr; cv.height = h * dpr;
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+            if (nuevoAncho === w && nodos.length) return; // en el celular la barra de direcciones cambia el alto: no regenerar
+            w = nuevoAncho;
+            const cantidad = Math.round(Math.min(70, w * h / 15000));
+            nodos = Array.from({ length: cantidad }, () => ({
+                x: Math.random() * w, y: Math.random() * h,
+                vx: (Math.random() - .5) * .4, vy: (Math.random() - .5) * .4,
+            }));
+        };
+
+        const cuadro = () => {
+            if (!enPantalla || document.hidden) { corriendo = false; return; }
+            ctx.clearRect(0, 0, w, h);
+            for (const p of nodos) {
+                p.x += p.vx; p.y += p.vy;
+                if (p.x < 0 || p.x > w) p.vx *= -1;
+                if (p.y < 0 || p.y > h) p.vy *= -1;
+            }
+            ctx.lineWidth = 1;
+            for (let i = 0; i < nodos.length; i++) {
+                const a = nodos[i];
+                for (let j = i + 1; j < nodos.length; j++) {
+                    const b = nodos[j], d = Math.hypot(a.x - b.x, a.y - b.y);
+                    if (d < DIST) {
+                        ctx.strokeStyle = `rgba(96,165,250,${(1 - d / DIST) * .32})`;
+                        ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+                    }
+                }
+                if (raton) {
+                    const d = Math.hypot(a.x - raton.x, a.y - raton.y);
+                    if (d < DIST_RATON) {
+                        ctx.strokeStyle = `rgba(125,211,252,${(1 - d / DIST_RATON) * .6})`;
+                        ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(raton.x, raton.y); ctx.stroke();
+                    }
+                }
+                ctx.fillStyle = 'rgba(147,197,253,.75)';
+                ctx.beginPath(); ctx.arc(a.x, a.y, 1.7, 0, Math.PI * 2); ctx.fill();
+            }
+            requestAnimationFrame(cuadro);
+        };
+        const arrancar = () => {
+            if (corriendo || !enPantalla || document.hidden) return;
+            corriendo = true;
+            requestAnimationFrame(cuadro);
+        };
+
+        medir();
+        let espera;
+        addEventListener('resize', () => { clearTimeout(espera); espera = setTimeout(medir, 150); });
+        new IntersectionObserver(([e]) => { enPantalla = e.isIntersecting; arrancar(); }).observe(hero);
+        document.addEventListener('visibilitychange', arrancar);
+        hero.addEventListener('pointermove', e => {
+            const r = hero.getBoundingClientRect();
+            raton = { x: e.clientX - r.left, y: e.clientY - r.top };
+        });
+        hero.addEventListener('pointerleave', () => raton = null);
+        arrancar();
+    })();
+
+    // Inclinación 3D del logo y luz que sigue al mouse en las tarjetas (solo con mouse)
+    if (!sinMovimiento && matchMedia('(hover: hover)').matches) {
+        const logo = document.querySelector('.hero-logo');
+        const hero = document.getElementById('inicio');
+        hero.addEventListener('pointermove', e => {
+            const r = logo.getBoundingClientRect();
+            const x = Math.max(-1, Math.min(1, (e.clientX - r.left - r.width / 2) / r.width));
+            const y = Math.max(-1, Math.min(1, (e.clientY - r.top - r.height / 2) / r.height));
+            logo.style.setProperty('--ry', `${(x * 12).toFixed(2)}deg`);
+            logo.style.setProperty('--rx', `${(-y * 12).toFixed(2)}deg`);
+        });
+        hero.addEventListener('pointerleave', () => { logo.style.setProperty('--rx', '0deg'); logo.style.setProperty('--ry', '0deg'); });
+
+        document.querySelectorAll('.servicio').forEach(el => el.addEventListener('pointermove', e => {
+            const r = el.getBoundingClientRect();
+            el.style.setProperty('--mx', `${e.clientX - r.left}px`);
+            el.style.setProperty('--my', `${e.clientY - r.top}px`);
+        }));
+    }
 
     // Envío del formulario sin recargar
     const form = document.getElementById('formContacto');
