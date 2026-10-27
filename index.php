@@ -3,6 +3,14 @@ $wa     = '5493434504750';
 $waLink = 'https://wa.me/' . $wa . '?text=' . rawurlencode('Hola Pablo, te escribo desde tu web. Quería consultarte por ');
 $enviado = isset($_GET['enviado']);
 $errorForm = isset($_GET['error']);
+
+// turnitoAhora: Reels de Instagram que se muestran en la sección (links tipo https://www.instagram.com/reel/XXXX/)
+$turnitoIg = 'https://www.instagram.com/turnitoahora/';
+$reels = [
+    'https://www.instagram.com/p/Desmd7ORgzB/',
+    'https://www.instagram.com/p/DeZWExPxGJ9/',
+    'https://www.instagram.com/p/DeZWjVkRPwp/',
+];
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -46,7 +54,8 @@ $errorForm = isset($_GET['error']);
         "areaServed": "AR",
         "address": { "@type": "PostalAddress", "addressLocality": "Paraná", "addressRegion": "Entre Ríos", "addressCountry": "AR" },
         "sameAs": ["https://www.linkedin.com/in/godoypablo1972/"],
-        "founder": { "@type": "Person", "name": "Pablo Andrés Godoy", "alternateName": "Pablo Godoy", "jobTitle": "Licenciado en Sistemas de Información", "sameAs": ["https://www.linkedin.com/in/godoypablo1972/"] },
+        "makesOffer": { "@type": "Offer", "itemOffered": { "@type": "SoftwareApplication", "name": "turnitoAhora", "url": "https://www.turnitoahora.com.ar", "applicationCategory": "BusinessApplication", "operatingSystem": "Web", "description": "Agenda de turnos online para peluquerías, estética, uñas, tatuajes y más.", "sameAs": ["https://www.instagram.com/turnitoahora/"] } },
+        "founder":{ "@type": "Person", "name": "Pablo Andrés Godoy", "alternateName": "Pablo Godoy", "jobTitle": "Licenciado en Sistemas de Información", "sameAs": ["https://www.linkedin.com/in/godoypablo1972/"] },
         "knowsAbout": ["Desarrollo web", "Aplicaciones móviles", "Software a medida", "Consultoría informática", "Informática médica", "Sistemas de salud"]
     }
     </script>
@@ -344,6 +353,42 @@ $errorForm = isset($_GET['error']);
         @keyframes pulso-wa { 0% { transform: scale(1); opacity: .55; } 100% { transform: scale(1.7); opacity: 0; } }
         @media (prefers-reduced-motion: reduce) { .wa-flotante::before { animation: none; } }
 
+        /* turnitoAhora */
+        .turnito { background: linear-gradient(135deg, #fdf2f8 0%, #fff 45%, #f5f3ff 100%); }
+        .turnito .eyebrow, .turnito h2 .serif { color: #db2777; }
+        .turnito-grilla { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 56px; align-items: center; }
+        .turnito-logo { width: 200px; height: auto; margin-bottom: 1.25rem; }
+        .turnito h2 { font-size: clamp(1.65rem, 3.6vw, 2.25rem); font-weight: 500; }
+        .turnito-bajada { margin-top: .9rem; color: var(--suave); font-size: 1.04rem; font-weight: 300; max-width: 480px; }
+        .turnito-acciones { display: flex; flex-wrap: wrap; gap: .75rem; margin-top: 1.75rem; }
+        .turnito-beneficios { list-style: none; display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        .turnito-beneficios li { background: #fff; border: 1px solid #fce7f3; border-radius: var(--radio); padding: 20px; box-shadow: var(--sombra); }
+        .turnito-beneficios i { display: grid; place-items: center; width: 38px; height: 38px; border-radius: 10px; background: #fdf2f8; color: #db2777; font-size: 1.1rem; margin-bottom: .75rem; }
+        .turnito-beneficios b { display: block; color: var(--tinta); font-weight: 500; }
+        .turnito-beneficios span { display: block; margin-top: .25rem; color: var(--suave); font-size: .9rem; line-height: 1.55; }
+        .turnito-videos { margin-top: 64px; }
+        .turnito-videos-titulo { font-size: .72rem; font-weight: 500; letter-spacing: .18em; text-transform: uppercase; color: #db2777; margin-bottom: 1.25rem; display: flex; align-items: center; gap: .5rem; }
+        .turnito-videos-titulo i { font-size: 1rem; }
+        .btn-turnito { background: #db2777; color: #fff; box-shadow: 0 6px 16px rgba(219,39,119,.25); }
+        .btn-turnito:hover { background: #be185d; }
+        .btn-instagram { background: #fff; color: var(--tinta); border-color: var(--linea); }
+        .btn-instagram i { background: linear-gradient(45deg, #f58529, #dd2a7b, #8134af); -webkit-background-clip: text; background-clip: text; color: transparent; font-size: 1.1rem; }
+        .btn-instagram:hover { border-color: #f9a8d4; }
+        .turnito-reels { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; align-items: start; }
+        .turnito-reels .instagram-media { width: 100% !important; max-width: none !important; min-width: 0 !important; margin: 0 !important; border-radius: 16px !important; border-color: #fce7f3 !important; box-shadow: var(--sombra) !important; }
+        /* Celular ilustrativo (se muestra mientras no haya Reels cargados) */
+        .tel { width: 240px; margin: 0 auto; background: #fff; border-radius: 26px; box-shadow: 0 24px 50px rgba(131,24,67,.16); padding: 16px; font-size: .72rem; color: #334155; }
+        .tel-cab { display: flex; align-items: center; gap: .5rem; margin-bottom: .7rem; }
+        .tel-avatar { width: 30px; height: 30px; border-radius: 50%; background: #db2777; color: #fff; display: grid; place-items: center; font-weight: 600; font-size: .66rem; }
+        .tel-cab strong { display: block; font-size: .8rem; color: #0f172a; }
+        .tel-dias { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; margin-bottom: .55rem; }
+        .tel-dias span { text-align: center; padding: 5px 0; border-radius: 6px; background: #f1f5f9; }
+        .tel-dias span.sel { background: #db2777; color: #fff; }
+        .tel-horas { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; }
+        .tel-horas span { text-align: center; padding: 6px 0; border-radius: 6px; border: 1px solid #e2e8f0; }
+        .tel-horas span.sel { border-color: #db2777; color: #db2777; font-weight: 600; }
+        .tel-ok { margin-top: .7rem; background: #dcfce7; color: #166534; border-radius: 8px; padding: 7px; text-align: center; font-weight: 600; }
+
         /* Responsive */
         @media (max-width: 960px) {
             .grilla-pasos { grid-template-columns: repeat(2, 1fr); row-gap: 32px; }
@@ -371,6 +416,12 @@ $errorForm = isset($_GET['error']);
             .sobre-panel { padding: 32px 20px; }
             .sobre-retrato { width: 130px; }
             .grilla-servicios { grid-template-columns: 1fr; }
+            .turnito-grilla { grid-template-columns: minmax(0, 1fr); gap: 40px; }
+            .turnito-videos { margin-top: 48px; }
+            /* En el celular los videos pasan a un carrusel que se desliza con el dedo */
+            .turnito-reels { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; gap: 16px; margin: 0 -20px; padding: 0 20px 12px; scrollbar-width: none; }
+            .turnito-reels::-webkit-scrollbar { display: none; }
+            .turnito-reels .instagram-media { flex: 0 0 82% !important; scroll-snap-align: center; }
             .servicio-destacado { grid-template-columns: 1fr; gap: 16px; }
             .nav-toggle { display: block; }
             .nav-links { position: absolute; top: 68px; left: 0; right: 0; flex-direction: column; align-items: stretch; gap: 0; background: #0b1224; border-bottom: 1px solid rgba(255,255,255,.08); padding: 8px 20px 16px; display: none; }
@@ -382,9 +433,9 @@ $errorForm = isset($_GET['error']);
         }
         @media (max-width: 560px) {
             .servicio, form.formulario { padding: 24px; }
-            .fila-2, .credenciales { grid-template-columns: 1fr; }
+            .fila-2, .credenciales, .turnito-beneficios { grid-template-columns: 1fr; }
             .grilla-pasos { grid-template-columns: 1fr; }
-            .hero-acciones .btn { flex: 1 1 100%; justify-content: center; }
+            .hero-acciones .btn, .turnito-acciones .btn { flex: 1 1 100%; justify-content: center; }
             .hero-cifras { grid-template-columns: repeat(3, 1fr); gap: 1rem; }
             .hero-cifras b { font-size: 1.15rem; }
             .hero-cifras span { font-size: .68rem; }
@@ -404,6 +455,7 @@ $errorForm = isset($_GET['error']);
         <button class="nav-toggle" id="navToggle" aria-label="Abrir menú" aria-expanded="false"><i class="bi bi-list"></i></button>
         <ul class="nav-links" id="navLinks">
             <li><a href="#servicios">Servicios</a></li>
+            <li><a href="#turnitoahora">turnitoAhora</a></li>
             <li><a href="#proceso">Cómo trabajo</a></li>
             <li><a href="#sobre-mi">Sobre mí</a></li>
             <li><a href="#contacto" class="btn btn-primario">Pedí presupuesto</a></li>
@@ -526,6 +578,51 @@ $cinta = [
                 </ul>
             </article>
         </div>
+    </div>
+</section>
+
+<!-- ── turnitoAhora ───────────────────────────────────────── -->
+<section id="turnitoahora" class="turnito">
+    <div class="contenedor">
+        <div class="turnito-grilla">
+            <div class="revelar">
+                <span class="eyebrow">Producto propio</span>
+                <img src="/img/logo/turnitoahora.png" class="turnito-logo" alt="turnitoAhora" width="286" height="59" loading="lazy">
+                <h2>Tu agenda de turnos, <span class="serif">sin complicaciones</span>.</h2>
+                <p class="turnito-bajada">Agenda online para peluquerías, estética, uñas, tatuajes y más. Tus clientes reservan solos desde Instagram o WhatsApp, a cualquier hora.</p>
+                <div class="turnito-acciones">
+                    <a href="https://www.turnitoahora.com.ar" class="btn btn-turnito" target="_blank" rel="noopener"><i class="bi bi-box-arrow-up-right"></i> Conocé turnitoAhora</a>
+                    <a href="<?= htmlspecialchars($turnitoIg) ?>" class="btn btn-instagram" target="_blank" rel="noopener"><i class="bi bi-instagram"></i> @turnitoahora</a>
+                </div>
+            </div>
+            <ul class="turnito-beneficios revelar">
+                <li><i class="bi bi-calendar-check"></i><b>Reservas 24 h</b><span>El cliente elige día y horario, sin registrarse.</span></li>
+                <li><i class="bi bi-whatsapp"></i><b>Avisos por WhatsApp</b><span>Confirmaciones y recordatorios automáticos.</span></li>
+                <li><i class="bi bi-shield-check"></i><b>Sin superposiciones</b><span>El sistema ordena la agenda por vos.</span></li>
+                <li><i class="bi bi-phone"></i><b>Desde el celular</b><span>Funciona en cualquier equipo, sin instalar nada.</span></li>
+            </ul>
+        </div>
+        <?php if ($reels): ?>
+        <div class="turnito-videos revelar">
+            <p class="turnito-videos-titulo"><i class="bi bi-play-circle"></i> Mirá cómo funciona</p>
+            <div class="turnito-reels" id="turnitoReels">
+                <?php foreach ($reels as $reel): ?>
+                <blockquote class="instagram-media" data-instgrm-permalink="<?= htmlspecialchars($reel) ?>" data-instgrm-version="14">
+                    <a href="<?= htmlspecialchars($reel) ?>" target="_blank" rel="noopener">Ver este video en Instagram</a>
+                </blockquote>
+                <?php endforeach; ?>
+            </div>
+        </div>
+        <?php else: ?>
+        <div class="turnito-videos revelar">
+            <div class="tel" aria-hidden="true">
+                <div class="tel-cab"><span class="tel-avatar"><i class="bi bi-shop"></i></span><div><strong>Tu negocio</strong>Tu dirección</div></div>
+                <div class="tel-dias"><span>lun 12</span><span class="sel">mar 13</span><span>mié 14</span><span>jue 15</span></div>
+                <div class="tel-horas"><span>09:00</span><span class="sel">09:30</span><span>10:00</span><span>14:00</span><span>14:30</span><span>15:00</span></div>
+                <div class="tel-ok">✓ ¡Listo! Tu turno está reservado</div>
+            </div>
+        </div>
+        <?php endif; ?>
     </div>
 </section>
 
@@ -680,6 +777,8 @@ $cinta = [
         </div>
         <div class="footer-links">
             <a href="#servicios">Servicios</a>
+            <a href="https://www.turnitoahora.com.ar" target="_blank" rel="noopener">turnitoAhora</a>
+            <a href="<?= htmlspecialchars($turnitoIg) ?>" target="_blank" rel="noopener"><i class="bi bi-instagram"></i> @turnitoahora</a>
             <a href="#contacto">Contacto</a>
             <a href="https://www.linkedin.com/in/godoypablo1972/" target="_blank" rel="noopener me"><i class="bi bi-linkedin"></i> LinkedIn</a>
             <a href="/cifra/login.php?next=%2Fpanel%2F" rel="nofollow">Acceso</a>
@@ -728,6 +827,20 @@ $cinta = [
         setTimeout(() => e.target.style.transitionDelay = '', 1400);
     }), { threshold: 0.12 });
     document.querySelectorAll('.revelar, .trazo').forEach(el => obs.observe(el));
+
+    // Reels de turnitoAhora: el script de Instagram (pesado) se carga recién al acercarse a la sección
+    const turnitoReels = document.getElementById('turnitoReels');
+    if (turnitoReels) {
+        const obsReels = new IntersectionObserver(entradas => {
+            if (!entradas[0].isIntersecting) return;
+            obsReels.disconnect();
+            const s = document.createElement('script');
+            s.src = 'https://www.instagram.com/embed.js';
+            s.async = true;
+            document.body.appendChild(s);
+        }, { rootMargin: '400px' });
+        obsReels.observe(turnitoReels);
+    }
 
     // Cifras del hero que cuentan desde cero
     if (!sinMovimiento) document.querySelectorAll('[data-contar]').forEach(el => {
