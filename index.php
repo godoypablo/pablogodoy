@@ -473,7 +473,7 @@ $reels = [
         <div class="hero-texto">
             <span class="pill entrar"><span class="pill-punto"></span> Disponible para nuevos proyectos</span>
             <h1><span class="hero-nombre entrar" style="--d:.1s">Pablo Andrés Godoy</span><span class="hero-titular entrar" style="--d:.15s">Tecnología <span class="serif">a&nbsp;medida</span> para tu organización.</span></h1>
-            <p class="hero-bajada entrar" style="--d:.25s">Sitios web, apps para Android e iPhone, sistemas de gestión y consultoría. <strong>Más de 25 años</strong> convirtiendo ideas en soluciones que funcionan, desde Paraná para todo el país.</p>
+            <p class="hero-bajada entrar" style="--d:.25s">Tu idea, convertida en una web, una app o un sistema que trabaja para vos. <strong>Más de 25 años de experiencia</strong>, desde Paraná, sin fronteras.</p>
             <div class="hero-acciones entrar" style="--d:.4s">
                 <a href="#contacto" class="btn btn-luz"><i class="bi bi-send"></i> Pedí tu presupuesto</a>
                 <a href="<?= htmlspecialchars($waLink) ?>" class="btn btn-vidrio" target="_blank" rel="noopener"><i class="bi bi-whatsapp"></i> Escribime por WhatsApp</a>
